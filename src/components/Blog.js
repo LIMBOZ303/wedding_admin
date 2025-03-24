@@ -202,11 +202,7 @@ const Blog = () => {
             )}
             
             {/* Admin Header */}
-            <header className="admin-header">
-                <div className="container">
-                    <h1><i className="fas fa-heart"></i> Admin - Quản lý Blog Tiệc Cưới</h1>
-                </div>
-            </header>
+            <h1><i className="fas fa-heart"></i> Admin - Quản lý Blog Tiệc Cưới</h1>
             
             {/* Add Blog Form */}
             <div className="card">
