@@ -57,6 +57,10 @@ const ProductManagement = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa dịch vụ này?")) {
+      return;
+    }
+    
     setLoading(true);
     try {
       const response = await deleteCatering(id);
@@ -91,6 +95,20 @@ const ProductManagement = () => {
     navigate(`/catering/${id}`);
   };
 
+  // Thêm hàm xử lý khi nhấn Enter trong input
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleFilterByCategory();
+    }
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
+  };
+
   return (
     <div className="container">
       <h2>Quản Lý Sản Phẩm</h2>
@@ -100,25 +118,35 @@ const ProductManagement = () => {
           placeholder="Nhập ID danh mục để lọc" 
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
-        <button className="button-filter" onClick={handleFilterByCategory}>Lọc theo danh mục</button>
+        <button className="button-filter" onClick={handleFilterByCategory}>
+          Lọc theo danh mục
+        </button>
       </div>
       {loading ? (
         <div className="spinner-container">
           <div className="loading-spinner"></div>
         </div>
-      ) : (
+      ) : cateringList.length > 0 ? (
         <ul className="product-list">
           {cateringList.map(item => (
             <li key={item._id} className="product-item">
-              <h3>{item.name}</h3>
+              <h3 title={item.name}>{item.name}</h3>
               {item.imageUrl && (
-                <img src={item.imageUrl} alt={item.name} />
+                <img 
+                  src={item.imageUrl} 
+                  alt={item.name} 
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/300x200?text=Không+có+hình';
+                  }}
+                />
               )}
-              <p>{item.Description || item.description}</p>
-              <p>Giá: {item.price}</p>
+              <p>{item.Description || item.description || "Chưa có mô tả"}</p>
+              <p><strong>Giá:</strong> {formatPrice(item.price)}</p>
               <p>
-                Danh mục:{" "}
+                <strong>Danh mục:</strong>{" "}
                 {item.cate_cateringId && item.cate_cateringId.name
                   ? item.cate_cateringId.name
                   : "Chưa xác định"}
@@ -137,6 +165,10 @@ const ProductManagement = () => {
             </li>
           ))}
         </ul>
+      ) : (
+        <div className="no-results">
+          <p>Không tìm thấy sản phẩm nào. Vui lòng thử lại với bộ lọc khác.</p>
+        </div>
       )}
     </div>
   );
