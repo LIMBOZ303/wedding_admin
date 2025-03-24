@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchAccounts, deleteAccount } from '../api/api';
+import { fetchAccounts, deleteAccount } from '../api/users_api';
 import '../public/styles/AccountManagement.css';
 
 const AccountManagement = () => {

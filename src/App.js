@@ -11,6 +11,7 @@ import Dashboard from './components/Dashboard';
 import './public/styles/Home.css';
 import './public/styles/Slidebar.css';
 import Blog from './components/Blog';
+import Transactions from './components/Transactions';
 
 const App = () => {
     const location = useLocation();
@@ -29,6 +30,7 @@ const App = () => {
                     <Route path="/combos" element={<ComboManagement />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/blog" element={<Blog />} />
+                    <Route path="/transaction" element={<Transactions/>} />
                 </Routes>
             </div>
         </div>

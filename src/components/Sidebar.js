@@ -14,7 +14,9 @@ const Sidebar = ({ isOpen }) => {
                 <li><Link to="/combos">Quản Lý Combo</Link></li>
                 <li><Link to="/statistics">Thống Kê</Link></li>
                 <li><Link to="/blog">Blog</Link></li>
+                <li><Link to="/transaction">Giao Dịch</Link></li>
                 <li><Link to="#">Đăng xuất</Link></li>
+
                 
             </ul>
         </div>
