@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Login from './components/Login';
@@ -17,11 +17,16 @@ import './public/styles/Slidebar.css';
 const App = () => {
     const location = useLocation();
     const isLoginPage = location.pathname === '/';
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    const handleSidebarToggle = (isOpen) => {
+        setSidebarOpen(isOpen);
+    };
 
     return (
         <div className="app-container">
-            {!isLoginPage && <Sidebar isOpen={true} />}
-            <div className="main-content">
+            {!isLoginPage && <Sidebar isOpen={true} onToggle={handleSidebarToggle} />}
+            <div className={`main-content ${!sidebarOpen ? 'sidebar-closed' : ''}`}>
                 <Routes>
                     <Route path="/" element={<Login />} />
                     <Route path="/home" element={<Dashboard />} />

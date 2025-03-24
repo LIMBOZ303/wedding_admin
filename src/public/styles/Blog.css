@@ -18,18 +18,19 @@
 }
 
 .blog-container {
-  max-width: 1250px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0px;
   font-family: 'Roboto', sans-serif;
-  margin-left: 250px;
+  margin-left: 0;
 }
 
 .admin-header {
-  background-color: var(--white);
-  box-shadow: var(--shadow);
+  /* background-color: var(--white); */
+  /* box-shadow: var(--shadow); */
   padding: 1rem 0;
   margin-bottom: 2rem;
+  border-radius: 10px;
 }
 
 .admin-header h1 {
@@ -341,7 +342,9 @@ form {
   margin-bottom: 15px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
+  box-orient: vertical;
   overflow: hidden;
 }
 
