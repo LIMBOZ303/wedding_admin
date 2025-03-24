@@ -8,10 +8,11 @@ import AccountManagement from './components/AccountManagement';
 import ComboManagement from './components/ComboManagement';
 import Statistics from './components/Statistics';
 import Dashboard from './components/Dashboard';
-import './public/styles/Home.css';
-import './public/styles/Slidebar.css';
 import Blog from './components/Blog';
 import Transactions from './components/Transactions';
+import CateringDetail from './components/CateringDetail';
+import './public/styles/Home.css';
+import './public/styles/Slidebar.css';
 
 const App = () => {
     const location = useLocation();
@@ -30,7 +31,8 @@ const App = () => {
                     <Route path="/combos" element={<ComboManagement />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/blog" element={<Blog />} />
-                    <Route path="/transaction" element={<Transactions/>} />
+                    <Route path="/transaction" element={<Transactions />} />
+                    <Route path="/catering/:id" element={<CateringDetail />} />
                 </Routes>
             </div>
         </div>

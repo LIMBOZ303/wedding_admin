@@ -1,16 +1,17 @@
-/* src/public/styles/Slidebar.css */
+/* Sidebar cơ bản */
 .sidebar {
     position: fixed;
     top: 0;
-    left: -250px; /* Ẩn sidebar */
+    left: 0;
+    width: 250px;  
     height: 100%;
-    width: 250px;
     background-color: #2c3e50;
     padding-top: 20px;
     color: white;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    transition: left 0.3s ease; /* Hiệu ứng chuyển động */
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
     z-index: 1000;
+<<<<<<< HEAD
 }
 
 .sidebar.open {
@@ -19,37 +20,62 @@
 
 
 .sidebar ul {
+=======
+  }
+  
+  .sidebar.closed {
+    transform: translateX(-250px);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar ul {
+>>>>>>> 5faef121d49b590669246f33351c0f5487e34dd8
     list-style: none;
     padding: 0;
-}
-
-.sidebar li {
+    margin-top: 60px;
+  }
+  
+  .sidebar li {
     margin: 15px 0;
-}
-
-.sidebar a {
+  }
+  
+  .sidebar a {
     color: white;
     text-decoration: none;
     font-size: 18px;
-    padding: 10px;
+    padding: 10px 20px;
     display: block;
     transition: background-color 0.3s;
-}
-
-.sidebar a:hover {
+  }
+  
+  .sidebar a:hover {
     background-color: #3498db;
-}
-
-/* Định dạng cho nút menu */
-.menu-button {
-    font-size: 24px;
-    background: none;
-    border: none;
-    color: #2c3e50;
-    cursor: pointer;
-    padding: 10px;
+  }
+  
+  .menu-button {
     position: absolute;
     top: 20px;
-    left: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background-color: #2c3e50;
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    cursor: pointer;
+    border-radius: 4px;
     z-index: 1001;
-}
+    transition: right 0.3s ease;
+  }
+  
+
+  .sidebar.closed .menu-button {
+    right: -60px;
+  }
+  
+  .sidebar.open .menu-button {
+    right: 10px;
+  }
+  
