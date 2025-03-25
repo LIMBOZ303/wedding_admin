@@ -1,9 +1,9 @@
 /* Container */
 .container {
     max-width: 1200px;
-    margin: 20px auto;
-    padding: 20px;
-    background: #f7f7f7;
+    margin: 10px auto;
+    padding: 0;
+    background: #ffffff;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
@@ -11,11 +11,10 @@
   /* Tiêu đề */
   .container h2 {
     text-align: center;
-    color: #333;
+    color: #fff;
     margin-bottom: 20px;
   }
   
-  /* Các nút hành động và input lọc */
   .action-buttons {
     display: flex;
     align-items: center;
@@ -26,7 +25,7 @@
   
   .action-buttons input[type="text"] {
     padding: 8px 12px;
-    border: 1px solid #ccc;
+    border: 0.5px solid #ccc;
     border-radius: 4px;
     width: 250px;
   }
@@ -45,7 +44,6 @@
     background: #e68900;
   }
   
-  /* Danh sách sản phẩm */
   .product-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -87,7 +85,6 @@
     margin: 6px 0;
   }
   
-  /* Nhóm nút trong sản phẩm */
   .button-group {
     display: flex;
     gap: 8px;
@@ -127,7 +124,6 @@
     background: #1e88e5;
   }
   
-  /* Hiệu ứng Spinner */
   .spinner-container {
     display: flex;
     justify-content: center;
@@ -149,7 +145,6 @@
     100% { transform: rotate(360deg); }
   }
   
-  /* Card Chi Tiết */
   .detail-card {
     position: fixed;
     top: 0;
