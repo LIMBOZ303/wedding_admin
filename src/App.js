@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import Navbar from './components/Navbar';
 import Login from './components/Login';
 import CategoryManagement from './components/CategoryManagement';
 import ProductManagement from './components/ProductManagement';
@@ -11,8 +12,11 @@ import Dashboard from './components/Dashboard';
 import Blog from './components/Blog';
 import Transactions from './components/Transactions';
 import CateringDetail from './components/CateringDetail';
-import './public/styles/Home.css';
+import { AppProvider } from './AppContext';
+import './public/styles/theme.css'; // Import theme first
 import './public/styles/Slidebar.css';
+import './public/styles/Home.css';
+import './App.css';
 
 const App = () => {
     const location = useLocation();
@@ -20,8 +24,9 @@ const App = () => {
 
     return (
         <div className="app-container">
-            {!isLoginPage && <Sidebar isOpen={true} />}
-            <div className="main-content">
+            {!isLoginPage && <Sidebar />}
+            <div className={`main-content ${isLoginPage ? 'login-page' : ''}`}>
+                {!isLoginPage && <Navbar />}
                 <Routes>
                     <Route path="/" element={<Login />} />
                     <Route path="/home" element={<Dashboard />} />
@@ -41,9 +46,11 @@ const App = () => {
 
 const AppWrapper = () => {
     return (
-        <Router>
-            <App />
-        </Router>
+        <AppProvider>
+            <Router>
+                <App />
+            </Router>
+        </AppProvider>
     );
 };
 
