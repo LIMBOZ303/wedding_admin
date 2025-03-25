@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  fetchCatering, 
-  updateCatering, 
-  deleteCatering, 
-  getCateringsByCategory 
+import {
+  fetchCatering,
+  updateCatering,
+  deleteCatering,
+  getCateringsByCategory
 } from '../api/catering_api';
 import { useNavigate } from 'react-router-dom';
 import '../public/styles/ProductManagement.css';
@@ -12,7 +12,7 @@ const ProductManagement = () => {
   const [cateringList, setCateringList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState("");
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,7 +60,7 @@ const ProductManagement = () => {
     if (!window.confirm("Bạn có chắc chắn muốn xóa dịch vụ này?")) {
       return;
     }
-    
+
     setLoading(true);
     try {
       const response = await deleteCatering(id);
@@ -90,12 +90,10 @@ const ProductManagement = () => {
     }
   };
 
-  // Khi ấn "Chi Tiết", chuyển hướng sang trang chi tiết sản phẩm
   const handleDetail = (id) => {
     navigate(`/catering/${id}`);
   };
 
-  // Thêm hàm xử lý khi nhấn Enter trong input
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleFilterByCategory();
@@ -113,9 +111,9 @@ const ProductManagement = () => {
     <div className="container">
       <h2>Quản Lý Sản Phẩm</h2>
       <div className="action-buttons">
-        <input 
-          type="text" 
-          placeholder="Nhập ID danh mục để lọc" 
+        <input
+          type="text"
+          placeholder="Nhập ID danh mục để lọc"
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -134,9 +132,9 @@ const ProductManagement = () => {
             <li key={item._id} className="product-item">
               <h3 title={item.name}>{item.name}</h3>
               {item.imageUrl && (
-                <img 
-                  src={item.imageUrl} 
-                  alt={item.name} 
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = 'https://via.placeholder.com/300x200?text=Không+có+hình';
@@ -152,12 +150,6 @@ const ProductManagement = () => {
                   : "Chưa xác định"}
               </p>
               <div className="button-group">
-                <button onClick={() => handleUpdate(item._id)} className="button-update">
-                  Cập Nhật
-                </button>
-                <button onClick={() => handleDelete(item._id)} className="button-delete">
-                  Xóa
-                </button>
                 <button onClick={() => handleDetail(item._id)} className="button-detail">
                   Chi Tiết
                 </button>

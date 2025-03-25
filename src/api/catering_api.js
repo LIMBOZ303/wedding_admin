@@ -23,9 +23,15 @@ export const getCateringById = async (id) => {
 export const updateCatering = async (id, cateringData) => {
   try {
     const response = await axios.put(`${API_URL}/update/${id}`, cateringData);
-    return response.data;
+    
+    if (response.data.status) {
+      console.log("Cập nhật thành công:", response.data);
+      return response.data;
+    } else {
+      throw new Error(response.data.message || "Cập nhật thất bại!");
+    }
   } catch (error) {
-    console.error("Lỗi khi cập nhật dịch vụ catering:", error);
+    console.error("Lỗi khi cập nhật dịch vụ catering:", error.response?.data || error.message);
     throw error;
   }
 };

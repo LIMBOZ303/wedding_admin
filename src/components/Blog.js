@@ -223,7 +223,7 @@ const Blog = () => {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="content">Nội dung (HTML):</label>
+                        <label htmlFor="content">Nội dung:</label>
                         <textarea 
                             id="content" 
                             name="content"

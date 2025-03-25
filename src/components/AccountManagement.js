@@ -61,8 +61,6 @@ const AccountManagement = () => {
     };
 
     const handleEditAccount = (id) => {
-        // Hàm thực hiện chỉnh sửa tài khoản
-        // Trong tương lai có thể mở form chỉnh sửa hoặc chuyển hướng đến trang chỉnh sửa
         console.log("Chỉnh sửa tài khoản:", id);
     };
 
@@ -141,7 +139,6 @@ const AccountManagement = () => {
                 </div>
             )}
             
-            {/* Hộp thoại xác nhận xóa */}
             {showConfirmDialog && (
                 <div className="confirmation-dialog">
                     <div className="dialog-content">

@@ -76,6 +76,8 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--spacing-md) 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .menu-list {
