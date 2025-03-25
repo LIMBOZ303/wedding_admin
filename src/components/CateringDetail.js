@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCateringById, updateCatering, deleteCatering } from '../api/catering_api';
+import { fetchCatering, updateCatering, deleteCatering } from '../api/catering_api';
 import '../public/styles/CateringDetail.css'; 
 
 const CateringDetail = () => {
@@ -9,26 +9,22 @@ const CateringDetail = () => {
     const [cateringDetail, setCateringDetail] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [editData, setEditData] = useState({ name: ""});
+    const [editName, setEditName] = useState("");
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await getCateringById(id);
-                console.log("Dữ liệu từ API:", response);
-
-                if (response.status && response.data) {
-                    setCateringDetail(response.data);
-                    setEditData({
-                        name: response.data.name,
-                        price: response.data.price.toString(), 
-                        Description: response.data.Description
-                    });
+                const response = await fetchCatering();
+                // Tìm món ăn có _id khớp với id từ params
+                const item = response.data.find(item => item._id === id);
+                if (item) {
+                    setCateringDetail(item);
+                    setEditName(item.name);
                 } else {
                     setError("Không tìm thấy dịch vụ catering.");
                 }
-            } catch (error) {
-                console.error("Lỗi khi tải chi tiết dịch vụ:", error);
+            } catch (err) {
+                console.error("Lỗi khi tải chi tiết dịch vụ:", err);
                 setError("Lỗi khi tải chi tiết dịch vụ.");
             } finally {
                 setLoading(false);
@@ -37,26 +33,17 @@ const CateringDetail = () => {
         fetchData();
     }, [id]);
 
-    const formatNumberWithDots = (value) => {
-        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    };
-
-    const handlePriceChange = (e) => {
-        let rawValue = e.target.value.replace(/\D/g, '');
-        rawValue = formatNumberWithDots(rawValue);
-        setEditData({ ...editData, price: rawValue });
-    };
-
     const handleUpdate = async () => {
         try {
-            const updatedData = { 
-                ...editData, 
-                price: parseInt(editData.price.replace(/\./g, ''), 10) || 0
-            };
-            await updateCatering(id, updatedData);
-            alert("Cập nhật thành công!");
-            setCateringDetail({ ...cateringDetail, ...updatedData });
-        } catch (error) {
+            // Chỉ cập nhật tên dịch vụ
+            const updatedData = { name: editName };
+            const res = await updateCatering(id, updatedData);
+            if (res.status) {
+                alert("Cập nhật thành công!");
+                setCateringDetail(prev => ({ ...prev, name: editName }));
+            }
+        } catch (err) {
+            console.error("Lỗi khi cập nhật dịch vụ:", err);
             alert("Lỗi khi cập nhật dịch vụ!");
         }
     };
@@ -64,10 +51,13 @@ const CateringDetail = () => {
     const handleDelete = async () => {
         if (window.confirm("Bạn có chắc chắn muốn xóa dịch vụ này?")) {
             try {
-                await deleteCatering(id);
-                alert("Xóa thành công!");
-                navigate("/");
-            } catch (error) {
+                const res = await deleteCatering(id);
+                if (res.status) {
+                    alert("Xóa thành công!");
+                    navigate("/");
+                }
+            } catch (err) {
+                console.error("Lỗi khi xóa dịch vụ:", err);
                 alert("Lỗi khi xóa dịch vụ!");
             }
         }
@@ -79,13 +69,17 @@ const CateringDetail = () => {
     return (
         <div className="catering-detail">
             <h2>Chi Tiết Dịch Vụ</h2>
-            {cateringDetail?.imageUrl && <img src={cateringDetail.imageUrl} alt={cateringDetail.name} />}
-            
+            {cateringDetail?.imageUrl && (
+                <img src={cateringDetail.imageUrl} alt={cateringDetail.name} />
+            )}
             <div className="edit-form">
                 <h3>Chỉnh Sửa Thông Tin</h3>
-                <input type="text" placeholder="Tên dịch vụ" value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
-                <input type="text" placeholder="Giá dịch vụ" value={editData.price} onChange={handlePriceChange} />
-                <textarea placeholder="Mô tả" value={editData.Description} onChange={(e) => setEditData({ ...editData, Description: e.target.value })}></textarea>
+                <input 
+                    type="text" 
+                    placeholder="Tên dịch vụ" 
+                    value={editName} 
+                    onChange={(e) => setEditName(e.target.value)} 
+                />
                 <button onClick={handleUpdate} className="button-update">Cập Nhật</button>
                 <button onClick={handleDelete} className="button-delete">Xóa</button>
             </div>

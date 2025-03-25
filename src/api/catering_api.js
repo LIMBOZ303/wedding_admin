@@ -13,13 +13,13 @@ export const fetchCatering = async () => {
     }
 };
 
-// Lấy dịch vụ catering theo ID
-export const getCateringById = async (id) => {
+// Thêm dịch vụ catering
+export const addCatering = async (cateringData) => {
     try {
-        const response = await axios.get(`${API_URL}/getbyid/${id}`);
+        const response = await axios.post(`${API_URL}/add`, cateringData);
         return response.data;
     } catch (error) {
-        console.error("Lỗi khi lấy dịch vụ catering theo ID:", error.response?.data || error.message);
+        console.error("Lỗi khi thêm dịch vụ catering:", error.response?.data || error.message);
         throw error;
     }
 };
@@ -47,28 +47,6 @@ export const deleteCatering = async (id) => {
         return response.data;
     } catch (error) {
         console.error("Lỗi khi xóa dịch vụ catering:", error.response?.data || error.message);
-        throw error;
-    }
-};
-
-// Thêm dịch vụ catering
-export const addCatering = async (cateringData) => {
-    try {
-        const response = await axios.post(`${API_URL}/add`, cateringData);
-        return response.data;
-    } catch (error) {
-        console.error("Lỗi khi thêm dịch vụ catering:", error.response?.data || error.message);
-        throw error;
-    }
-};
-
-// Lấy danh sách dịch vụ catering theo danh mục
-export const getCateringsByCategory = async (cateringId) => {
-    try {
-        const response = await axios.get(`${API_URL}/caterings/${cateringId}`);
-        return response.data;
-    } catch (error) {
-        console.error("Lỗi khi lấy danh sách dịch vụ catering theo danh mục:", error.response?.data || error.message);
         throw error;
     }
 };
