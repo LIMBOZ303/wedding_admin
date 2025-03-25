@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCateringById, updateCatering, deleteCatering } from '../api/catering_api';
+import '../public/styles/CateringDetail.css'; 
 
 const CateringDetail = () => {
     const { id } = useParams();
@@ -8,7 +9,7 @@ const CateringDetail = () => {
     const [cateringDetail, setCateringDetail] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [editData, setEditData] = useState({ name: "", price: "", Description: "" });
+    const [editData, setEditData] = useState({ name: ""});
 
     useEffect(() => {
         const fetchData = async () => {
@@ -20,7 +21,7 @@ const CateringDetail = () => {
                     setCateringDetail(response.data);
                     setEditData({
                         name: response.data.name,
-                        price: response.data.price,
+                        price: response.data.price.toString(), 
                         Description: response.data.Description
                     });
                 } else {
@@ -36,11 +37,25 @@ const CateringDetail = () => {
         fetchData();
     }, [id]);
 
+    const formatNumberWithDots = (value) => {
+        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
+
+    const handlePriceChange = (e) => {
+        let rawValue = e.target.value.replace(/\D/g, '');
+        rawValue = formatNumberWithDots(rawValue);
+        setEditData({ ...editData, price: rawValue });
+    };
+
     const handleUpdate = async () => {
         try {
-            await updateCatering(id, editData);
+            const updatedData = { 
+                ...editData, 
+                price: parseInt(editData.price.replace(/\./g, ''), 10) || 0
+            };
+            await updateCatering(id, updatedData);
             alert("Cập nhật thành công!");
-            setCateringDetail({ ...cateringDetail, ...editData });
+            setCateringDetail({ ...cateringDetail, ...updatedData });
         } catch (error) {
             alert("Lỗi khi cập nhật dịch vụ!");
         }
@@ -65,15 +80,11 @@ const CateringDetail = () => {
         <div className="catering-detail">
             <h2>Chi Tiết Dịch Vụ</h2>
             {cateringDetail?.imageUrl && <img src={cateringDetail.imageUrl} alt={cateringDetail.name} />}
-            <p><strong>Mô tả:</strong> {cateringDetail?.Description || "Không có mô tả"}</p>
-            <p><strong>Giá:</strong> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(cateringDetail?.price)}</p>
-            <p><strong>Danh mục ID:</strong> {cateringDetail?.cate_cateringId || "Không xác định"}</p>
-            <p><strong>Ngày tạo:</strong> {new Date(cateringDetail?.createdAt).toLocaleString()}</p>
             
             <div className="edit-form">
                 <h3>Chỉnh Sửa Thông Tin</h3>
                 <input type="text" placeholder="Tên dịch vụ" value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} />
-                <input type="number" placeholder="Giá dịch vụ" value={editData.price} onChange={(e) => setEditData({ ...editData, price: e.target.value })} />
+                <input type="text" placeholder="Giá dịch vụ" value={editData.price} onChange={handlePriceChange} />
                 <textarea placeholder="Mô tả" value={editData.Description} onChange={(e) => setEditData({ ...editData, Description: e.target.value })}></textarea>
                 <button onClick={handleUpdate} className="button-update">Cập Nhật</button>
                 <button onClick={handleDelete} className="button-delete">Xóa</button>

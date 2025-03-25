@@ -55,8 +55,8 @@ const Sidebar = () => {
   // Define menu items with icons
   const menuItems = [
     { path: '/home', icon: faHome, text: 'Trang chủ' },
-    { path: '/categories', icon: faFolderOpen, text: 'Quản Lý Danh Mục' },
-    { path: '/products', icon: faBoxes, text: 'Quản Lý Sản Phẩm' },
+    // { path: '/categories', icon: faFolderOpen, text: 'Quản Lý Danh Mục' },
+    { path: '/products', icon: faBoxes, text: 'Quản Lý Dịch Vụ' },
     { path: '/accounts', icon: faUsers, text: 'Quản Lý Tài Khoản' },
     { path: '/combos', icon: faBoxArchive, text: 'Quản Lý Combo' },
     { path: '/statistics', icon: faChartBar, text: 'Thống Kê' },

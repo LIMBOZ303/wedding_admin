@@ -33,6 +33,7 @@ const ProductManagement = () => {
 
   // Hàm cập nhật dịch vụ catering (dữ liệu mẫu)
   const handleUpdate = async (id) => {
+    // Dữ liệu cập nhật có thể thay đổi theo yêu cầu của bạn (đang sử dụng dữ liệu mẫu)
     const updatedData = {
       name: "Tên cập nhật",
       price: 100,
@@ -44,11 +45,11 @@ const ProductManagement = () => {
     setLoading(true);
     try {
       const response = await updateCatering(id, updatedData);
-      const updatedCatering = response.data.data;
+      // Cập nhật lại danh sách sau khi cập nhật thành công
       setCateringList(prevList =>
-        prevList.map(item => (item._id === id ? updatedCatering : item))
+        prevList.map(item => (item._id === id ? response.data.data : item))
       );
-      console.log("Cập nhật dịch vụ thành công:", updatedCatering);
+      console.log("Cập nhật dịch vụ thành công:", response.data.data);
     } catch (error) {
       console.error("Lỗi khi cập nhật dịch vụ catering:", error);
     } finally {
@@ -65,7 +66,8 @@ const ProductManagement = () => {
     try {
       const response = await deleteCatering(id);
       console.log("Xóa dịch vụ thành công:", response.data);
-      getCateringData();
+      // Cập nhật lại danh sách sau khi xóa
+      setCateringList(prevList => prevList.filter(item => item._id !== id));
     } catch (error) {
       console.error("Lỗi khi xóa dịch vụ catering:", error);
     } finally {
