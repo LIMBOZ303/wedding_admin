@@ -45,35 +45,27 @@ import {
 import '../public/styles/ProductManagement.css';
 
 const ProductManagement = () => {
-  // State cho thanh điều hướng
   const [activeTab, setActiveTab] = useState("DichVu");
 
-  // State cho danh sách món ăn (Dịch Vụ)
   const [foodList, setFoodList] = useState([]);
-  // State cho Trang Trí
   const [decorateList, setDecorateList] = useState([]);
-  // State cho Quà Tặng
   const [giftList, setGiftList] = useState([]);
-  // State cho các tab khác (Order) dùng catering API làm tạm
   const [cateringList, setCateringList] = useState([]);
-  // State cho Order (Phòng/Sảnh)
   const [lobbyList, setLobbyList] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [filterText, setFilterText] = useState("");
-
-  // State cho modal chi tiết
   const [selectedItem, setSelectedItem] = useState(null);
-  
-  // --- State chỉnh sửa cho món ăn (Dịch Vụ) và quà tặng ---
+
+  // --- State chỉnh sửa cho món ăn và quà tặng ---
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
   const [editCate, setEditCate] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editImageUrl, setEditImageUrl] = useState("");
   const [editStatus, setEditStatus] = useState("");
-  
-  // --- State thêm mới cho món ăn (Dịch Vụ) ---
+
+  // --- State thêm mới cho món ăn ---
   const [newName, setNewName] = useState("");
   const [newPrice, setNewPrice] = useState("");
   const [newCate, setNewCate] = useState("");
@@ -81,28 +73,22 @@ const ProductManagement = () => {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newStatus, setNewStatus] = useState("");
 
-  // State cho modal thêm mới (dùng cho các tab khác nếu cần)
+  // State cho modal thêm mới
   const [showAddModal, setShowAddModal] = useState(false);
   // State cho loại form thêm mới đang hiển thị
-  const [addFormType, setAddFormType] = useState("food"); // "food", "gift", "decorate"
-
-  // State for gift categories
+  const [addFormType, setAddFormType] = useState("food");
   const [giftCategories, setGiftCategories] = useState([]);
-
-  // State for decorate categories
   const [decorateCategories, setDecorateCategories] = useState([]);
-  
-  // State for catering categories
   const [cateringCategories, setCateringCategories] = useState([]);
 
   useEffect(() => {
     if (activeTab === "DichVu") {
       getFoodData();
-      getCateringCategories(); // Get catering categories for the service section
+      getCateringCategories();
       setAddFormType("food");
     } else if (activeTab === "TrangTri") {
       getDecorateData();
-      getDecorateCategories(); // Get decoration categories when on decoration tab
+      getDecorateCategories();
       setAddFormType("decorate");
     } else if (activeTab === "QuaTang") {
       getGiftData();
@@ -114,7 +100,7 @@ const ProductManagement = () => {
     }
   }, [activeTab]);
 
-  // ===== API cho Món Ăn (Dịch Vụ) =====
+  // ===== Call API cho Món Ăn =====
   const getFoodData = async () => {
     setLoading(true);
     try {
@@ -127,7 +113,7 @@ const ProductManagement = () => {
     }
   };
 
-  // ===== API cho Trang Trí =====
+  // ===== Call API cho Trang Trí =====
   const getDecorateData = async () => {
     setLoading(true);
     try {
@@ -140,7 +126,7 @@ const ProductManagement = () => {
     }
   };
 
-  // ===== API cho Quà Tặng =====
+  // ===== Call API cho Quà Tặng =====
   const getGiftData = async () => {
     setLoading(true);
     try {
@@ -153,7 +139,7 @@ const ProductManagement = () => {
     }
   };
 
-  // ===== API cho các tab khác (tạm dùng catering) =====
+  // ===== Call API cho các tab khác =====
   const getCateringData = async () => {
     setLoading(true);
     try {
@@ -166,7 +152,7 @@ const ProductManagement = () => {
     }
   };
 
-  // ===== API cho Order (Phòng/Sảnh) =====
+  // ===== Call API cho Hall=====
   const getLobbyData = async () => {
     setLoading(true);
     try {
@@ -179,7 +165,6 @@ const ProductManagement = () => {
     }
   };
 
-  // Fetch gift categories for the dropdown menu
   const getGiftCategories = async () => {
     try {
       const data = await fetchGiftCategories();
@@ -191,7 +176,6 @@ const ProductManagement = () => {
     }
   };
 
-  // Fetch decoration categories for the dropdown menu
   const getDecorateCategories = async () => {
     try {
       const data = await fetchDecorateCategories();
@@ -203,7 +187,6 @@ const ProductManagement = () => {
     }
   };
 
-  // Fetch catering categories for the dropdown menu
   const getCateringCategories = async () => {
     try {
       const data = await fetchCateringCategories();
@@ -215,7 +198,6 @@ const ProductManagement = () => {
     }
   };
 
-  // Hàm lọc danh sách hiển thị
   const filteredList = () => {
     let list = [];
     if (activeTab === "DichVu") {
@@ -223,14 +205,14 @@ const ProductManagement = () => {
     } else if (activeTab === "TrangTri") {
       list = decorateList;
     } else if (activeTab === "QuaTang") {
-      list = giftList; // Sử dụng danh sách quà tặng
+      list = giftList;
     } else if (activeTab === "Order") {
       list = lobbyList;
     }
     return filterText
       ? list.filter(item =>
-          item.name.toLowerCase().includes(filterText.toLowerCase())
-        )
+        item.name.toLowerCase().includes(filterText.toLowerCase())
+      )
       : list;
   };
 
@@ -238,21 +220,21 @@ const ProductManagement = () => {
   const handleShowDetail = async (id) => {
     try {
       setLoading(true);
-      
+
       if (activeTab === "DichVu") {
         // Xử lý chi tiết món ăn (giữ nguyên code cũ)
         const localItem = foodList.find(item => item._id === id);
-        
+
         if (!localItem) {
           Swal.fire("Lỗi!", "Không tìm thấy thông tin món ăn trong danh sách.", "error");
           setLoading(false);
           return;
         }
-        
+
         setSelectedItem({ ...localItem, type: activeTab });
         setEditName(localItem.name || "");
         setEditPrice(localItem.price || "");
-        
+
         // Handle cate_cateringId which could be an object or a string
         if (localItem.cate_cateringId) {
           if (typeof localItem.cate_cateringId === 'object' && localItem.cate_cateringId._id) {
@@ -263,21 +245,21 @@ const ProductManagement = () => {
         } else {
           setEditCate("");
         }
-        
+
         setEditDescription(localItem.description || "");
         setEditImageUrl(localItem.imageUrl || "");
-        
+
         try {
           console.log(`Đang gọi API lấy chi tiết món ăn với ID: ${id}`);
           const res = await fetchFoodById(id);
           console.log("Kết quả từ fetchFoodById:", res);
-          
+
           if (res && res.status && res.data) {
             const food = res.data;
             setSelectedItem({ ...food, type: activeTab });
             setEditName(food.name || "");
             setEditPrice(food.price || "");
-            
+
             // Handle cate_cateringId which could be an object or a string
             if (food.cate_cateringId) {
               if (typeof food.cate_cateringId === 'object' && food.cate_cateringId._id) {
@@ -288,24 +270,24 @@ const ProductManagement = () => {
             } else {
               setEditCate("");
             }
-            
+
             setEditDescription(food.description || "");
             setEditImageUrl(food.imageUrl || "");
             console.log("Đã cập nhật thông tin từ fetchFoodById");
           }
         } catch (error) {
           console.log("Lỗi khi gọi fetchFoodById, đang thử fetchFoodDetail:", error);
-          
+
           try {
             const res = await fetchFoodDetail(id);
             console.log("Kết quả từ fetchFoodDetail:", res);
-            
+
             if (res && res.status && res.data) {
               const food = res.data;
               setSelectedItem({ ...food, type: activeTab });
               setEditName(food.name || "");
               setEditPrice(food.price || "");
-              
+
               // Handle cate_cateringId which could be an object or a string
               if (food.cate_cateringId) {
                 if (typeof food.cate_cateringId === 'object' && food.cate_cateringId._id) {
@@ -316,7 +298,7 @@ const ProductManagement = () => {
               } else {
                 setEditCate("");
               }
-              
+
               setEditDescription(food.description || "");
               setEditImageUrl(food.imageUrl || "");
               console.log("Đã cập nhật thông tin từ fetchFoodDetail");
@@ -328,17 +310,17 @@ const ProductManagement = () => {
       } else if (activeTab === "QuaTang") {
         // Xử lý chi tiết quà tặng
         const localItem = giftList.find(item => item._id === id);
-        
+
         if (!localItem) {
           Swal.fire("Lỗi!", "Không tìm thấy thông tin quà tặng trong danh sách.", "error");
           setLoading(false);
           return;
         }
-        
+
         setSelectedItem({ ...localItem, type: activeTab });
         setEditName(localItem.name || "");
         setEditPrice(localItem.price || "");
-        
+
         // Handle Cate_presentId which could be an object or a string
         if (localItem.Cate_presentId) {
           if (typeof localItem.Cate_presentId === 'object' && localItem.Cate_presentId._id) {
@@ -349,22 +331,22 @@ const ProductManagement = () => {
         } else {
           setEditCate("");
         }
-        
+
         setEditDescription(localItem.Description || "");
         setEditImageUrl(localItem.imageUrl || "");
         setEditStatus(localItem.Status || "");
-        
+
         try {
           console.log(`Đang gọi API lấy chi tiết quà tặng với ID: ${id}`);
           const res = await fetchGiftById(id);
           console.log("Kết quả từ fetchGiftById:", res);
-          
+
           if (res && res.status && res.data) {
             const gift = res.data;
             setSelectedItem({ ...gift, type: activeTab });
             setEditName(gift.name || "");
             setEditPrice(gift.price || "");
-            
+
             // Handle Cate_presentId which could be an object or a string
             if (gift.Cate_presentId) {
               if (typeof gift.Cate_presentId === 'object' && gift.Cate_presentId._id) {
@@ -375,7 +357,7 @@ const ProductManagement = () => {
             } else {
               setEditCate("");
             }
-            
+
             setEditDescription(gift.Description || "");
             setEditImageUrl(gift.imageUrl || "");
             setEditStatus(gift.Status || "");
@@ -383,17 +365,17 @@ const ProductManagement = () => {
           }
         } catch (error) {
           console.log("Lỗi khi gọi fetchGiftById, đang thử fetchGiftDetail:", error);
-          
+
           try {
             const res = await fetchGiftDetail(id);
             console.log("Kết quả từ fetchGiftDetail:", res);
-            
+
             if (res && res.status && res.data) {
               const gift = res.data;
               setSelectedItem({ ...gift, type: activeTab });
               setEditName(gift.name || "");
               setEditPrice(gift.price || "");
-              
+
               // Handle Cate_presentId which could be an object or a string
               if (gift.Cate_presentId) {
                 if (typeof gift.Cate_presentId === 'object' && gift.Cate_presentId._id) {
@@ -404,7 +386,7 @@ const ProductManagement = () => {
               } else {
                 setEditCate("");
               }
-              
+
               setEditDescription(gift.Description || "");
               setEditImageUrl(gift.imageUrl || "");
               setEditStatus(gift.Status || "");
@@ -417,17 +399,17 @@ const ProductManagement = () => {
       } else if (activeTab === "TrangTri") {
         // Xử lý chi tiết sản phẩm trang trí
         const localItem = decorateList.find(item => item._id === id);
-        
+
         if (!localItem) {
           Swal.fire("Lỗi!", "Không tìm thấy thông tin trang trí trong danh sách.", "error");
           setLoading(false);
           return;
         }
-        
+
         setSelectedItem({ ...localItem, type: activeTab });
         setEditName(localItem.name || "");
         setEditPrice(localItem.price || "");
-        
+
         // Handle Cate_decorateId which could be an object or a string
         if (localItem.Cate_decorateId) {
           if (typeof localItem.Cate_decorateId === 'object' && localItem.Cate_decorateId._id) {
@@ -438,22 +420,22 @@ const ProductManagement = () => {
         } else {
           setEditCate("");
         }
-        
+
         setEditDescription(localItem.Description || "");
         setEditImageUrl(localItem.imageUrl || "");
         setEditStatus(localItem.Status || "");
-        
+
         try {
           console.log(`Đang gọi API lấy chi tiết trang trí với ID: ${id}`);
           const res = await fetchDecorateById(id);
           console.log("Kết quả từ fetchDecorateById:", res);
-          
+
           if (res && res.status && res.data) {
             const decorate = res.data;
             setSelectedItem({ ...decorate, type: activeTab });
             setEditName(decorate.name || "");
             setEditPrice(decorate.price || "");
-            
+
             // Handle Cate_decorateId which could be an object or a string
             if (decorate.Cate_decorateId) {
               if (typeof decorate.Cate_decorateId === 'object' && decorate.Cate_decorateId._id) {
@@ -464,7 +446,7 @@ const ProductManagement = () => {
             } else {
               setEditCate("");
             }
-            
+
             setEditDescription(decorate.Description || "");
             setEditImageUrl(decorate.imageUrl || "");
             setEditStatus(decorate.Status || "");
@@ -472,17 +454,17 @@ const ProductManagement = () => {
           }
         } catch (error) {
           console.log("Lỗi khi gọi fetchDecorateById, đang thử fetchDecorateDetail:", error);
-          
+
           try {
             const res = await fetchDecorateDetail(id);
             console.log("Kết quả từ fetchDecorateDetail:", res);
-            
+
             if (res && res.status && res.data) {
               const decorate = res.data;
               setSelectedItem({ ...decorate, type: activeTab });
               setEditName(decorate.name || "");
               setEditPrice(decorate.price || "");
-              
+
               // Handle Cate_decorateId which could be an object or a string
               if (decorate.Cate_decorateId) {
                 if (typeof decorate.Cate_decorateId === 'object' && decorate.Cate_decorateId._id) {
@@ -493,7 +475,7 @@ const ProductManagement = () => {
               } else {
                 setEditCate("");
               }
-              
+
               setEditDescription(decorate.Description || "");
               setEditImageUrl(decorate.imageUrl || "");
               setEditStatus(decorate.Status || "");
@@ -511,18 +493,18 @@ const ProductManagement = () => {
           setLoading(false);
           return;
         }
-        
+
         setSelectedItem({ ...localItem, type: activeTab });
         setEditName(localItem.name || "");
         setEditPrice(localItem.price || "");
         setEditDescription(localItem.SoLuongKhach || "");
         setEditImageUrl(localItem.imageUrl || "");
-        
+
         try {
           console.log(`Đang gọi API lấy chi tiết phòng/sảnh với ID: ${id}`);
           const res = await fetchLobbyById(id);
           console.log("Kết quả từ fetchLobbyById:", res);
-          
+
           if (res && res.status && res.data) {
             const lobby = res.data;
             setSelectedItem({ ...lobby, type: activeTab });
@@ -542,11 +524,11 @@ const ProductManagement = () => {
           setLoading(false);
           return;
         }
-        
+
         setSelectedItem({ ...item, type: activeTab });
         setEditName(item.name || "");
         setEditPrice(item.price || "");
-        
+
         // Handle cate_cateringId which could be an object or a string
         if (item.cate_cateringId) {
           if (typeof item.cate_cateringId === 'object' && item.cate_cateringId._id) {
@@ -557,21 +539,21 @@ const ProductManagement = () => {
         } else {
           setEditCate("");
         }
-        
+
         setEditDescription(item.description || "");
         setEditImageUrl(item.imageUrl || "");
-        
+
         try {
           console.log(`Đang gọi API lấy chi tiết dịch vụ catering với ID: ${id}`);
           const res = await fetchCateringById(id);
           console.log("Kết quả từ fetchCateringById:", res);
-          
+
           if (res && res.status && res.data) {
             const catering = res.data;
             setSelectedItem({ ...catering, type: activeTab });
             setEditName(catering.name || "");
             setEditPrice(catering.price || "");
-            
+
             // Handle cate_cateringId which could be an object or a string
             if (catering.cate_cateringId) {
               if (typeof catering.cate_cateringId === 'object' && catering.cate_cateringId._id) {
@@ -582,24 +564,24 @@ const ProductManagement = () => {
             } else {
               setEditCate("");
             }
-            
+
             setEditDescription(catering.description || "");
             setEditImageUrl(catering.imageUrl || "");
             console.log("Đã cập nhật thông tin từ fetchCateringById");
           }
         } catch (error) {
           console.log("Lỗi khi gọi fetchCateringById, đang thử fetchCateringDetail:", error);
-          
+
           try {
             const res = await fetchCateringDetail(id);
             console.log("Kết quả từ fetchCateringDetail:", res);
-            
+
             if (res && res.status && res.data) {
               const catering = res.data;
               setSelectedItem({ ...catering, type: activeTab });
               setEditName(catering.name || "");
               setEditPrice(catering.price || "");
-              
+
               // Handle cate_cateringId which could be an object or a string
               if (catering.cate_cateringId) {
                 if (typeof catering.cate_cateringId === 'object' && catering.cate_cateringId._id) {
@@ -610,7 +592,7 @@ const ProductManagement = () => {
               } else {
                 setEditCate("");
               }
-              
+
               setEditDescription(catering.description || "");
               setEditImageUrl(catering.imageUrl || "");
               console.log("Đã cập nhật thông tin từ fetchCateringDetail");
@@ -652,13 +634,12 @@ const ProductManagement = () => {
           Status: editStatus,
           imageUrl: editImageUrl
         };
-        
+
         // Ensure price is a number
         if (updateData.price) {
           updateData.price = Number(updateData.price);
         }
-        
-        // Validate Cate_presentId format (it should be a valid MongoDB ObjectId)
+
         if (updateData.Cate_presentId && !/^[0-9a-fA-F]{24}$/.test(updateData.Cate_presentId)) {
           Swal.fire("Lỗi!", "Mã loại quà tặng không đúng định dạng.", "warning");
           return;
@@ -673,13 +654,11 @@ const ProductManagement = () => {
           Status: editStatus,
           imageUrl: editImageUrl
         };
-        
-        // Ensure price is a number
+
         if (updateData.price) {
           updateData.price = Number(updateData.price);
         }
-        
-        // Validate Cate_decorateId format (it should be a valid MongoDB ObjectId)
+
         if (updateData.Cate_decorateId && !/^[0-9a-fA-F]{24}$/.test(updateData.Cate_decorateId)) {
           Swal.fire("Lỗi!", "Mã loại trang trí không đúng định dạng.", "warning");
           return;
@@ -692,12 +671,12 @@ const ProductManagement = () => {
           SoLuongKhach: editDescription,
           imageUrl: editImageUrl
         };
-        
+
         // Ensure price is a number
         if (updateData.price) {
           updateData.price = Number(updateData.price);
         }
-        
+
         // Ensure SoLuongKhach is a number
         if (updateData.SoLuongKhach) {
           updateData.SoLuongKhach = Number(updateData.SoLuongKhach);
@@ -741,7 +720,7 @@ const ProductManagement = () => {
   const handleDelete = async () => {
     if (!selectedItem) return;
     const confirmResult = await Swal.fire({
-      title: "Bạn có chắc chắn?",
+      title: "Bạn có chắc chắn muốn xóa sản phẩm?",
       text: "Hành động này không thể hoàn tác!",
       icon: "warning",
       showCancelButton: true,
@@ -800,25 +779,23 @@ const ProductManagement = () => {
   const handleAdd = async () => {
     try {
       setLoading(true);
-      
+
       // Validate required fields
       if (!newName.trim()) {
         Swal.fire("Lỗi!", "Vui lòng nhập tên.", "warning");
         setLoading(false);
         return;
       }
-      
+
       let addFunc, newData;
-      
-      // Xác định API và dữ liệu tùy theo tab đang active
+
       if (addFormType === "food") {
         addFunc = addFood;
-        
-        // Create base data object for food
+
         newData = {
           name: newName.trim()
         };
-        
+
         // Handle price
         if (newPrice && newPrice.trim() !== "") {
           const priceNumber = parseFloat(newPrice);
@@ -830,16 +807,15 @@ const ProductManagement = () => {
             return;
           }
         }
-        
-        // Add other fields
+
         if (newDescription && newDescription.trim() !== "") {
           newData.description = newDescription.trim();
         }
-        
+
         if (newImageUrl && newImageUrl.trim() !== "") {
           newData.imageUrl = newImageUrl.trim();
         }
-        
+
         // Handle cate_cateringId
         if (newCate && newCate.trim() !== "") {
           if (/^[0-9a-fA-F]{24}$/.test(newCate.trim())) {
@@ -850,12 +826,12 @@ const ProductManagement = () => {
         }
       } else if (addFormType === "gift") {
         addFunc = addGift;
-        
+
         // Create base data object for gift
         newData = {
           name: newName.trim()
         };
-        
+
         // Handle price
         if (newPrice && newPrice.trim() !== "") {
           const priceNumber = parseFloat(newPrice);
@@ -867,38 +843,36 @@ const ProductManagement = () => {
             return;
           }
         }
-        
+
         // Add other fields
         if (newDescription && newDescription.trim() !== "") {
-          newData.Description = newDescription.trim(); // Note: capital D for gift API
+          newData.Description = newDescription.trim();
         }
-        
+
         if (newImageUrl && newImageUrl.trim() !== "") {
           newData.imageUrl = newImageUrl.trim();
         }
-        
+
         // Handle Cate_presentId
         if (newCate && newCate.trim() !== "") {
           if (/^[0-9a-fA-F]{24}$/.test(newCate.trim())) {
-            newData.Cate_presentId = newCate.trim(); // Note: capital C for gift API
+            newData.Cate_presentId = newCate.trim();
           } else {
             console.warn("Invalid Cate_presentId format, omitting field");
           }
         }
-        
+
         // Handle Status if provided
         if (newStatus && newStatus.trim() !== "") {
           newData.Status = newStatus.trim();
         }
       } else if (addFormType === "decorate") {
         addFunc = addDecorate;
-        
-        // Create base data object for decoration
+
         newData = {
           name: newName.trim()
         };
-        
-        // Handle price
+
         if (newPrice && newPrice.trim() !== "") {
           const priceNumber = parseFloat(newPrice);
           if (!isNaN(priceNumber)) {
@@ -909,37 +883,36 @@ const ProductManagement = () => {
             return;
           }
         }
-        
+
         // Add other fields
         if (newDescription && newDescription.trim() !== "") {
-          newData.Description = newDescription.trim(); // Note: capital D for decoration API
+          newData.Description = newDescription.trim();
         }
-        
+
         if (newImageUrl && newImageUrl.trim() !== "") {
           newData.imageUrl = newImageUrl.trim();
         }
-        
+
         // Handle Cate_decorateId
         if (newCate && newCate.trim() !== "") {
           if (/^[0-9a-fA-F]{24}$/.test(newCate.trim())) {
-            newData.Cate_decorateId = newCate.trim(); // Note: capital C for decoration API
+            newData.Cate_decorateId = newCate.trim();
           } else {
             console.warn("Invalid Cate_decorateId format, omitting field");
           }
         }
-        
+
         // Handle Status if provided
         if (newStatus && newStatus.trim() !== "") {
           newData.Status = newStatus.trim();
         }
       } else if (addFormType === "lobby") {
         addFunc = addLobby;
-        
-        // Create base data object for lobby
+
         newData = {
           name: newName.trim()
         };
-        
+
         // Handle price
         if (newPrice && newPrice.trim() !== "") {
           const priceNumber = parseFloat(newPrice);
@@ -951,7 +924,7 @@ const ProductManagement = () => {
             return;
           }
         }
-        
+
         // Handle SoLuongKhach
         if (newDescription && newDescription.trim() !== "") {
           const guestNumber = parseInt(newDescription);
@@ -963,7 +936,7 @@ const ProductManagement = () => {
             return;
           }
         }
-        
+
         // Handle imageUrl
         if (newImageUrl && newImageUrl.trim() !== "") {
           newData.imageUrl = newImageUrl.trim();
@@ -973,13 +946,13 @@ const ProductManagement = () => {
         setLoading(false);
         return;
       }
-      
+
       console.log(`Sending ${addFormType} data to API:`, newData);
-      
+
       try {
         const res = await addFunc(newData);
         console.log(`Add ${addFormType} response:`, res);
-        
+
         if (res.status) {
           // Refresh data based on type
           if (addFormType === "food") {
@@ -991,7 +964,7 @@ const ProductManagement = () => {
           } else if (addFormType === "lobby") {
             await getLobbyData();
           }
-          
+
           // Clear form fields
           setNewName("");
           setNewPrice("");
@@ -999,14 +972,13 @@ const ProductManagement = () => {
           setNewDescription("");
           setNewImageUrl("");
           setNewStatus("");
-          
+
           setShowAddModal(false);
-          Swal.fire("Thành công!", `Thêm ${
-            addFormType === "food" ? "món ăn" : 
-            addFormType === "gift" ? "quà tặng" : 
-            addFormType === "decorate" ? "trang trí" : 
-            "phòng/sảnh"
-          } mới thành công.`, "success");
+          Swal.fire("Thành công!", `Thêm ${addFormType === "food" ? "món ăn" :
+            addFormType === "gift" ? "quà tặng" :
+              addFormType === "decorate" ? "trang trí" :
+                "phòng/sảnh"
+            } mới thành công.`, "success");
         } else {
           // Fix any catering references in error messages
           let errorMessage = res.message || "Thêm thất bại.";
@@ -1015,7 +987,7 @@ const ProductManagement = () => {
       } catch (error) {
         console.error(`Error adding ${addFormType}:`, error);
         let errorMessage = "Thêm thất bại";
-        
+
         if (error.response && error.response.data) {
           console.error("Response data:", error.response.data);
           let serverMessage = error.response.data.message || error.message || "Lỗi từ máy chủ";
@@ -1023,7 +995,7 @@ const ProductManagement = () => {
         } else {
           errorMessage += `: ${error.message || "Lỗi không xác định"}`;
         }
-        
+
         Swal.fire("Lỗi!", errorMessage, "error");
       }
     } catch (error) {
@@ -1043,7 +1015,7 @@ const ProductManagement = () => {
     setNewDescription("");
     setNewImageUrl("");
     setNewStatus("");
-    
+
     // Set form type based on active tab
     if (activeTab === "DichVu") {
       setAddFormType("food");
@@ -1056,7 +1028,7 @@ const ProductManagement = () => {
     } else {
       setAddFormType("food"); // Default
     }
-    
+
     setShowAddModal(true);
   };
 
@@ -1073,15 +1045,14 @@ const ProductManagement = () => {
           <div className="action-buttons">
             <input
               type="text"
-              placeholder={`Nhập từ khóa để lọc ${
-                activeTab === "DichVu"
-                  ? "món ăn"
-                  : activeTab === "TrangTri"
+              placeholder={`Nhập từ khóa để lọc ${activeTab === "DichVu"
+                ? "món ăn"
+                : activeTab === "TrangTri"
                   ? "trang trí"
                   : activeTab === "QuaTang"
-                  ? "quà tặng"
-                  : "phòng/sảnh"
-              }`}
+                    ? "quà tặng"
+                    : "phòng/sảnh"
+                }`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
             />
@@ -1405,9 +1376,9 @@ const ProductManagement = () => {
 
           {/* Nút "Thêm Mới" */}
           <button className="button-add" onClick={handleOpenAddModal}>
-            {activeTab === "DichVu" 
+            {activeTab === "DichVu"
               ? "Thêm Món Ăn Mới"
-              : activeTab === "QuaTang" 
+              : activeTab === "QuaTang"
                 ? "Thêm Quà Tặng Mới"
                 : activeTab === "TrangTri"
                   ? "Thêm Trang Trí Mới"
@@ -1426,9 +1397,9 @@ const ProductManagement = () => {
                   &times;
                 </button>
                 <h3>
-                  {addFormType === "food" 
+                  {addFormType === "food"
                     ? "Thêm Món Ăn Mới"
-                    : addFormType === "gift" 
+                    : addFormType === "gift"
                       ? "Thêm Quà Tặng Mới"
                       : addFormType === "decorate"
                         ? "Thêm Trang Trí Mới"
@@ -1495,9 +1466,9 @@ const ProductManagement = () => {
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
                       <div style={{ marginTop: '10px' }}>
-                        <img 
-                          src={newImageUrl} 
-                          alt="Preview" 
+                        <img
+                          src={newImageUrl}
+                          alt="Preview"
                           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
                           onError={(e) => {
                             e.target.onerror = null;
@@ -1508,7 +1479,7 @@ const ProductManagement = () => {
                     )}
                   </>
                 )}
-                
+
                 {addFormType === "gift" && (
                   <>
                     <div>
@@ -1578,9 +1549,9 @@ const ProductManagement = () => {
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
                       <div style={{ marginTop: '10px' }}>
-                        <img 
-                          src={newImageUrl} 
-                          alt="Preview" 
+                        <img
+                          src={newImageUrl}
+                          alt="Preview"
                           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
                           onError={(e) => {
                             e.target.onerror = null;
@@ -1591,7 +1562,7 @@ const ProductManagement = () => {
                     )}
                   </>
                 )}
-                
+
                 {addFormType === "decorate" && (
                   <>
                     <div>
@@ -1661,9 +1632,9 @@ const ProductManagement = () => {
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
                       <div style={{ marginTop: '10px' }}>
-                        <img 
-                          src={newImageUrl} 
-                          alt="Preview" 
+                        <img
+                          src={newImageUrl}
+                          alt="Preview"
                           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
                           onError={(e) => {
                             e.target.onerror = null;
@@ -1674,7 +1645,7 @@ const ProductManagement = () => {
                     )}
                   </>
                 )}
-                
+
                 {addFormType === "lobby" && (
                   <>
                     <div>
@@ -1716,9 +1687,9 @@ const ProductManagement = () => {
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
                       <div style={{ marginTop: '10px' }}>
-                        <img 
-                          src={newImageUrl} 
-                          alt="Preview" 
+                        <img
+                          src={newImageUrl}
+                          alt="Preview"
                           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
                           onError={(e) => {
                             e.target.onerror = null;
@@ -1729,12 +1700,12 @@ const ProductManagement = () => {
                     )}
                   </>
                 )}
-                
+
                 <div className="detail-card-buttons">
                   <button className="button-update" onClick={handleAdd}>
-                    {addFormType === "food" 
+                    {addFormType === "food"
                       ? "Thêm Món Ăn"
-                      : addFormType === "gift" 
+                      : addFormType === "gift"
                         ? "Thêm Quà Tặng"
                         : addFormType === "decorate"
                           ? "Thêm Trang Trí"

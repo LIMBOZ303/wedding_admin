@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-// API URLs
-const CATEGORY_API_URL = 'https://apidatn.onrender.com/cate_decorate'; // Category API
-const PRODUCT_API_URL = 'https://apidatn.onrender.com/decorate'; // Product API for decoration items
+const CATEGORY_API_URL = 'https://apidatn.onrender.com/cate_decorate';
+const PRODUCT_API_URL = 'https://apidatn.onrender.com/decorate';
 
-// ===== CATEGORY ENDPOINTS =====
 
 // Lấy danh sách tất cả danh mục trang trí
 export const fetchDecorateCategories = async () => {
@@ -54,8 +52,6 @@ export const deleteDecorateCategory = async (id) => {
         throw error;
     }
 };
-
-// ===== PRODUCT ENDPOINTS =====
 
 // Lấy danh sách tất cả sản phẩm trang trí
 export const fetchDecorate = async () => {

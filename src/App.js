@@ -13,7 +13,7 @@ import Blog from './components/Blog';
 import Transactions from './components/Transactions';
 import CateringDetail from './components/CateringDetail';
 import { AppProvider } from './AppContext';
-import './public/styles/theme.css'; // Import theme first
+import './public/styles/theme.css';
 import './public/styles/Slidebar.css';
 import './public/styles/Home.css';
 import './App.css';
