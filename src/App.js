@@ -3,10 +3,9 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import Login from './components/Login';
-import CategoryManagement from './components/CategoryManagement';
+import PlansManagement from './components/PlansManagement';
 import ProductManagement from './components/ProductManagement';
 import AccountManagement from './components/AccountManagement';
-import ComboManagement from './components/ComboManagement';
 import Statistics from './components/Statistics';
 import Dashboard from './components/Dashboard';
 import Blog from './components/Blog';
@@ -30,10 +29,9 @@ const App = () => {
                 <Routes>
                     <Route path="/" element={<Login />} />
                     <Route path="/home" element={<Dashboard />} />
-                    <Route path="/categories" element={<CategoryManagement />} />
                     <Route path="/products" element={<ProductManagement />} />
                     <Route path="/accounts" element={<AccountManagement />} />
-                    <Route path="/combos" element={<ComboManagement />} />
+                    <Route path="/plans" element={<PlansManagement />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/transaction" element={<Transactions />} />

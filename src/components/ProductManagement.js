@@ -73,9 +73,8 @@ const ProductManagement = () => {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newStatus, setNewStatus] = useState("");
 
-  // State cho modal thêm mới
   const [showAddModal, setShowAddModal] = useState(false);
-  // State cho loại form thêm mới đang hiển thị
+
   const [addFormType, setAddFormType] = useState("food");
   const [giftCategories, setGiftCategories] = useState([]);
   const [decorateCategories, setDecorateCategories] = useState([]);
@@ -1755,7 +1754,7 @@ const ProductManagement = () => {
             className={activeTab === "Order" ? "active" : ""}
             onClick={() => setActiveTab("Order")}
           >
-            Order
+            Sảnh
           </li>
         </ul>
       </nav>

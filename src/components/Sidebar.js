@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faHome, 
-  faFolderOpen, 
   faBoxes, 
   faUsers, 
   faBoxArchive, 
@@ -25,25 +24,20 @@ const Sidebar = () => {
   const location = useLocation();
   const { darkMode, setDarkMode } = useContext(AppContext) || { darkMode: false, setDarkMode: () => {} };
 
-  // Handle sidebar toggle
   const toggleSidebar = () => {
     setOpen(!open);
   };
 
-  // Handle navigation
   const handleNavigation = (path) => {
-    // On smaller screens, close the sidebar after clicking a link
     if (window.innerWidth <= 768) {
       setOpen(false);
     }
     navigate(path);
   };
 
-  // Toggle dark mode
   const toggleDarkMode = () => {
     if (setDarkMode) {
       setDarkMode(!darkMode);
-      // Apply dark mode class to body
       if (!darkMode) {
         document.body.classList.add('dark-mode');
       } else {
@@ -55,10 +49,9 @@ const Sidebar = () => {
   // Define menu items with icons
   const menuItems = [
     { path: '/home', icon: faHome, text: 'Trang chủ' },
-    // { path: '/categories', icon: faFolderOpen, text: 'Quản Lý Danh Mục' },
     { path: '/products', icon: faBoxes, text: 'Quản Lý Dịch Vụ' },
     { path: '/accounts', icon: faUsers, text: 'Quản Lý Tài Khoản' },
-    { path: '/combos', icon: faBoxArchive, text: 'Quản Lý Combo' },
+    { path: '/plans', icon: faBoxArchive, text: 'Quản Lý Kế Hoạch' },
     { path: '/statistics', icon: faChartBar, text: 'Thống Kê' },
     { path: '/blog', icon: faBlog, text: 'Blog' },
     { path: '/transaction', icon: faExchangeAlt, text: 'Giao Dịch' },
