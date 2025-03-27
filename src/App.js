@@ -14,7 +14,7 @@ import Transactions from './components/Transactions';
 import CateringDetail from './components/CateringDetail';
 import AdminChat from './components/AdminChat';
 import { AppProvider } from './AppContext';
-import './public/styles/theme.css'; // Import theme first
+import './public/styles/theme.css';
 import './public/styles/Slidebar.css';
 import './public/styles/Home.css';
 import './App.css';
