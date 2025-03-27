@@ -4,7 +4,19 @@ import { getUserById } from '../api/users_api';
 import { io } from 'socket.io-client';
 import '../styles/AdminChat.css'; // Sẽ tạo file CSS này sau
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPaperPlane, faCircle } from '@fortawesome/free-solid-svg-icons';
+import { 
+    faPaperPlane, 
+    faCircle, 
+    faSync, 
+    faUser, 
+    faInfoCircle,
+    faClock,
+    faBell,
+    faEnvelope,
+    faCheck,
+    faCheckDouble,
+    faArrowDown 
+} from '@fortawesome/free-solid-svg-icons';
 
 const AdminChat = () => {
     const [users, setUsers] = useState([]);
@@ -15,7 +27,9 @@ const AdminChat = () => {
     const [loading, setLoading] = useState(false);
     const [userLoading, setUserLoading] = useState(true);
     const [socket, setSocket] = useState(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef(null);
+    const messagesContainerRef = useRef(null);
     
     // Kết nối Socket.IO khi component được mount
     useEffect(() => {
@@ -331,6 +345,8 @@ const AdminChat = () => {
             const result = await fetchChatHistory(userId);
             if (result.success) {
                 setMessages(result.data);
+                // Đảm bảo cuộn xuống sau khi dữ liệu đã tải
+                setTimeout(scrollToBottom, 100);
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -460,13 +476,78 @@ const AdminChat = () => {
         }
         
         // Nếu tin nhắn được gửi trước đó, hiển thị ngày tháng năm
-        return date.toLocaleDateString();
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    };
+    
+    // Format ngày để hiển thị giữa các tin nhắn
+    const formatMessageDate = (dateString) => {
+        const date = new Date(dateString);
+        const now = new Date();
+        
+        if (date.toDateString() === now.toDateString()) {
+            return 'Hôm nay';
+        }
+        
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        if (date.toDateString() === yesterday.toDateString()) {
+            return 'Hôm qua';
+        }
+        
+        // Nếu tin nhắn được gửi trong tuần này
+        if (now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
+            const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
+            return days[date.getDay()];
+        }
+        
+        // Nếu tin nhắn cũ hơn, hiển thị ngày tháng năm
+        return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
+    };
+    
+    // Kiểm tra nếu cần hiển thị ngày giữa các tin nhắn
+    const shouldShowDate = (messages, index) => {
+        if (index === 0) return true;
+        
+        const currentDate = new Date(messages[index].createdAt).toDateString();
+        const prevDate = new Date(messages[index - 1].createdAt).toDateString();
+        
+        return currentDate !== prevDate;
     };
     
     // Rút gọn tin nhắn
     const truncateMessage = (message, maxLength) => {
         return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
     };
+
+    // Kiểm tra nếu nên hiển thị nút cuộn xuống
+    const checkScrollPosition = () => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+        
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        // Hiển thị nút khi người dùng kéo lên khỏi cuối tối thiểu 300px
+        const isScrolledUp = scrollHeight - scrollTop - clientHeight > 300;
+        setShowScrollButton(isScrolledUp);
+    };
+
+    // Cuộn xuống tin nhắn cuối cùng
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Cuộn xuống ngay khi mở cuộc trò chuyện hoặc có tin nhắn mới
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    // Thêm sự kiện scroll để kiểm tra vị trí cuộn
+    useEffect(() => {
+        const container = messagesContainerRef.current;
+        if (container) {
+            container.addEventListener('scroll', checkScrollPosition);
+            return () => container.removeEventListener('scroll', checkScrollPosition);
+        }
+    }, []);
 
     return (
         <div className="admin-chat-container">
@@ -479,13 +560,16 @@ const AdminChat = () => {
                 <div className="user-list-container">
                     <div className="user-list-header">
                         <h5>Danh sách người dùng</h5>
+                        <button className="refresh-button" onClick={fetchUsers} title="Tải lại danh sách">
+                            <FontAwesomeIcon icon={faSync} />
+                        </button>
                     </div>
                     
                     <div className="user-list">
                         {userLoading ? (
                             <div className="loading-spinner">
                                 <div className="spinner-border text-primary" role="status">
-                                    <span className="visually-hidden">Đang tải...</span>
+                                    <span className="visually-hidden"></span>
                                 </div>
                             </div>
                         ) : users.length === 0 ? (
@@ -500,6 +584,15 @@ const AdminChat = () => {
                                     onClick={() => handleSelectUser(user.userId)}
                                     title={`${user.name || 'Khách hàng'}${user.email ? ' - ' + user.email : ''}`}
                                 >
+                                    <div className="user-avatar">
+                                        {user.avatar ? (
+                                            <img src={user.avatar} alt={user.name || 'User'} />
+                                        ) : (
+                                            <div className="default-avatar">
+                                                <FontAwesomeIcon icon={faUser} />
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="user-item-content">
                                         <div className="user-info">
                                             <h6>
@@ -527,14 +620,35 @@ const AdminChat = () => {
                     <div className="chat-window-header">
                         {currentUserId ? (
                             <div className="current-user-info">
-                                <div>
-                                    <h5>{currentUserInfo?.name || 'Khách hàng'}</h5>
-                                    <div className="user-id-display header">ID: {currentUserId}</div>
-                                    {currentUserInfo?.email && <small className="user-email">{currentUserInfo.email}</small>}
+                                <div className="user-details">
+                                    <div className="user-avatar header-avatar">
+                                        {currentUserInfo?.avatar ? (
+                                            <img src={currentUserInfo.avatar} alt={currentUserInfo.name || 'User'} />
+                                        ) : (
+                                            <div className="default-avatar">
+                                                <FontAwesomeIcon icon={faUser} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h5>{currentUserInfo?.name || 'Khách hàng'}</h5>
+                                        <div className="user-id-display header">ID: {currentUserId}</div>
+                                        {currentUserInfo?.email && (
+                                            <div className="user-email">
+                                                <FontAwesomeIcon icon={faEnvelope} className="info-icon" />
+                                                {currentUserInfo.email}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="online-status">
-                                    <FontAwesomeIcon icon={faCircle} className="online-icon" />
-                                    <span>Online</span>
+                                <div className="chat-actions">
+                                    <button className="action-button" onClick={() => fetchMessages(currentUserId)} title="Tải lại tin nhắn">
+                                        <FontAwesomeIcon icon={faSync} />
+                                    </button>
+                                    <div className="online-status">
+                                        <FontAwesomeIcon icon={faCircle} className="online-icon" />
+                                        <span>Online</span>
+                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -542,128 +656,159 @@ const AdminChat = () => {
                         )}
                     </div>
                     
-                    <div className="chat-messages">
-                        {!currentUserId ? (
-                            <div className="no-user-selected">
-                                <p>Chọn một người dùng để bắt đầu chat</p>
-                            </div>
-                        ) : loading ? (
-                            <div className="loading-spinner">
-                                <div className="spinner-border text-primary" role="status">
-                                    <span className="visually-hidden">Đang tải...</span>
+                    <div className="chat-messages-wrapper">
+                        <div className="chat-messages" ref={messagesContainerRef} onScroll={checkScrollPosition}>
+                            {!currentUserId ? (
+                                <div className="no-user-selected">
+                                    <div className="empty-state">
+                                        <FontAwesomeIcon icon={faInfoCircle} className="empty-icon" />
+                                        <p>Chọn một người dùng để bắt đầu chat</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : messages.length === 0 ? (
-                            <div className="no-messages">
-                                <p>Chưa có tin nhắn nào</p>
-                            </div>
-                        ) : (
-                            <div className="messages-container">
-                                {messages.map((message, index) => {
-                                    // Xác định tên người gửi cho tin nhắn
-                                    let senderName = 'Admin';
-                                    let senderInfo = null;
-                                    
-                                    // Nếu không phải admin gửi, tìm tên người dùng
-                                    if (message.senderType !== 'admin') {
-                                        // Tìm trong danh sách người dùng dựa vào senderId
-                                        const userInList = users.find(u => u.userId === message.senderId);
-                                        if (userInList && userInList.name && userInList.name !== 'Khách hàng') {
-                                            // Nếu tìm thấy tên từ danh sách users
-                                            senderName = userInList.name;
-                                            senderInfo = userInList;
-                                            console.log(`📝 Sử dụng tên người dùng từ danh sách: ${senderName}`);
-                                        } else if (currentUserInfo && currentUserId === message.senderId) {
-                                            // Nếu đang chat với người dùng này, sử dụng thông tin hiện tại
-                                            senderName = currentUserInfo.name || 'Khách hàng';
-                                            senderInfo = currentUserInfo;
-                                            console.log(`📝 Sử dụng tên người dùng hiện tại: ${senderName}`);
-                                        } else {
-                                            // Mặc định sử dụng tên "Khách hàng" nếu không tìm thấy tên
-                                            // Đồng thời gửi yêu cầu lấy thông tin người dùng (không chờ đợi)
-                                            senderName = 'Khách hàng';
-                                            console.log(`⚠️ Không tìm thấy tên người dùng, sử dụng mặc định: ${senderName}`);
-                                            if (message.senderId) {
-                                                // Thực hiện fetch không đồng bộ để cập nhật thông tin người dùng
-                                                console.log(`🔄 Đang tự động lấy thông tin người dùng: ${message.senderId}`);
-                                                getUserById(message.senderId).then(userInfo => {
-                                                    if (userInfo && userInfo.data) {
-                                                        // Tìm tên người dùng
-                                                        let newUserName = extractUserName(userInfo.data);
-                                                        
-                                                        // Thử các trường khác nếu vẫn là "Khách hàng"
-                                                        if (newUserName === 'Khách hàng') {
-                                                            for (const key in userInfo.data) {
-                                                                const value = userInfo.data[key];
-                                                                if (typeof value === 'string' && value.length > 0 && key !== 'email' && key !== '_id' && key !== 'id' && key !== 'userId') {
-                                                                    newUserName = value;
-                                                                    break;
+                            ) : loading ? (
+                                <div className="loading-spinner">
+                                    <div className="spinner-border text-primary" role="status">
+                                        <span className="visually-hidden"></span>
+                                    </div>
+                                </div>
+                            ) : messages.length === 0 ? (
+                                <div className="no-messages">
+                                    <div className="empty-state">
+                                        <FontAwesomeIcon icon={faClock} className="empty-icon" />
+                                        <p>Chưa có tin nhắn nào</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="messages-container">
+                                    {messages.map((message, index) => {
+                                        // Xác định tên người gửi cho tin nhắn
+                                        let senderName = 'Admin';
+                                        let senderInfo = null;
+                                        
+                                        // Nếu không phải admin gửi, tìm tên người dùng
+                                        if (message.senderType !== 'admin') {
+                                            // Tìm trong danh sách người dùng dựa vào senderId
+                                            const userInList = users.find(u => u.userId === message.senderId);
+                                            if (userInList && userInList.name && userInList.name !== 'Khách hàng') {
+                                                // Nếu tìm thấy tên từ danh sách users
+                                                senderName = userInList.name;
+                                                senderInfo = userInList;
+                                                console.log(`📝 Sử dụng tên người dùng từ danh sách: ${senderName}`);
+                                            } else if (currentUserInfo && currentUserId === message.senderId) {
+                                                // Nếu đang chat với người dùng này, sử dụng thông tin hiện tại
+                                                senderName = currentUserInfo.name || 'Khách hàng';
+                                                senderInfo = currentUserInfo;
+                                                console.log(`📝 Sử dụng tên người dùng hiện tại: ${senderName}`);
+                                            } else {
+                                                // Mặc định sử dụng tên "Khách hàng" nếu không tìm thấy tên
+                                                // Đồng thời gửi yêu cầu lấy thông tin người dùng (không chờ đợi)
+                                                senderName = 'Khách hàng';
+                                                console.log(`⚠️ Không tìm thấy tên người dùng, sử dụng mặc định: ${senderName}`);
+                                                if (message.senderId) {
+                                                    // Thực hiện fetch không đồng bộ để cập nhật thông tin người dùng
+                                                    console.log(`🔄 Đang tự động lấy thông tin người dùng: ${message.senderId}`);
+                                                    getUserById(message.senderId).then(userInfo => {
+                                                        if (userInfo && userInfo.data) {
+                                                            // Tìm tên người dùng
+                                                            let newUserName = extractUserName(userInfo.data);
+                                                            
+                                                            // Thử các trường khác nếu vẫn là "Khách hàng"
+                                                            if (newUserName === 'Khách hàng') {
+                                                                for (const key in userInfo.data) {
+                                                                    const value = userInfo.data[key];
+                                                                    if (typeof value === 'string' && value.length > 0 && key !== 'email' && key !== '_id' && key !== 'id' && key !== 'userId') {
+                                                                        newUserName = value;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                                
+                                                                // Nếu vẫn không có tên, thử dùng email
+                                                                if (newUserName === 'Khách hàng' && userInfo.data.email) {
+                                                                    newUserName = userInfo.data.email.split('@')[0].charAt(0).toUpperCase() 
+                                                                        + userInfo.data.email.split('@')[0].slice(1);
                                                                 }
                                                             }
                                                             
-                                                            // Nếu vẫn không có tên, thử dùng email
-                                                            if (newUserName === 'Khách hàng' && userInfo.data.email) {
-                                                                newUserName = userInfo.data.email.split('@')[0].charAt(0).toUpperCase() 
-                                                                    + userInfo.data.email.split('@')[0].slice(1);
-                                                            }
+                                                            console.log(`✅ Đã lấy thêm thông tin người dùng: ${message.senderId} - ${newUserName}`);
+                                                            // Cập nhật danh sách người dùng
+                                                            fetchUsers();
                                                         }
-                                                        
-                                                        console.log(`✅ Đã lấy thêm thông tin người dùng: ${message.senderId} - ${newUserName}`);
-                                                        // Cập nhật danh sách người dùng
-                                                        fetchUsers();
-                                                    }
-                                                }).catch(err => {
-                                                    console.error("❌ Không thể lấy thông tin người dùng:", err);
-                                                });
+                                                    }).catch(err => {
+                                                        console.error("❌ Không thể lấy thông tin người dùng:", err);
+                                                    });
+                                                }
                                             }
                                         }
-                                    }
-                                    
-                                    return (
-                                        <div 
-                                            key={index}
-                                            className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}
-                                        >
-                                            <div className="message-content">
-                                                {message.senderType !== 'admin' && (
-                                                    <div className="message-sender">
-                                                        {senderName}
-                                                        {senderInfo?.email && (
-                                                            <small className="sender-email"> ({senderInfo.email})</small>
-                                                        )}
-                                                        <div className="message-sender-id">ID: {message.senderId}</div>
+                                        
+                                        // Hiển thị ngày nếu cần
+                                        const showDateHeader = shouldShowDate(messages, index);
+                                        
+                                        return (
+                                            <React.Fragment key={index}>
+                                                {showDateHeader && (
+                                                    <div className="date-separator">
+                                                        <span>{formatMessageDate(message.createdAt)}</span>
                                                     </div>
                                                 )}
-                                                <p>{message.message}</p>
-                                                <small>{formatTime(message.createdAt)}</small>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                <div ref={messagesEndRef} />
+                                                <div 
+                                                    className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}
+                                                >
+                                                    <div className="message-content">
+                                                        {message.senderType !== 'admin' && (
+                                                            <div className="message-sender">
+                                                                {senderName}
+                                                                {senderInfo?.email && (
+                                                                    <small className="sender-email"> ({senderInfo.email})</small>
+                                                                )}
+                                                                <div className="message-sender-id">ID: {message.senderId}</div>
+                                                            </div>
+                                                        )}
+                                                        <p>{message.message}</p>
+                                                        <div className="message-footer">
+                                                            <small className="message-time">{formatTime(message.createdAt)}</small>
+                                                            {message.senderType === 'admin' && (
+                                                                <small className="message-status">
+                                                                    <FontAwesomeIcon icon={message.read ? faCheckDouble : faCheck} />
+                                                                </small>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    <div ref={messagesEndRef} />
+                                </div>
+                            )}
+                            
+                            {/* Nút cuộn xuống cuối cùng */}
+                            {showScrollButton && (
+                                <button className="scroll-bottom-button" onClick={scrollToBottom} title="Cuộn xuống cuối">
+                                    <FontAwesomeIcon icon={faArrowDown} />
+                                </button>
+                            )}
+                        </div>
+                        
+                        {currentUserId && (
+                            <div className="chat-input">
+                                <input
+                                    type="text"
+                                    value={messageInput}
+                                    onChange={(e) => setMessageInput(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                    placeholder="Nhập tin nhắn..."
+                                    disabled={!currentUserId}
+                                />
+                                <button 
+                                    className="send-button"
+                                    onClick={handleSendMessage}
+                                    disabled={!messageInput.trim() || !currentUserId}
+                                >
+                                    <FontAwesomeIcon icon={faPaperPlane} />
+                                </button>
                             </div>
                         )}
                     </div>
-                    
-                    {currentUserId && (
-                        <div className="chat-input">
-                            <input
-                                type="text"
-                                value={messageInput}
-                                onChange={(e) => setMessageInput(e.target.value)}
-                                onKeyPress={handleKeyPress}
-                                placeholder="Nhập tin nhắn..."
-                                disabled={!currentUserId}
-                            />
-                            <button 
-                                className="send-button"
-                                onClick={handleSendMessage}
-                                disabled={!messageInput.trim() || !currentUserId}
-                            >
-                                <FontAwesomeIcon icon={faPaperPlane} />
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
