@@ -69,11 +69,9 @@ function Transactions() {
         }
     };
 
-    // Hàm xác nhận giao dịch với hiệu ứng loading của SweetAlert2
     const confirmTransaction = async (transactionId) => {
         try {
             setLoading(true);
-            // Hiển thị SweetAlert2 loading
             Swal.fire({
                 title: 'Đang xác nhận giao dịch...',
                 text: 'Vui lòng đợi một chút...',
@@ -92,7 +90,6 @@ function Transactions() {
                     },
                 }
             );
-            // Tắt loading alert
             Swal.close();
 
             if (response.data.status) {
@@ -103,7 +100,6 @@ function Transactions() {
                     timer: 1500,
                     showConfirmButton: false,
                 });
-                // Cập nhật lại danh sách giao dịch
                 getTransactions();
             } else {
                 Swal.fire({
@@ -150,8 +146,7 @@ function Transactions() {
         if (sortConfig.key) {
             sortableItems.sort((a, b) => {
                 let aValue, bValue;
-                
-                // Handle nested properties like userId.name
+
                 if (sortConfig.key === 'userName') {
                     aValue = a.userId?.name || '';
                     bValue = b.userId?.name || '';
@@ -175,7 +170,6 @@ function Transactions() {
         return sortableItems;
     }, [filteredTransactions, sortConfig]);
 
-    // Hiển thị icon phân loại
     const getSortIcon = (columnName) => {
         if (sortConfig.key !== columnName) {
             return null;
@@ -183,7 +177,6 @@ function Transactions() {
         return sortConfig.direction === 'ascending' ? '↑' : '↓';
     };
 
-    // Hiển thị status badge với màu sắc
     const getStatusBadge = (status) => {
         switch(status) {
             case 'active':
