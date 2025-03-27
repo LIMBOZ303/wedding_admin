@@ -14,7 +14,8 @@ import {
   faMoon,
   faSun,
   faBars,
-  faChevronLeft
+  faChevronLeft,
+  faComments
 } from '@fortawesome/free-solid-svg-icons';
 import '../public/styles/Slidebar.css';
 import { AppContext } from '../AppContext';
@@ -62,6 +63,7 @@ const Sidebar = () => {
     { path: '/statistics', icon: faChartBar, text: 'Thống Kê' },
     { path: '/blog', icon: faBlog, text: 'Blog' },
     { path: '/transaction', icon: faExchangeAlt, text: 'Giao Dịch' },
+    { path: '/admin-chat', icon: faComments, text: 'Chat Với Khách Hàng' },
     { path: '/', icon: faSignOutAlt, text: 'Đăng xuất' },
   ];
 
