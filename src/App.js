@@ -11,6 +11,7 @@ import Dashboard from './components/Dashboard';
 import Blog from './components/Blog';
 import Transactions from './components/Transactions';
 import CateringDetail from './components/CateringDetail';
+import AdminChat from './components/AdminChat';
 import { AppProvider } from './AppContext';
 import './public/styles/theme.css';
 import './public/styles/Slidebar.css';
@@ -36,6 +37,7 @@ const App = () => {
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/transaction" element={<Transactions />} />
                     <Route path="/catering/:id" element={<CateringDetail />} />
+                    <Route path="/admin-chat" element={<AdminChat />} />
                 </Routes>
             </div>
         </div>

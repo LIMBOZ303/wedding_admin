@@ -6,7 +6,8 @@ import {
   faBell, 
   faUser, 
   faSignOutAlt,
-  faCog
+  faCog,
+  faComments
 } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../AppContext';
@@ -17,7 +18,7 @@ const Navbar = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
-  const { user } = useContext(AppContext);
+  const { user, unreadMessages, markAllMessagesAsRead } = useContext(AppContext);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -38,6 +39,12 @@ const Navbar = () => {
   const toggleNotifications = () => {
     setShowNotifications(!showNotifications);
     if (showUserMenu) setShowUserMenu(false);
+  };
+
+  // Chuyển đến trang chat và đánh dấu đã đọc tất cả tin nhắn
+  const navigateToChat = () => {
+    navigate('/admin-chat');
+    markAllMessagesAsRead();
   };
 
   // Sample notifications
@@ -67,6 +74,20 @@ const Navbar = () => {
       </div>
 
       <div className="navbar-actions">
+        {/* Chat Button */}
+        <div className="chat-container">
+          <button 
+            className="chat-button" 
+            onClick={navigateToChat}
+            aria-label="Chat với khách hàng"
+          >
+            <FontAwesomeIcon icon={faComments} />
+            {unreadMessages > 0 && (
+              <span className="notification-badge">{unreadMessages}</span>
+            )}
+          </button>
+        </div>
+
         <div className="notification-container">
           <button 
             className="notification-button" 
