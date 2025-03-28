@@ -1,10 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://apidatn.onrender.com/lobby'; // API endpoint for lobbies/halls
-
-/**
- * Lobbies/Halls API Functions
- */
+const API_URL = 'https://apidatn.onrender.com/lobby';
 
 // Lấy danh sách tất cả phòng
 export const fetchLobbies = async () => {
