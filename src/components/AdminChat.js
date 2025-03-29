@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { fetchChatHistory, fetchAllChatUsers, sendMessage } from '../api/chat_api';
 import { getUserById } from '../api/users_api';
 import { io } from 'socket.io-client';
-import '../styles/AdminChat.css'; // Sẽ tạo file CSS này sau
+import '../styles/AdminChat.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
     faPaperPlane, 
