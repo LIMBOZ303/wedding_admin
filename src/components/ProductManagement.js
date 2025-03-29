@@ -98,7 +98,21 @@ const ProductManagement = () => {
       setAddFormType("lobby");
     }
   }, [activeTab]);
-
+// Handle new
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewImageUrl(URL.createObjectURL(file));
+    }
+  };
+  const handleEditImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setEditImageUrl(URL.createObjectURL(file)); // Hiển thị ảnh ngay lập tức
+    }
+  };
+  
+  
   // ===== Call API cho Món Ăn =====
   const getFoodData = async () => {
     setLoading(true);
@@ -1147,20 +1161,24 @@ const ProductManagement = () => {
                         onChange={(e) => setEditDescription(e.target.value)}
                       />
                     </div>
-                    <div>
-                      <label><strong>Ảnh URL:</strong></label>
-                      <input
-                        type="text"
-                        value={editImageUrl}
-                        onChange={(e) => setEditImageUrl(e.target.value)}
-                      />
-                    </div>
+                    <div className="upload-container">
+    <label><strong>Ảnh:</strong></label>
+    <label className="upload-label">
+      <input
+        type="file"
+        accept="image/*"
+        className="upload-input"
+        onChange={handleEditImageUpload}
+      />
+      {editImageUrl ? (
+        <img src={editImageUrl} alt="Preview" />
+      ) : (
+        <span>Chọn ảnh</span>
+      )}
+    </label>
+  </div>
                     {/* Hiển thị hình ảnh nếu có link */}
-                    {editImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
-                        <img src={editImageUrl} alt={editName} style={{ maxWidth: '100%', height: 'auto' }} />
-                      </div>
-                    )}
+                    
                   </>
                 ) : selectedItem.type === "QuaTang" ? (
                   <>
@@ -1214,12 +1232,13 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh URL:</strong></label>
+                      <label><strong>Ảnh:</strong></label>
                       <input
-                        type="text"
-                        value={editImageUrl}
-                        onChange={(e) => setEditImageUrl(e.target.value)}
-                      />
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleEditImageUpload(e)}
+/>
+
                     </div>
                     <div>
                       <label><strong>Trạng thái:</strong></label>
@@ -1288,12 +1307,13 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh URL:</strong></label>
+                      <label><strong>Ảnh:</strong></label>
                       <input
-                        type="text"
-                        value={editImageUrl}
-                        onChange={(e) => setEditImageUrl(e.target.value)}
-                      />
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleEditImageUpload(e)}
+/>
+
                     </div>
                     <div>
                       <label><strong>Trạng thái:</strong></label>
@@ -1337,12 +1357,13 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh URL:</strong></label>
+                      <label><strong>Ảnh:</strong></label>
                       <input
-                        type="text"
-                        value={editImageUrl}
-                        onChange={(e) => setEditImageUrl(e.target.value)}
-                      />
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleEditImageUpload(e)}
+/>
+
                     </div>
                     {/* Hiển thị hình ảnh nếu có link */}
                     {editImageUrl && (
@@ -1453,14 +1474,18 @@ const ProductManagement = () => {
                         placeholder="Nhập mô tả"
                       />
                     </div>
-                    <div>
-                      <label><strong>Ảnh URL:</strong></label>
-                      <input
-                        type="text"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        placeholder="Nhập URL ảnh"
+                    
+                    <div className="upload-container mb-2">
+                    <label className="upload-label">
+                    <input
+                        type="file"
+                        accept="image/*"
+                        className="upload-input"
+                        onChange={(e) => handleImageUpload(e)}
                       />
+        <span>Chọn ảnh</span>
+                      </label>
+                          
                     </div>
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
@@ -1537,13 +1562,13 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh URL:</strong></label>
+                      <label><strong>Ảnh:</strong></label>
                       <input
-                        type="text"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        placeholder="Nhập URL ảnh"
-                      />
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleImageUpload(e)}
+/>
+
                     </div>
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
@@ -1620,13 +1645,13 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh URL:</strong></label>
+                      <label><strong>Ảnh:</strong></label>
                       <input
-                        type="text"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        placeholder="Nhập URL ảnh"
-                      />
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleImageUpload(e)}
+/>
+
                     </div>
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
@@ -1675,13 +1700,13 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh URL:</strong></label>
+                      <label><strong>Ảnh:</strong></label>
                       <input
-                        type="text"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        placeholder="Nhập URL ảnh"
-                      />
+  type="file"
+  accept="image/*"
+  onChange={(e) => handleImageUpload(e)}
+/>
+
                     </div>
                     {/* Preview image if URL is entered */}
                     {newImageUrl && (
