@@ -139,10 +139,17 @@ const Dashboard = () => {
       ? transactionStats.byUser.length
       : 0;
   const newOrders = 45;
+  
+  // Get the current month (1-12)
+  const currentMonth = new Date().getMonth() + 1; 
+  
+  // Get revenue for the current month
   const currentMonthRevenue =
-    monthlyRevenue && monthlyRevenue.length
-      ? monthlyRevenue[monthlyRevenue.length - 1]
-      : 0;
+    monthlyRevenue && monthlyRevenue.length && currentMonth <= monthlyRevenue.length
+      ? monthlyRevenue[currentMonth - 1]
+      : (monthlyRevenue && monthlyRevenue.length 
+         ? monthlyRevenue[monthlyRevenue.length - 1] 
+         : 0);
 
   // ============== BIỂU ĐỒ DOANH THU THEO THÁNG (Line Chart) ==============
   const revenueData = {
@@ -248,7 +255,7 @@ const Dashboard = () => {
       changeType: 'positive'
     },
     {
-      title: 'Doanh thu tháng',
+      title: 'Doanh Thu Tháng',
       value: currentMonthRevenue.toLocaleString() + ' VND',
       icon: faMoneyBillWave,
       color: 'var(--success-color)',
