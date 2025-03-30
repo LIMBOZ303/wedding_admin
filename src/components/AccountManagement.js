@@ -71,7 +71,6 @@ const AccountManagement = () => {
         <div className="account-management-container">
             <div className="header-container">
                 <h2>Quản Lý Tài Khoản</h2>
-                {/* Nút refresh nằm bên phải */}
                 <button 
                     className="refresh-button" 
                     onClick={loadAccounts}
