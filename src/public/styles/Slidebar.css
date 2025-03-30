@@ -2,7 +2,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 250px;
+    width: 300px;
     height: 100%;
     background-color: #ffffff;
     padding-top: 20px;
@@ -90,16 +90,33 @@
 }
 
 .sidebar a {
+    position: relative;
     color: white;
     text-decoration: none;
     font-size: 18px;
     padding: 10px 20px;
     display: block;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.sidebar a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 0%;
+    height: 3px;
+    /* Tăng độ dày viền từ 2px lên 3px */
+    background-color: white;
+    transition: width 0.3s;
 }
 
 .sidebar a:hover {
     background-color: #3498db;
+}
+
+.sidebar a:hover::after {
+    width: 100%;
 }
 
 .menu-button {
@@ -117,8 +134,6 @@
     z-index: 1001;
     transition: right 0.3s ease;
 }
-
-
 
 .menu-item {
     margin-bottom: var(--spacing-xs);
@@ -317,4 +332,23 @@
         top: 10px;
         background-color: rgba(44, 62, 80, 0.8);
     }
+}
+
+/* Style cho nút refresh nằm bên phải */
+.refresh-button {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: color 0.3s;
+}
+
+.refresh-button:hover {
+    color: #3498db;
+}
+
+.refresh-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }

@@ -21,7 +21,6 @@ import {
   fetchCatering,
   fetchCateringById,
   fetchCateringDetail,
-  addCatering,
   updateCatering,
   deleteCatering,
   fetchCateringCategories
@@ -1236,7 +1235,7 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={editPrice}
                         onChange={(e) => setEditPrice(e.target.value)}
                       />
@@ -1306,7 +1305,7 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={editPrice}
                         onChange={(e) => setEditPrice(e.target.value)}
                       />
@@ -1384,7 +1383,7 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={editPrice}
                         onChange={(e) => setEditPrice(e.target.value)}
                       />
@@ -1462,7 +1461,7 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={editPrice}
                         onChange={(e) => setEditPrice(e.target.value)}
                       />
@@ -1913,7 +1912,7 @@ const ProductManagement = () => {
             className={activeTab === "DichVu" ? "active" : ""}
             onClick={() => setActiveTab("DichVu")}
           >
-            Dịch Vụ
+            Món Ăn
           </li>
           <li
             className={activeTab === "QuaTang" ? "active" : ""}
