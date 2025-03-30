@@ -1,4 +1,3 @@
-// src/components/AccountManagement.js
 import React, { useEffect, useState } from 'react';
 import { fetchAccounts } from '../api/users_api';
 import Swal from 'sweetalert2';
@@ -9,34 +8,36 @@ const AccountManagement = () => {
     const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // Lấy danh sách tài khoản từ API
-    useEffect(() => {
-        const loadAccounts = async () => {
-            // Hiển thị SweetAlert2 Loading
-            Swal.fire({
-                title: 'Đang tải dữ liệu...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            try {
-                const data = await fetchAccounts();
-                setAccounts(data);
-                setFilteredAccounts(data);
-            } catch (err) {
-                setError('Không thể tải dữ liệu tài khoản.');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi',
-                    text: 'Không thể tải dữ liệu tài khoản.',
-                });
-            } finally {
-                Swal.close();
+    const loadAccounts = async () => {
+        setLoading(true);
+        Swal.fire({
+            title: 'Đang tải dữ liệu...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
             }
-        };
+        });
+        try {
+            const data = await fetchAccounts();
+            setAccounts(data);
+            setFilteredAccounts(data);
+            setError('');
+        } catch (err) {
+            setError('Không thể tải dữ liệu tài khoản.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: 'Không thể tải dữ liệu tài khoản.',
+            });
+        } finally {
+            setLoading(false);
+            Swal.close();
+        }
+    };
 
+    useEffect(() => {
         loadAccounts();
     }, []);
 
@@ -46,7 +47,7 @@ const AccountManagement = () => {
             setFilteredAccounts(accounts);
         } else {
             const filtered = accounts.filter(
-                account => 
+                account =>
                     account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     account.email.toLowerCase().includes(searchTerm.toLowerCase())
             );
@@ -68,7 +69,17 @@ const AccountManagement = () => {
 
     return (
         <div className="account-management-container">
-            <h2>Quản Lý Tài Khoản</h2>
+            <div className="header-container">
+                <h2>Quản Lý Tài Khoản</h2>
+                <button 
+                    className="refresh-button" 
+                    onClick={loadAccounts}
+                    title="Tải lại giao diện"
+                    disabled={loading}
+                >
+                    <i className="fa fa-refresh"></i>
+                </button>
+            </div>
             <h3>Danh Sách Tài Khoản Người Dùng</h3>
             
             <div className="search-container">
@@ -89,6 +100,7 @@ const AccountManagement = () => {
                         <tr>
                             <th>Tên</th>
                             <th>Email</th>
+                            <th>Trạng Thái</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,6 +108,7 @@ const AccountManagement = () => {
                             <tr key={account._id}>
                                 <td>{account.name}</td>
                                 <td className="email-cell">{account.email}</td>
+                                <td>{account.isLoggedIn ? "Đã đăng nhập" : "Chưa đăng nhập"}</td>
                             </tr>
                         ))}
                     </tbody>

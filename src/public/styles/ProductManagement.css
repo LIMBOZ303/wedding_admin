@@ -238,6 +238,7 @@
 .button-update,
 .button-delete,
 .button-detail {
+  width: 100px;
   padding: 10px 0;
   border: none;
   border-radius: 6px;
