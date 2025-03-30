@@ -73,6 +73,10 @@ const ProductManagement = () => {
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newStatus, setNewStatus] = useState("");
 
+  // --- State for image upload ---
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [editSelectedImage, setEditSelectedImage] = useState(null);
+
   const [showAddModal, setShowAddModal] = useState(false);
 
   const [addFormType, setAddFormType] = useState("food");
@@ -984,6 +988,7 @@ const ProductManagement = () => {
           setNewCate("");
           setNewDescription("");
           setNewImageUrl("");
+          setSelectedImage(null);
           setNewStatus("");
 
           setShowAddModal(false);
@@ -1027,6 +1032,9 @@ const ProductManagement = () => {
     setNewCate("");
     setNewDescription("");
     setNewImageUrl("");
+    setSelectedImage(null);
+    
+    // Reset status only for the types that need it
     setNewStatus("");
 
     // Set form type based on active tab
@@ -1043,6 +1051,78 @@ const ProductManagement = () => {
     }
 
     setShowAddModal(true);
+  };
+
+  // Function to convert image file to base64
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      
+      fileReader.onload = () => {
+        resolve(fileReader.result);
+      };
+      
+      fileReader.onerror = (error) => {
+        reject(error);
+      };
+    });
+  };
+
+  // Handle image upload for new item
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      Swal.fire("Lỗi!", "Vui lòng chọn file hình ảnh (JPEG, PNG, GIF)", "error");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      Swal.fire("Lỗi!", "Kích thước hình ảnh không được vượt quá 2MB", "error");
+      return;
+    }
+
+    try {
+      setSelectedImage(file);
+      const base64 = await convertToBase64(file);
+      setNewImageUrl(base64);
+    } catch (error) {
+      console.error("Error converting image to base64:", error);
+      Swal.fire("Lỗi!", "Không thể tải lên hình ảnh", "error");
+    }
+  };
+
+  // Handle image upload for edit item
+  const handleEditImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      Swal.fire("Lỗi!", "Vui lòng chọn file hình ảnh (JPEG, PNG, GIF)", "error");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      Swal.fire("Lỗi!", "Kích thước hình ảnh không được vượt quá 2MB", "error");
+      return;
+    }
+
+    try {
+      setEditSelectedImage(file);
+      const base64 = await convertToBase64(file);
+      setEditImageUrl(base64);
+    } catch (error) {
+      console.error("Error converting image to base64:", error);
+      Swal.fire("Lỗi!", "Không thể tải lên hình ảnh", "error");
+    }
   };
 
   // Render nội dung theo tab
@@ -1069,27 +1149,60 @@ const ProductManagement = () => {
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
             />
+            <button className="button-add" onClick={handleOpenAddModal}>
+              + Thêm mới
+            </button>
           </div>
           {loading ? (
             <div className="spinner-container">
               <div className="loading-spinner"></div>
             </div>
           ) : filteredList().length > 0 ? (
-            <ul className="product-list">
-              {filteredList().map((item) => (
-                <li key={item._id} className="product-item">
-                  <h3 title={item.name}>{item.name}</h3>
-                  <div className="button-group">
-                    <button
-                      className="button-detail"
-                      onClick={() => handleShowDetail(item._id)}
-                    >
-                      Chi Tiết
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="product-table-container">
+              <table className="product-table">
+                <thead>
+                  <tr>
+                    <th>Hình ảnh</th>
+                    <th>Tên</th>
+                    <th>Giá</th>
+                    <th>Mô tả</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredList().map((item) => (
+                    <tr key={item._id} className="product-row">
+                      <td className="product-image-cell">
+                        {item.imageUrl ? (
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.name} 
+                            className="product-thumbnail"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://placehold.co/100x100?text=No+Image';
+                            }}
+                          />
+                        ) : (
+                          <div className="no-image">No Image</div>
+                        )}
+                      </td>
+                      <td>{item.name}</td>
+                      <td>{item.price?.toLocaleString() || 0} VND</td>
+                      <td className="description-cell">{item.description || 'Không có mô tả'}</td>
+                      <td>
+                        <button
+                          className="button-detail"
+                          onClick={() => handleShowDetail(item._id)}
+                        >
+                          Chi Tiết
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <div className="no-results">
               <p>Không tìm thấy sản phẩm nào.</p>
@@ -1107,6 +1220,20 @@ const ProductManagement = () => {
                   &times;
                 </button>
                 <h3>Chi Tiết Sản Phẩm</h3>
+                {/* Display the image prominently at the top */}
+                {selectedItem.imageUrl && (
+                  <div className="detail-image-container">
+                    <img 
+                      src={selectedItem.imageUrl} 
+                      alt={selectedItem.name} 
+                      className="detail-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://placehold.co/400x300?text=No+Image';
+                      }}
+                    />
+                  </div>
+                )}
                 <p>
                   <strong>ID:</strong> {selectedItem._id}
                 </p>
@@ -1147,12 +1274,6 @@ const ProductManagement = () => {
                         </div>
                       )}
                     </div>
-                    {selectedItem.cate_cateringId && typeof selectedItem.cate_cateringId === 'object' && selectedItem.cate_cateringId.name && (
-                      <div>
-                        <label><strong>Tên loại hiện tại:</strong></label>
-                        <span> {selectedItem.cate_cateringId.name}</span>
-                      </div>
-                    )}
                     <div>
                       <label><strong>Mô tả:</strong></label>
                       <input
@@ -1161,6 +1282,7 @@ const ProductManagement = () => {
                         onChange={(e) => setEditDescription(e.target.value)}
                       />
                     </div>
+<<<<<<< HEAD
                     <div className="upload-container">
     <label><strong>Ảnh:</strong></label>
     <label className="upload-label">
@@ -1179,6 +1301,32 @@ const ProductManagement = () => {
   </div>
                     {/* Hiển thị hình ảnh nếu có link */}
                     
+=======
+                    <div>
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-food-image-upload"
+                        />
+                        <label htmlFor="edit-food-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+                      </div>
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                   </>
                 ) : selectedItem.type === "QuaTang" ? (
                   <>
@@ -1217,12 +1365,6 @@ const ProductManagement = () => {
                         </div>
                       )}
                     </div>
-                    {selectedItem.Cate_presentId && typeof selectedItem.Cate_presentId === 'object' && selectedItem.Cate_presentId.name && (
-                      <div>
-                        <label><strong>Tên loại hiện tại:</strong></label>
-                        <span> {selectedItem.Cate_presentId.name}</span>
-                      </div>
-                    )}
                     <div>
                       <label><strong>Mô tả:</strong></label>
                       <input
@@ -1232,6 +1374,7 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
+<<<<<<< HEAD
                       <label><strong>Ảnh:</strong></label>
                       <input
   type="file"
@@ -1239,6 +1382,30 @@ const ProductManagement = () => {
   onChange={(e) => handleEditImageUpload(e)}
 />
 
+=======
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-gift-image-upload"
+                        />
+                        <label htmlFor="edit-gift-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+                      </div>
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                     </div>
                     <div>
                       <label><strong>Trạng thái:</strong></label>
@@ -1248,12 +1415,6 @@ const ProductManagement = () => {
                         onChange={(e) => setEditStatus(e.target.value)}
                       />
                     </div>
-                    {/* Hiển thị hình ảnh nếu có link */}
-                    {editImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
-                        <img src={editImageUrl} alt={editName} style={{ maxWidth: '100%', height: 'auto' }} />
-                      </div>
-                    )}
                   </>
                 ) : selectedItem.type === "TrangTri" ? (
                   <>
@@ -1292,12 +1453,6 @@ const ProductManagement = () => {
                         </div>
                       )}
                     </div>
-                    {selectedItem.Cate_decorateId && typeof selectedItem.Cate_decorateId === 'object' && selectedItem.Cate_decorateId.name && (
-                      <div>
-                        <label><strong>Tên loại hiện tại:</strong></label>
-                        <span> {selectedItem.Cate_decorateId.name}</span>
-                      </div>
-                    )}
                     <div>
                       <label><strong>Mô tả:</strong></label>
                       <input
@@ -1307,6 +1462,7 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
+<<<<<<< HEAD
                       <label><strong>Ảnh:</strong></label>
                       <input
   type="file"
@@ -1314,6 +1470,30 @@ const ProductManagement = () => {
   onChange={(e) => handleEditImageUpload(e)}
 />
 
+=======
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-decorate-image-upload"
+                        />
+                        <label htmlFor="edit-decorate-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+                      </div>
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                     </div>
                     <div>
                       <label><strong>Trạng thái:</strong></label>
@@ -1323,12 +1503,6 @@ const ProductManagement = () => {
                         onChange={(e) => setEditStatus(e.target.value)}
                       />
                     </div>
-                    {/* Hiển thị hình ảnh nếu có link */}
-                    {editImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
-                        <img src={editImageUrl} alt={editName} style={{ maxWidth: '100%', height: 'auto' }} />
-                      </div>
-                    )}
                   </>
                 ) : selectedItem.type === "Order" ? (
                   <>
@@ -1357,6 +1531,7 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
+<<<<<<< HEAD
                       <label><strong>Ảnh:</strong></label>
                       <input
   type="file"
@@ -1369,8 +1544,31 @@ const ProductManagement = () => {
                     {editImageUrl && (
                       <div style={{ marginTop: '10px' }}>
                         <img src={editImageUrl} alt={editName} style={{ maxWidth: '100%', height: 'auto' }} />
+=======
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-lobby-image-upload"
+                        />
+                        <label htmlFor="edit-lobby-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                       </div>
-                    )}
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div>
@@ -1406,7 +1604,7 @@ const ProductManagement = () => {
             }
           </button>
 
-          {/* Modal Thêm mới */}
+          {/* Modal Thêm Mới */}
           {showAddModal && (
             <div className="detail-card">
               <div className="detail-card-content">
@@ -1416,16 +1614,31 @@ const ProductManagement = () => {
                 >
                   &times;
                 </button>
-                <h3>
-                  {addFormType === "food"
-                    ? "Thêm Món Ăn Mới"
-                    : addFormType === "gift"
-                      ? "Thêm Quà Tặng Mới"
-                      : addFormType === "decorate"
-                        ? "Thêm Trang Trí Mới"
-                        : "Thêm Phòng/Sảnh Mới"
-                  }
-                </h3>
+                <h3>Thêm Mới {
+                  addFormType === "food" 
+                    ? "Dịch Vụ" 
+                    : addFormType === "gift" 
+                      ? "Quà Tặng" 
+                      : addFormType === "decorate" 
+                        ? "Trang Trí" 
+                        : "Phòng/Sảnh"
+                }</h3>
+                
+                {/* Image Preview */}
+                {newImageUrl && (
+                  <div className="detail-image-container">
+                    <img
+                      src={newImageUrl}
+                      alt="Preview"
+                      className="detail-image"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://placehold.co/400x300?text=Invalid+Image+URL';
+                      }}
+                    />
+                  </div>
+                )}
+
                 {addFormType === "food" && (
                   <>
                     <div>
@@ -1434,7 +1647,7 @@ const ProductManagement = () => {
                         type="text"
                         value={newName}
                         onChange={(e) => setNewName(e.target.value)}
-                        placeholder="Nhập tên món ăn"
+                        placeholder="Nhập tên dịch vụ"
                       />
                     </div>
                     <div>
@@ -1474,6 +1687,7 @@ const ProductManagement = () => {
                         placeholder="Nhập mô tả"
                       />
                     </div>
+<<<<<<< HEAD
                     
                     <div className="upload-container mb-2">
                     <label className="upload-label">
@@ -1498,9 +1712,32 @@ const ProductManagement = () => {
                             e.target.onerror = null;
                             e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
                           }}
+=======
+                    <div>
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="image-upload-input"
+                          id="food-image-upload"
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                         />
+                        <label htmlFor="food-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
+                        </span>
                       </div>
-                    )}
+                      {newImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh đã chọn:</strong></p>
+                          <img src={newImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -1553,6 +1790,7 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
+<<<<<<< HEAD
                       <label><strong>Trạng thái:</strong></label>
                       <input
                         type="text"
@@ -1581,9 +1819,31 @@ const ProductManagement = () => {
                             e.target.onerror = null;
                             e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
                           }}
+=======
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="image-upload-input"
+                          id="gift-image-upload"
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                         />
+                        <label htmlFor="gift-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
+                        </span>
                       </div>
-                    )}
+                      {newImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh đã chọn:</strong></p>
+                          <img src={newImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -1636,6 +1896,7 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
+<<<<<<< HEAD
                       <label><strong>Trạng thái:</strong></label>
                       <input
                         type="text"
@@ -1664,9 +1925,31 @@ const ProductManagement = () => {
                             e.target.onerror = null;
                             e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
                           }}
+=======
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="image-upload-input"
+                          id="decorate-image-upload"
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                         />
+                        <label htmlFor="decorate-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
+                        </span>
                       </div>
-                    )}
+                      {newImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh đã chọn:</strong></p>
+                          <img src={newImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -1700,6 +1983,7 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
+<<<<<<< HEAD
                       <label><strong>Ảnh:</strong></label>
                       <input
   type="file"
@@ -1719,9 +2003,31 @@ const ProductManagement = () => {
                             e.target.onerror = null;
                             e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
                           }}
+=======
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="image-upload-input"
+                          id="lobby-image-upload"
+>>>>>>> 6132ec7e201558d393c14610806acd2186c1e516
                         />
+                        <label htmlFor="lobby-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
+                        </span>
                       </div>
-                    )}
+                      {newImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh đã chọn:</strong></p>
+                          <img src={newImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 

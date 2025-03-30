@@ -129,6 +129,13 @@ button {
 .btn-secondary {
   background: var(--secondary-color);
   color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #8065b6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(149, 117, 205, 0.3);
 }
 
 .btn-danger {
@@ -224,20 +231,22 @@ tr:hover {
 }
 
 .status-badge {
-  display: inline-block;
-  padding: 0.3rem 0.8rem;
-  border-radius: 30px;
-  font-size: 0.8rem;
+  transition: all 0.3s ease;
+  padding: 6px 12px;
   font-weight: 500;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .badge-success {
-  background-color: rgba(102, 187, 106, 0.15);
+  background-color: rgba(102, 187, 106, 0.2);
+  border: 1px solid rgba(102, 187, 106, 0.5);
   color: var(--success-color);
 }
 
 .badge-warning {
-  background-color: rgba(255, 183, 77, 0.15);
+  background-color: rgba(255, 183, 77, 0.2);
+  border: 1px solid rgba(255, 183, 77, 0.5);
   color: var(--warning-color);
 }
 
@@ -344,17 +353,6 @@ form {
   color: var(--text-color);
 }
 
-.blog-post-summary {
-  color: var(--light-text);
-  margin-bottom: 15px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  box-orient: vertical;
-  overflow: hidden;
-}
-
 .blog-post-footer {
   display: flex;
   justify-content: space-between;
@@ -435,4 +433,120 @@ form button[type="submit"] {
 
 .dark-mode #update-form .form-group {
   border-color: var(--dark-border-color);
+}
+
+/* CKEditor Styles */
+.ck-editor__editable {
+  min-height: 200px;
+  max-height: 500px;
+}
+
+.ck.ck-editor {
+  width: 100%;
+}
+
+.ck.ck-editor__editable {
+  padding: 0 10px;
+  border-radius: 0 0 4px 4px !important;
+}
+
+.ck.ck-toolbar {
+  border-radius: 4px 4px 0 0 !important;
+}
+
+/* Ensure form responsiveness */
+@media (max-width: 768px) {
+  .ck.ck-editor__editable {
+    min-height: 150px;
+  }
+}
+
+/* Style cho trường summary */
+textarea#summary,
+textarea#update-summary {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: var(--transition);
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+}
+
+/* Style for date info */
+.date-info {
+  display: inline-flex;
+  align-items: center;
+  color: var(--light-text);
+  font-size: 0.9rem;
+}
+
+.date-info i {
+  margin-right: 5px;
+  color: var(--secondary-color);
+}
+
+textarea#summary:focus,
+textarea#update-summary:focus {
+  outline: none;
+  border-color: var(--secondary-color);
+  box-shadow: 0 0 0 3px rgba(149, 117, 205, 0.2);
+}
+
+/* Style cho blog admin container */
+.blog-admin-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+}
+
+.blog-form-card {
+  background: var(--white);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow);
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.btn-cancel {
+  background-color: var(--light-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.btn-submit {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-cancel, .btn-submit {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+}
+
+.btn-cancel:hover {
+  background-color: var(--border-color);
+}
+
+.btn-submit:hover {
+  background-color: var(--primary-dark);
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
