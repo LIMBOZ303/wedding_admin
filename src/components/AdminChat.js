@@ -15,7 +15,8 @@ import {
     faEnvelope,
     faCheck,
     faCheckDouble,
-    faArrowDown 
+    faArrowDown,
+    faPaperclip
 } from '@fortawesome/free-solid-svg-icons';
 
 const AdminChat = () => {
@@ -62,14 +63,35 @@ const AdminChat = () => {
             newSocket.disconnect();
         };
     }, []);
-    
+    const [selectedImage, setSelectedImage] = useState(null);
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setSelectedImage(reader.result); // Lưu trữ hình ảnh dưới dạng base64
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && messageInput.trim()) {
+          e.preventDefault();
+          handleSendMessage();
+        }
+      };
     // Xử lý khi nhận tin nhắn mới
     const handleNewMessage = async (data) => {
         const { message, userId } = data;
         
         // Xác định ID người dùng từ tin nhắn
         const senderId = message.senderId;
-        
+        console.log('📩 Nhận tin nhắn mới:', JSON.stringify(message, null, 2));
+        if (message.image) {
+            console.log('🖼️ Hình ảnh nhận được:', message.image.substring(0, 50) + '...');
+        } else {
+            console.log('⚠️ Tin nhắn không chứa hình ảnh');
+        }
         console.log('------------------------------------');
         console.log('📩 NHẬN TIN NHẮN MỚI');
         console.log('📱 ID người gửi:', senderId);
@@ -197,10 +219,16 @@ const AdminChat = () => {
     // Xử lý xác nhận tin nhắn đã gửi
     const handleMessageSent = (data) => {
         const { message } = data;
-        
-        // Thêm tin nhắn mới vào danh sách
+        console.log('✅ Tin nhắn đã gửi thành công từ server:', JSON.stringify(message, null, 2));
+        if (selectedImage && !message.image) {
+          console.warn('⚠️ Backend chưa xử lý hình ảnh! Dữ liệu ảnh gửi đi nhưng không nhận lại được.');
+          // Thêm thông báo nếu cần
+          alert('Hình ảnh đã gửi nhưng backend chưa xử lý đúng. Vui lòng kiểm tra server.');
+        } else if (message.image) {
+          console.log('🖼️ Hình ảnh được backend xử lý và trả về:', message.image.substring(0, 50) + '...');
+        }
         setMessages(prevMessages => [...prevMessages, message]);
-    };
+      };
     
     // Lấy danh sách người dùng đã chat và thông tin của họ
     const fetchUsers = async () => {
@@ -369,30 +397,30 @@ const AdminChat = () => {
     
     // Gửi tin nhắn mới
     const handleSendMessage = () => {
-        if (!messageInput.trim() || !currentUserId || !socket) return;
-        
-        // Chuẩn bị dữ liệu tin nhắn
+        if ((!messageInput.trim() && !selectedImage) || !currentUserId || !socket) return;
+      
         const messageData = {
-            senderId: 'admin',
-            receiverId: currentUserId,
-            message: messageInput.trim(),
-            senderType: 'admin'
+          senderId: 'admin',
+          receiverId: currentUserId,
+          senderType: 'admin',
         };
-        
-        // Gửi tin nhắn qua socket
-        socket.emit('sendMessage', messageData);
-        
-        // Reset input
-        setMessageInput('');
-    };
-    
-    // Xử lý khi nhấn phím Enter để gửi tin nhắn
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleSendMessage();
+      
+        if (messageInput.trim()) {
+          messageData.message = messageInput.trim();
+          console.log('📤 Gửi tin nhắn văn bản:', messageData.message);
         }
-    };
+        if (selectedImage) {
+          messageData.image = selectedImage;
+          console.log('📤 Gửi hình ảnh (base64):', selectedImage.substring(0, 50) + '...'); // Chỉ log 50 ký tự đầu để tránh dài dòng
+        }
+      
+        console.log('📤 Dữ liệu gửi đi:', JSON.stringify(messageData, null, 2));
+        socket.emit('sendMessage', messageData);
+      
+        setMessageInput('');
+        setSelectedImage(null);
+      };
+    
     
     // Tự động cuộn xuống tin nhắn mới nhất
     useEffect(() => {
@@ -680,105 +708,74 @@ const AdminChat = () => {
                                 </div>
                             ) : (
                                 <div className="messages-container">
-                                    {messages.map((message, index) => {
-                                        // Xác định tên người gửi cho tin nhắn
-                                        let senderName = 'Admin';
-                                        let senderInfo = null;
-                                        
-                                        // Nếu không phải admin gửi, tìm tên người dùng
-                                        if (message.senderType !== 'admin') {
-                                            // Tìm trong danh sách người dùng dựa vào senderId
-                                            const userInList = users.find(u => u.userId === message.senderId);
-                                            if (userInList && userInList.name && userInList.name !== 'Khách hàng') {
-                                                // Nếu tìm thấy tên từ danh sách users
-                                                senderName = userInList.name;
-                                                senderInfo = userInList;
-                                                console.log(`📝 Sử dụng tên người dùng từ danh sách: ${senderName}`);
-                                            } else if (currentUserInfo && currentUserId === message.senderId) {
-                                                // Nếu đang chat với người dùng này, sử dụng thông tin hiện tại
-                                                senderName = currentUserInfo.name || 'Khách hàng';
-                                                senderInfo = currentUserInfo;
-                                                console.log(`📝 Sử dụng tên người dùng hiện tại: ${senderName}`);
-                                            } else {
-                                                // Mặc định sử dụng tên "Khách hàng" nếu không tìm thấy tên
-                                                // Đồng thời gửi yêu cầu lấy thông tin người dùng (không chờ đợi)
-                                                senderName = 'Khách hàng';
-                                                console.log(`⚠️ Không tìm thấy tên người dùng, sử dụng mặc định: ${senderName}`);
-                                                if (message.senderId) {
-                                                    // Thực hiện fetch không đồng bộ để cập nhật thông tin người dùng
-                                                    console.log(`🔄 Đang tự động lấy thông tin người dùng: ${message.senderId}`);
-                                                    getUserById(message.senderId).then(userInfo => {
-                                                        if (userInfo && userInfo.data) {
-                                                            // Tìm tên người dùng
-                                                            let newUserName = extractUserName(userInfo.data);
-                                                            
-                                                            // Thử các trường khác nếu vẫn là "Khách hàng"
-                                                            if (newUserName === 'Khách hàng') {
-                                                                for (const key in userInfo.data) {
-                                                                    const value = userInfo.data[key];
-                                                                    if (typeof value === 'string' && value.length > 0 && key !== 'email' && key !== '_id' && key !== 'id' && key !== 'userId') {
-                                                                        newUserName = value;
-                                                                        break;
-                                                                    }
-                                                                }
-                                                                
-                                                                // Nếu vẫn không có tên, thử dùng email
-                                                                if (newUserName === 'Khách hàng' && userInfo.data.email) {
-                                                                    newUserName = userInfo.data.email.split('@')[0].charAt(0).toUpperCase() 
-                                                                        + userInfo.data.email.split('@')[0].slice(1);
-                                                                }
-                                                            }
-                                                            
-                                                            console.log(`✅ Đã lấy thêm thông tin người dùng: ${message.senderId} - ${newUserName}`);
-                                                            // Cập nhật danh sách người dùng
-                                                            fetchUsers();
-                                                        }
-                                                    }).catch(err => {
-                                                        console.error("❌ Không thể lấy thông tin người dùng:", err);
-                                                    });
-                                                }
-                                            }
-                                        }
-                                        
-                                        // Hiển thị ngày nếu cần
-                                        const showDateHeader = shouldShowDate(messages, index);
-                                        
-                                        return (
-                                            <React.Fragment key={index}>
-                                                {showDateHeader && (
-                                                    <div className="date-separator">
-                                                        <span>{formatMessageDate(message.createdAt)}</span>
-                                                    </div>
-                                                )}
-                                                <div 
-                                                    className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}
-                                                >
-                                                    <div className="message-content">
-                                                        {message.senderType !== 'admin' && (
-                                                            <div className="message-sender">
-                                                                {senderName}
-                                                                {senderInfo?.email && (
-                                                                    <small className="sender-email"> ({senderInfo.email})</small>
-                                                                )}
-                                                                <div className="message-sender-id">ID: {message.senderId}</div>
-                                                            </div>
-                                                        )}
-                                                        <p>{message.message}</p>
-                                                        <div className="message-footer">
-                                                            <small className="message-time">{formatTime(message.createdAt)}</small>
-                                                            {message.senderType === 'admin' && (
-                                                                <small className="message-status">
-                                                                    <FontAwesomeIcon icon={message.read ? faCheckDouble : faCheck} />
-                                                                </small>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                    <div ref={messagesEndRef} />
-                                </div>
+  {messages.map((message, index) => {
+    let senderName = 'Admin';
+    let senderInfo = null;
+
+    if (message.senderType !== 'admin') {
+      const userInList = users.find((u) => u.userId === message.senderId);
+      if (userInList && userInList.name && userInList.name !== 'Khách hàng') {
+        senderName = userInList.name;
+        senderInfo = userInList;
+      } else if (currentUserInfo && currentUserId === message.senderId) {
+        senderName = currentUserInfo.name || 'Khách hàng';
+        senderInfo = currentUserInfo;
+      } else {
+        senderName = 'Khách hàng';
+        // Logic lấy thông tin người dùng không đổi
+      }
+    }
+
+    const showDateHeader = shouldShowDate(messages, index);
+
+    return (
+      <React.Fragment key={index}>
+        {showDateHeader && (
+          <div className="date-separator">
+            <span>{formatMessageDate(message.createdAt)}</span>
+          </div>
+        )}
+        <div
+          className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}
+        >
+          <div className="message-content">
+            {message.senderType !== 'admin' && (
+              <div className="message-sender">
+                {senderName}
+                {senderInfo?.email && (
+                  <small className="sender-email"> ({senderInfo.email})</small>
+                )}
+                <div className="message-sender-id">ID: {message.senderId}</div>
+              </div>
+            )}
+            {/* Hiển thị văn bản nếu có */}
+            {message.message && <p>{message.message}</p>}
+            {/* Hiển thị hình ảnh nếu có */}
+            {message.image && (
+              <div className="message-image">
+                <img
+                  src={message.image}
+                  alt="Chat attachment"
+                  style={{ maxWidth: '200px', maxHeight: '200px', cursor: 'pointer' }}
+                  onClick={() => window.open(message.image, '_blank')}
+                />
+              </div>
+            )}
+            <div className="message-footer">
+              <small className="message-time">{formatTime(message.createdAt)}</small>
+              {message.senderType === 'admin' && (
+                <small className="message-status">
+                  <FontAwesomeIcon icon={message.read ? faCheckDouble : faCheck} />
+                </small>
+              )}
+            </div>
+          </div>
+        </div>
+      </React.Fragment>
+    );
+  })}
+  <div ref={messagesEndRef} />
+</div>
                             )}
                             
                             {/* Nút cuộn xuống cuối cùng */}
@@ -790,24 +787,54 @@ const AdminChat = () => {
                         </div>
                         
                         {currentUserId && (
-                            <div className="chat-input">
-                                <input
-                                    type="text"
-                                    value={messageInput}
-                                    onChange={(e) => setMessageInput(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder="Nhập tin nhắn..."
-                                    disabled={!currentUserId}
-                                />
-                                <button 
-                                    className="send-button"
-                                    onClick={handleSendMessage}
-                                    disabled={!messageInput.trim() || !currentUserId}
-                                >
-                                    <FontAwesomeIcon icon={faPaperPlane} />
-                                </button>
-                            </div>
-                        )}
+  <div className="chat-input-area">
+    {/* Thêm phần xem trước ảnh ở đây */}
+    {selectedImage && (
+      <div className="image-preview">
+        <img
+          src={selectedImage}
+          alt="Preview"
+          style={{ maxWidth: '100px', maxHeight: '100px', marginBottom: '10px' }}
+        />
+        <button
+          className="remove-image-button"
+          onClick={() => setSelectedImage(null)}
+        >
+          Xóa
+        </button>
+      </div>
+    )}
+    {/* Phần input hiện tại */}
+    <div className="chat-input">
+      <input
+        type="text"
+        value={messageInput}
+        onChange={(e) => setMessageInput(e.target.value)}
+        onKeyPress={handleKeyPress}
+        placeholder="Nhập tin nhắn..."
+        disabled={!currentUserId}
+      />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => handleImageSelect(e)}
+        disabled={!currentUserId}
+        style={{ display: "none" }}
+        id="image-upload"
+      />
+      <label htmlFor="image-upload" className="image-upload-button">
+        <FontAwesomeIcon icon={faPaperclip} />
+      </label>
+      <button
+        className="send-button"
+        onClick={handleSendMessage}
+        disabled={!messageInput.trim() && !selectedImage || !currentUserId}
+      >
+        <FontAwesomeIcon icon={faPaperPlane} />
+      </button>
+    </div>
+  </div>
+)}
                     </div>
                 </div>
             </div>

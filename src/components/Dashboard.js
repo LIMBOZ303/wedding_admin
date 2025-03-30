@@ -392,14 +392,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="chart-card service-chart">
-          <div className="chart-header">
-            <h3>Phân bổ dịch vụ</h3>
-          </div>
-          <div className="chart-container">
-            <Doughnut data={serviceData} options={serviceOptions} />
-          </div>
-        </div>
+        
 
         <div className="chart-card recent-orders">
           <div className="chart-header">

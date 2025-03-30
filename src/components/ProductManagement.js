@@ -1138,14 +1138,15 @@ const ProductManagement = () => {
           <div className="action-buttons">
             <input
               type="text"
-              placeholder={`Nhập từ khóa để lọc ${activeTab === "DichVu"
-                ? "món ăn"
-                : activeTab === "TrangTri"
+              placeholder={`Nhập từ khóa để lọc ${
+                activeTab === "DichVu"
+                  ? "món ăn"
+                  : activeTab === "TrangTri"
                   ? "trang trí"
                   : activeTab === "QuaTang"
-                    ? "quà tặng"
-                    : "phòng/sảnh"
-                }`}
+                  ? "quà tặng"
+                  : "phòng/sảnh"
+              }`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
             />
@@ -1174,13 +1175,14 @@ const ProductManagement = () => {
                     <tr key={item._id} className="product-row">
                       <td className="product-image-cell">
                         {item.imageUrl ? (
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.name} 
+                          <img
+                            src={item.imageUrl}
+                            alt={item.name}
                             className="product-thumbnail"
                             onError={(e) => {
                               e.target.onerror = null;
-                              e.target.src = 'https://placehold.co/100x100?text=No+Image';
+                              e.target.src =
+                                "https://placehold.co/100x100?text=No+Image";
                             }}
                           />
                         ) : (
@@ -1189,7 +1191,9 @@ const ProductManagement = () => {
                       </td>
                       <td>{item.name}</td>
                       <td>{item.price?.toLocaleString() || 0} VND</td>
-                      <td className="description-cell">{item.description || 'Không có mô tả'}</td>
+                      <td className="description-cell">
+                        {item.description || "Không có mô tả"}
+                      </td>
                       <td>
                         <button
                           className="button-detail"
@@ -1208,7 +1212,7 @@ const ProductManagement = () => {
               <p>Không tìm thấy sản phẩm nào.</p>
             </div>
           )}
-
+  
           {/* Modal Chi Tiết */}
           {selectedItem && (
             <div className="detail-card">
@@ -1217,19 +1221,19 @@ const ProductManagement = () => {
                   className="detail-card-close"
                   onClick={() => setSelectedItem(null)}
                 >
-                  &times;
+                  ×
                 </button>
                 <h3>Chi Tiết Sản Phẩm</h3>
-                {/* Display the image prominently at the top */}
                 {selectedItem.imageUrl && (
                   <div className="detail-image-container">
-                    <img 
-                      src={selectedItem.imageUrl} 
-                      alt={selectedItem.name} 
+                    <img
+                      src={selectedItem.imageUrl}
+                      alt={selectedItem.name}
                       className="detail-image"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = 'https://placehold.co/400x300?text=No+Image';
+                        e.target.src =
+                          "https://placehold.co/400x300?text=No+Image";
                       }}
                     />
                   </div>
@@ -1240,7 +1244,9 @@ const ProductManagement = () => {
                 {selectedItem.type === "DichVu" ? (
                   <>
                     <div>
-                      <label><strong>Tên:</strong></label>
+                      <label>
+                        <strong>Tên:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editName}
@@ -1248,7 +1254,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={editPrice}
@@ -1256,26 +1264,36 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Loại dịch vụ:</strong></label>
+                      <label>
+                        <strong>Loại dịch vụ:</strong>
+                      </label>
                       <select
                         value={editCate}
                         onChange={(e) => setEditCate(e.target.value)}
                       >
                         <option value="">-- Chọn loại dịch vụ --</option>
-                        {cateringCategories.map(category => (
+                        {cateringCategories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
                           </option>
                         ))}
                       </select>
                       {cateringCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: "0.8em",
+                            color: "#888",
+                            marginTop: "5px",
+                          }}
+                        >
                           Đang tải danh sách loại dịch vụ...
                         </div>
                       )}
                     </div>
                     <div>
-                      <label><strong>Mô tả:</strong></label>
+                      <label>
+                        <strong>Mô tả:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editDescription}
@@ -1283,28 +1301,30 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div className="upload-container">
-    <label><strong>Ảnh:</strong></label>
-    <label className="upload-label">
-      <input
-        type="file"
-        accept="image/*"
-        className="upload-input"
-        onChange={handleEditImageUpload}
-      />
-      {editImageUrl ? (
-        <img src={editImageUrl} alt="Preview" />
-      ) : (
-        <span>Chọn ảnh</span>
-      )}
-    </label>
-  </div>
-                    {/* Hiển thị hình ảnh nếu có link */}
-                    
+                      <label>
+                        <strong>Ảnh:</strong>
+                      </label>
+                      <label className="upload-label">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="upload-input"
+                          onChange={handleEditImageUpload}
+                        />
+                        {editImageUrl ? (
+                          <img src={editImageUrl} alt="Preview" />
+                        ) : (
+                          <span>Chọn ảnh</span>
+                        )}
+                      </label>
+                    </div>
                   </>
                 ) : selectedItem.type === "QuaTang" ? (
                   <>
                     <div>
-                      <label><strong>Tên:</strong></label>
+                      <label>
+                        <strong>Tên:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editName}
@@ -1312,7 +1332,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={editPrice}
@@ -1320,26 +1342,36 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Loại quà tặng:</strong></label>
+                      <label>
+                        <strong>Loại quà tặng:</strong>
+                      </label>
                       <select
                         value={editCate}
                         onChange={(e) => setEditCate(e.target.value)}
                       >
                         <option value="">-- Chọn loại quà tặng --</option>
-                        {giftCategories.map(category => (
+                        {giftCategories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
                           </option>
                         ))}
                       </select>
                       {giftCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: "0.8em",
+                            color: "#888",
+                            marginTop: "5px",
+                          }}
+                        >
                           Đang tải danh sách loại quà tặng...
                         </div>
                       )}
                     </div>
                     <div>
-                      <label><strong>Mô tả:</strong></label>
+                      <label>
+                        <strong>Mô tả:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editDescription}
@@ -1347,16 +1379,19 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh:</strong></label>
+                      <label>
+                        <strong>Ảnh:</strong>
+                      </label>
                       <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => handleEditImageUpload(e)}
-/>
-
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleEditImageUpload(e)}
+                      />
                     </div>
                     <div>
-                      <label><strong>Trạng thái:</strong></label>
+                      <label>
+                        <strong>Trạng thái:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editStatus}
@@ -1367,7 +1402,9 @@ const ProductManagement = () => {
                 ) : selectedItem.type === "TrangTri" ? (
                   <>
                     <div>
-                      <label><strong>Tên:</strong></label>
+                      <label>
+                        <strong>Tên:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editName}
@@ -1375,7 +1412,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={editPrice}
@@ -1383,26 +1422,36 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Loại trang trí:</strong></label>
+                      <label>
+                        <strong>Loại trang trí:</strong>
+                      </label>
                       <select
                         value={editCate}
                         onChange={(e) => setEditCate(e.target.value)}
                       >
                         <option value="">-- Chọn loại trang trí --</option>
-                        {decorateCategories.map(category => (
+                        {decorateCategories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
                           </option>
                         ))}
                       </select>
                       {decorateCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: "0.8em",
+                            color: "#888",
+                            marginTop: "5px",
+                          }}
+                        >
                           Đang tải danh sách loại trang trí...
                         </div>
                       )}
                     </div>
                     <div>
-                      <label><strong>Mô tả:</strong></label>
+                      <label>
+                        <strong>Mô tả:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editDescription}
@@ -1410,16 +1459,19 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh:</strong></label>
+                      <label>
+                        <strong>Ảnh:</strong>
+                      </label>
                       <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => handleEditImageUpload(e)}
-/>
-
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleEditImageUpload(e)}
+                      />
                     </div>
                     <div>
-                      <label><strong>Trạng thái:</strong></label>
+                      <label>
+                        <strong>Trạng thái:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editStatus}
@@ -1430,7 +1482,9 @@ const ProductManagement = () => {
                 ) : selectedItem.type === "Order" ? (
                   <>
                     <div>
-                      <label><strong>Tên phòng/sảnh:</strong></label>
+                      <label>
+                        <strong>Tên phòng/sảnh:</strong>
+                      </label>
                       <input
                         type="text"
                         value={editName}
@@ -1438,7 +1492,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={editPrice}
@@ -1446,7 +1502,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Số lượng khách:</strong></label>
+                      <label>
+                        <strong>Số lượng khách:</strong>
+                      </label>
                       <input
                         type="number"
                         value={editDescription}
@@ -1454,30 +1512,30 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh:</strong></label>
+                      <label>
+                        <strong>Ảnh:</strong>
+                      </label>
                       <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => handleEditImageUpload(e)}
-/>
-
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleEditImageUpload(e)}
+                      />
                     </div>
-                    {/* Hiển thị hình ảnh nếu có link */}
                     {editImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
-                        <img src={editImageUrl} alt={editName} style={{ maxWidth: '100%', height: 'auto' }} />
+                      <div style={{ marginTop: "10px" }}>
+                        <img
+                          src={editImageUrl}
+                          alt={editName}
+                          style={{ maxWidth: "100%", height: "auto" }}
+                        />
                       </div>
-                      {editImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh hiện tại:</strong></p>
-                          <img src={editImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </>
                 ) : (
                   <div>
-                    <label><strong>Tên:</strong></label>
+                    <label>
+                      <strong>Tên:</strong>
+                    </label>
                     <input
                       type="text"
                       value={editName}
@@ -1496,19 +1554,7 @@ const ProductManagement = () => {
               </div>
             </div>
           )}
-
-          {/* Nút "Thêm Mới" */}
-          <button className="button-add" onClick={handleOpenAddModal}>
-            {activeTab === "DichVu"
-              ? "Thêm Món Ăn Mới"
-              : activeTab === "QuaTang"
-                ? "Thêm Quà Tặng Mới"
-                : activeTab === "TrangTri"
-                  ? "Thêm Trang Trí Mới"
-                  : "Thêm Phòng/Sảnh Mới"
-            }
-          </button>
-
+  
           {/* Modal Thêm Mới */}
           {showAddModal && (
             <div className="detail-card">
@@ -1517,19 +1563,19 @@ const ProductManagement = () => {
                   className="detail-card-close"
                   onClick={() => setShowAddModal(false)}
                 >
-                  &times;
+                  ×
                 </button>
-                <h3>Thêm Mới {
-                  addFormType === "food" 
-                    ? "Dịch Vụ" 
-                    : addFormType === "gift" 
-                      ? "Quà Tặng" 
-                      : addFormType === "decorate" 
-                        ? "Trang Trí" 
-                        : "Phòng/Sảnh"
-                }</h3>
-                
-                {/* Image Preview */}
+                <h3>
+                  Thêm Mới{" "}
+                  {addFormType === "food"
+                    ? "Dịch Vụ"
+                    : addFormType === "gift"
+                    ? "Quà Tặng"
+                    : addFormType === "decorate"
+                    ? "Trang Trí"
+                    : "Phòng/Sảnh"}
+                </h3>
+  
                 {newImageUrl && (
                   <div className="detail-image-container">
                     <img
@@ -1538,16 +1584,19 @@ const ProductManagement = () => {
                       className="detail-image"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = 'https://placehold.co/400x300?text=Invalid+Image+URL';
+                        e.target.src =
+                          "https://placehold.co/400x300?text=Invalid+Image+URL";
                       }}
                     />
                   </div>
                 )}
-
+  
                 {addFormType === "food" && (
                   <>
                     <div>
-                      <label><strong>Tên:</strong></label>
+                      <label>
+                        <strong>Tên:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newName}
@@ -1556,7 +1605,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={newPrice}
@@ -1565,26 +1616,36 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Loại dịch vụ:</strong></label>
+                      <label>
+                        <strong>Loại dịch vụ:</strong>
+                      </label>
                       <select
                         value={newCate}
                         onChange={(e) => setNewCate(e.target.value)}
                       >
                         <option value="">-- Chọn loại dịch vụ --</option>
-                        {cateringCategories.map(category => (
+                        {cateringCategories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
                           </option>
                         ))}
                       </select>
                       {cateringCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: "0.8em",
+                            color: "#888",
+                            marginTop: "5px",
+                          }}
+                        >
                           Đang tải danh sách loại dịch vụ...
                         </div>
                       )}
                     </div>
                     <div>
-                      <label><strong>Mô tả:</strong></label>
+                      <label>
+                        <strong>Mô tả:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newDescription}
@@ -1592,52 +1653,44 @@ const ProductManagement = () => {
                         placeholder="Nhập mô tả"
                       />
                     </div>
-                    
                     <div className="upload-container mb-2">
-                    <label className="upload-label">
-                    <input
-                        type="file"
-                        accept="image/*"
-                        className="upload-input"
-                        onChange={(e) => handleImageUpload(e)}
-                      />
-        <span>Chọn ảnh</span>
+                      <label className="upload-label">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="upload-input"
+                          onChange={(e) => handleImageUpload(e)}
+                        />
+                        <span>Chọn ảnh</span>
                       </label>
-                          
                     </div>
-                    {/* Preview image if URL is entered */}
                     {newImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
+                      <div style={{ marginTop: "10px" }}>
                         <img
                           src={newImageUrl}
                           alt="Preview"
-                          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "200px",
+                            objectFit: "contain",
+                          }}
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
+                            e.target.src =
+                              "https://placehold.co/400x200?text=Invalid+Image+URL";
                           }}
                         />
-                        <label htmlFor="food-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
-                        </span>
                       </div>
-                      {newImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh đã chọn:</strong></p>
-                          <img src={newImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </>
                 )}
-
+  
                 {addFormType === "gift" && (
                   <>
                     <div>
-                      <label><strong>Tên:</strong></label>
+                      <label>
+                        <strong>Tên:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newName}
@@ -1646,7 +1699,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={newPrice}
@@ -1655,26 +1710,36 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Loại quà tặng:</strong></label>
+                      <label>
+                        <strong>Loại quà tặng:</strong>
+                      </label>
                       <select
                         value={newCate}
                         onChange={(e) => setNewCate(e.target.value)}
                       >
                         <option value="">-- Chọn loại quà tặng --</option>
-                        {giftCategories.map(category => (
+                        {giftCategories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
                           </option>
                         ))}
                       </select>
                       {giftCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: "0.8em",
+                            color: "#888",
+                            marginTop: "5px",
+                          }}
+                        >
                           Đang tải danh sách loại quà tặng...
                         </div>
                       )}
                     </div>
                     <div>
-                      <label><strong>Mô tả:</strong></label>
+                      <label>
+                        <strong>Mô tả:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newDescription}
@@ -1683,7 +1748,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Trạng thái:</strong></label>
+                      <label>
+                        <strong>Trạng thái:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newStatus}
@@ -1692,47 +1759,42 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh:</strong></label>
+                      <label>
+                        <strong>Ảnh:</strong>
+                      </label>
                       <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => handleImageUpload(e)}
-/>
-
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e)}
+                      />
                     </div>
-                    {/* Preview image if URL is entered */}
                     {newImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
+                      <div style={{ marginTop: "10px" }}>
                         <img
                           src={newImageUrl}
                           alt="Preview"
-                          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "200px",
+                            objectFit: "contain",
+                          }}
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
+                            e.target.src =
+                              "https://placehold.co/400x200?text=Invalid+Image+URL";
                           }}
                         />
-                        <label htmlFor="gift-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
-                        </span>
                       </div>
-                      {newImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh đã chọn:</strong></p>
-                          <img src={newImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </>
                 )}
-
+  
                 {addFormType === "decorate" && (
                   <>
                     <div>
-                      <label><strong>Tên:</strong></label>
+                      <label>
+                        <strong>Tên:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newName}
@@ -1741,7 +1803,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={newPrice}
@@ -1750,26 +1814,36 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Loại trang trí:</strong></label>
+                      <label>
+                        <strong>Loại trang trí:</strong>
+                      </label>
                       <select
                         value={newCate}
                         onChange={(e) => setNewCate(e.target.value)}
                       >
                         <option value="">-- Chọn loại trang trí --</option>
-                        {decorateCategories.map(category => (
+                        {decorateCategories.map((category) => (
                           <option key={category._id} value={category._id}>
                             {category.name}
                           </option>
                         ))}
                       </select>
                       {decorateCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                        <div
+                          style={{
+                            fontSize: "0.8em",
+                            color: "#888",
+                            marginTop: "5px",
+                          }}
+                        >
                           Đang tải danh sách loại trang trí...
                         </div>
                       )}
                     </div>
                     <div>
-                      <label><strong>Mô tả:</strong></label>
+                      <label>
+                        <strong>Mô tả:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newDescription}
@@ -1778,7 +1852,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Trạng thái:</strong></label>
+                      <label>
+                        <strong>Trạng thái:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newStatus}
@@ -1787,47 +1863,42 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh:</strong></label>
+                      <label>
+                        <strong>Ảnh:</strong>
+                      </label>
                       <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => handleImageUpload(e)}
-/>
-
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e)}
+                      />
                     </div>
-                    {/* Preview image if URL is entered */}
                     {newImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
+                      <div style={{ marginTop: "10px" }}>
                         <img
                           src={newImageUrl}
                           alt="Preview"
-                          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "200px",
+                            objectFit: "contain",
+                          }}
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
+                            e.target.src =
+                              "https://placehold.co/400x200?text=Invalid+Image+URL";
                           }}
                         />
-                        <label htmlFor="decorate-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
-                        </span>
                       </div>
-                      {newImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh đã chọn:</strong></p>
-                          <img src={newImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </>
                 )}
-
+  
                 {addFormType === "lobby" && (
                   <>
                     <div>
-                      <label><strong>Tên phòng/sảnh:</strong></label>
+                      <label>
+                        <strong>Tên phòng/sảnh:</strong>
+                      </label>
                       <input
                         type="text"
                         value={newName}
@@ -1836,7 +1907,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Giá:</strong></label>
+                      <label>
+                        <strong>Giá:</strong>
+                      </label>
                       <input
                         type="number"
                         value={newPrice}
@@ -1845,7 +1918,9 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Số lượng khách:</strong></label>
+                      <label>
+                        <strong>Số lượng khách:</strong>
+                      </label>
                       <input
                         type="number"
                         value={newDescription}
@@ -1854,53 +1929,45 @@ const ProductManagement = () => {
                       />
                     </div>
                     <div>
-                      <label><strong>Ảnh:</strong></label>
+                      <label>
+                        <strong>Ảnh:</strong>
+                      </label>
                       <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => handleImageUpload(e)}
-/>
-
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e)}
+                      />
                     </div>
-                    {/* Preview image if URL is entered */}
                     {newImageUrl && (
-                      <div style={{ marginTop: '10px' }}>
+                      <div style={{ marginTop: "10px" }}>
                         <img
                           src={newImageUrl}
                           alt="Preview"
-                          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }}
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: "200px",
+                            objectFit: "contain",
+                          }}
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/400x200?text=Invalid+Image+URL';
+                            e.target.src =
+                              "https://placehold.co/400x200?text=Invalid+Image+URL";
                           }}
                         />
-                        <label htmlFor="lobby-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {selectedImage ? selectedImage.name : "Chưa chọn file nào"}
-                        </span>
                       </div>
-                      {newImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh đã chọn:</strong></p>
-                          <img src={newImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </>
                 )}
-
+  
                 <div className="detail-card-buttons">
                   <button className="button-update" onClick={handleAdd}>
                     {addFormType === "food"
                       ? "Thêm Món Ăn"
                       : addFormType === "gift"
-                        ? "Thêm Quà Tặng"
-                        : addFormType === "decorate"
-                          ? "Thêm Trang Trí"
-                          : "Thêm Phòng/Sảnh"
-                    }
+                      ? "Thêm Quà Tặng"
+                      : addFormType === "decorate"
+                      ? "Thêm Trang Trí"
+                      : "Thêm Phòng/Sảnh"}
                   </button>
                 </div>
               </div>
