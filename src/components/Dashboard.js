@@ -53,16 +53,17 @@ const Dashboard = () => {
   const [transactionStats, setTransactionStats] = useState(null);
   const [revenueStats, setRevenueStats] = useState(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState([]);
-
   const [statsByStatus, setStatsByStatus] = useState(null);
   const [statsByUser, setStatsByUser] = useState(null);
   const [revenueByYear, setRevenueByYear] = useState(null);
   const [quarterRevenue, setQuarterRevenue] = useState([]);
   const [weekRevenue, setWeekRevenue] = useState([]);
+  const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
 
   const chosenStatus = 'active';
   const sampleUserId = '603d2f5e2e2e2e2e2e2e2e2e';
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -96,6 +97,11 @@ const Dashboard = () => {
         );
         setMonthlyRevenue(revenueByMonthData);
 
+        const currentMonthRevenueRes = await fetchRevenueByMonth(currentYear, currentMonth);
+        if (currentMonthRevenueRes.success && currentMonthRevenueRes.data) {
+          setCurrentMonthRevenue(currentMonthRevenueRes.data.totalDeposit);
+        }
+
         const statusRes = await fetchTransactionStatsByStatus(chosenStatus);
         setStatsByStatus(statusRes);
 
@@ -128,7 +134,7 @@ const Dashboard = () => {
       }
     };
     fetchData();
-  }, [chosenStatus, sampleUserId, currentYear]);
+  }, [chosenStatus, sampleUserId, currentYear, currentMonth]);
 
   // ============== TÍNH TOÁN DỮ LIỆU ==============
   const totalTransactions =
@@ -141,17 +147,6 @@ const Dashboard = () => {
       : 0;
   const newOrders = 45;
   
-  // Get the current month (1-12)
-  const currentMonth = new Date().getMonth() + 1; 
-  
-  // Get revenue for the current month
-  const currentMonthRevenue =
-    monthlyRevenue && monthlyRevenue.length && currentMonth <= monthlyRevenue.length
-      ? monthlyRevenue[currentMonth - 1]
-      : (monthlyRevenue && monthlyRevenue.length 
-         ? monthlyRevenue[monthlyRevenue.length - 1] 
-         : 0);
-
   // ============== BIỂU ĐỒ DOANH THU THEO THÁNG (Line Chart) ==============
   const revenueData = {
     labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
@@ -256,7 +251,7 @@ const Dashboard = () => {
       changeType: 'positive'
     },
     {
-      title: 'Doanh Thu Tháng',
+      title: 'Doanh Thu Tháng ' + currentMonth,
       value: currentMonthRevenue.toLocaleString() + ' VND',
       icon: faMoneyBillWave,
       color: 'var(--success-color)',
