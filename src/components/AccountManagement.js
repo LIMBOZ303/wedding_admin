@@ -1,8 +1,10 @@
 // src/components/AccountManagement.js
 import React, { useEffect, useState } from 'react';
-import { fetchAccounts } from '../api/users_api';
+import { fetchAccounts, getUserStatus } from '../api/users_api';
 import Swal from 'sweetalert2';
 import '../public/styles/AccountManagement.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch, faExclamationCircle, faUsers, faCircle, faClock } from '@fortawesome/free-solid-svg-icons';
 
 const AccountManagement = () => {
     const [accounts, setAccounts] = useState([]);
@@ -23,8 +25,30 @@ const AccountManagement = () => {
             });
             try {
                 const data = await fetchAccounts();
-                setAccounts(data);
-                setFilteredAccounts(data);
+                
+                // Thêm thông tin trạng thái từ API
+                const accountsWithStatus = await Promise.all(
+                    data.map(async (account) => {
+                        try {
+                            const statusResponse = await getUserStatus(account._id);
+                            if (statusResponse && statusResponse.status) {
+                                return {
+                                    ...account,
+                                    isOnline: statusResponse.data.isOnline,
+                                    lastActive: statusResponse.data.lastActive
+                                    // Đã loại bỏ inactiveTimeFormatted
+                                };
+                            }
+                            return account;
+                        } catch (err) {
+                            console.error(`Lỗi khi lấy trạng thái cho người dùng ${account._id}:`, err);
+                            return account;
+                        }
+                    })
+                );
+                
+                setAccounts(accountsWithStatus);
+                setFilteredAccounts(accountsWithStatus);
             } catch (err) {
                 setError('Không thể tải dữ liệu tài khoản.');
                 Swal.fire({
@@ -54,11 +78,25 @@ const AccountManagement = () => {
         }
     }, [searchTerm, accounts]);
 
+    // Format thời gian hoạt động
+    const formatLastActive = (lastActive) => {
+        if (!lastActive) return 'Không có dữ liệu';
+        
+        const date = new Date(lastActive);
+        return date.toLocaleString('vi-VN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     if (error) {
         return (
             <div className="account-management-container">
                 <div className="error-message">
-                    <i className="fa fa-exclamation-circle"></i>
+                    <FontAwesomeIcon icon={faExclamationCircle} />
                     <p>{error}</p>
                     <button onClick={() => window.location.reload()}>Thử lại</button>
                 </div>
@@ -73,7 +111,7 @@ const AccountManagement = () => {
             
             <div className="search-container">
                 <div className="search-box">
-                    <i className="fa fa-search"></i>
+                    <FontAwesomeIcon icon={faSearch} />
                     <input 
                         type="text" 
                         placeholder="Tìm kiếm theo tên hoặc email..." 
@@ -87,22 +125,39 @@ const AccountManagement = () => {
                 <table className="account-table">
                     <thead>
                         <tr>
+                            <th>Trạng thái</th>
                             <th>Tên</th>
                             <th>Email</th>
+                            <th>Hoạt động lần cuối</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filteredAccounts.map((account) => (
                             <tr key={account._id}>
+                                <td className="status-cell-prominent">
+                                    <div className="status-indicator">
+                                        <FontAwesomeIcon 
+                                            icon={faCircle} 
+                                            className={account.isOnline ? "status-online" : "status-offline"} 
+                                        />
+                                        <span>{account.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}</span>
+                                    </div>
+                                </td>
                                 <td>{account.name}</td>
                                 <td className="email-cell">{account.email}</td>
+                                <td className="last-active-cell">
+                                    <div className="last-active">
+                                        <FontAwesomeIcon icon={faClock} />
+                                        <span>{formatLastActive(account.lastActive)}</span>
+                                    </div>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             ) : (
                 <div className="empty-state">
-                    <i className="fa fa-users"></i>
+                    <FontAwesomeIcon icon={faUsers} />
                     <p>Không tìm thấy tài khoản nào.</p>
                 </div>
             )}

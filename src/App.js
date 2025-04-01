@@ -12,6 +12,7 @@ import Blog from './components/Blog';
 import Transactions from './components/Transactions';
 import CateringDetail from './components/CateringDetail';
 import AdminChat from './components/AdminChat';
+import UserStatusDashboard from './components/UserStatusDashboard';
 import { AppProvider } from './AppContext';
 import './public/styles/theme.css';
 import './public/styles/Slidebar.css';
@@ -32,6 +33,7 @@ const App = () => {
                     <Route path="/home" element={<Dashboard />} />
                     <Route path="/products" element={<ProductManagement />} />
                     <Route path="/accounts" element={<AccountManagement />} />
+                    <Route path="/user-status" element={<UserStatusDashboard />} />
                     <Route path="/plans" element={<PlansManagement />} />
                     <Route path="/statistics" element={<Statistics />} />
                     <Route path="/blog" element={<Blog />} />

@@ -14,7 +14,8 @@ import {
   faSun,
   faBars,
   faChevronLeft,
-  faComments
+  faComments,
+  faUserCheck
 } from '@fortawesome/free-solid-svg-icons';
 import '../public/styles/Slidebar.css';
 import { AppContext } from '../AppContext';
@@ -52,6 +53,7 @@ const Sidebar = () => {
     { path: '/home', icon: faHome, text: 'Trang chủ' },
     { path: '/products', icon: faBoxes, text: 'Quản Lý Dịch Vụ' },
     { path: '/accounts', icon: faUsers, text: 'Quản Lý Tài Khoản' },
+    { path: '/user-status', icon: faUserCheck, text: 'Trạng Thái Người Dùng' },
     { path: '/plans', icon: faBoxArchive, text: 'Quản Lý Kế Hoạch' },
     { path: '/statistics', icon: faChartBar, text: 'Thống Kê' },
     { path: '/blog', icon: faBlog, text: 'Blog' },

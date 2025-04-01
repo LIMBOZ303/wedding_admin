@@ -56,3 +56,58 @@ export const getUserById = async (userId) => {
         return null;
     }
 };   
+
+// Lấy thông tin trạng thái hoạt động của người dùng
+export const getUserStatus = async (userId) => {
+    try {
+        const response = await axios.get(`${API_URL}/status/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi lấy trạng thái người dùng:', error);
+        throw error;
+    }
+};
+
+// Đánh dấu người dùng là online
+export const setUserOnline = async (userId) => {
+    try {
+        const response = await axios.patch(`${API_URL}/status/online/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi đánh dấu người dùng là online:', error);
+        throw error;
+    }
+};
+
+// Đánh dấu người dùng là offline
+export const setUserOffline = async (userId) => {
+    try {
+        const response = await axios.patch(`${API_URL}/status/offline/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi đánh dấu người dùng là offline:', error);
+        throw error;
+    }
+};
+
+// Cập nhật thời gian hoạt động của người dùng
+export const updateUserActivity = async (userId) => {
+    try {
+        const response = await axios.patch(`${API_URL}/status/active/${userId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi cập nhật thời gian hoạt động:', error);
+        throw error;
+    }
+};
+
+// Lấy danh sách người dùng đang online
+export const getOnlineUsers = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/online/all`);
+        return response.data;
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách người dùng online:', error);
+        throw error;
+    }
+};   
