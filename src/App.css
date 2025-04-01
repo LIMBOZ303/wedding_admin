@@ -259,3 +259,7 @@ input:focus, select:focus, textarea:focus {
     margin-left: 0;
   }
 }
+
+.recent-orders {
+  margin-bottom: 32px;
+}

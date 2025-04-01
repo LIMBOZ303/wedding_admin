@@ -1,4 +1,3 @@
-// src/components/AccountManagement.js
 import React, { useEffect, useState } from 'react';
 import { fetchAccounts, getUserStatus } from '../api/users_api';
 import Swal from 'sweetalert2';
@@ -11,56 +10,61 @@ const AccountManagement = () => {
     const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // Lấy danh sách tài khoản từ API
-    useEffect(() => {
-        const loadAccounts = async () => {
-            // Hiển thị SweetAlert2 Loading
-            Swal.fire({
-                title: 'Đang tải dữ liệu...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            try {
-                const data = await fetchAccounts();
-                
-                // Thêm thông tin trạng thái từ API
-                const accountsWithStatus = await Promise.all(
-                    data.map(async (account) => {
-                        try {
-                            const statusResponse = await getUserStatus(account._id);
-                            if (statusResponse && statusResponse.status) {
-                                return {
-                                    ...account,
-                                    isOnline: statusResponse.data.isOnline,
-                                    lastActive: statusResponse.data.lastActive
-                                    // Đã loại bỏ inactiveTimeFormatted
-                                };
-                            }
-                            return account;
-                        } catch (err) {
-                            console.error(`Lỗi khi lấy trạng thái cho người dùng ${account._id}:`, err);
-                            return account;
-                        }
-                    })
-                );
-                
-                setAccounts(accountsWithStatus);
-                setFilteredAccounts(accountsWithStatus);
-            } catch (err) {
-                setError('Không thể tải dữ liệu tài khoản.');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi',
-                    text: 'Không thể tải dữ liệu tài khoản.',
-                });
-            } finally {
-                Swal.close();
+    // Định nghĩa hàm loadAccounts ở mức component
+    const loadAccounts = async () => {
+        // Hiển thị SweetAlert2 Loading
+        setLoading(true);
+        Swal.fire({
+            title: 'Đang tải dữ liệu...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
             }
-        };
+        });
+        try {
+            const data = await fetchAccounts();
+            
+            // Thêm thông tin trạng thái từ API
+            const accountsWithStatus = await Promise.all(
+                data.map(async (account) => {
+                    try {
+                        const statusResponse = await getUserStatus(account._id);
+                        if (statusResponse && statusResponse.status) {
+                            return {
+                                ...account,
+                                isOnline: statusResponse.data.isOnline,
+                                lastActive: statusResponse.data.lastActive
+                                // Đã loại bỏ inactiveTimeFormatted
+                            };
+                        }
+                        return account;
+                    } catch (err) {
+                        console.error(`Lỗi khi lấy trạng thái cho người dùng ${account._id}:`, err);
+                        return account;
+                    }
+                })
+            );
+            
+            setAccounts(accountsWithStatus);
+            setFilteredAccounts(accountsWithStatus);
+            setError('');
+        } catch (err) {
+            setError('Không thể tải dữ liệu tài khoản.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: 'Không thể tải dữ liệu tài khoản.',
+            });
+        } finally {
+            Swal.close();
+            setLoading(false);
+        }
+    };
 
+    // Lấy danh sách tài khoản từ API khi component được mount
+    useEffect(() => {
         loadAccounts();
     }, []);
 
@@ -70,7 +74,7 @@ const AccountManagement = () => {
             setFilteredAccounts(accounts);
         } else {
             const filtered = accounts.filter(
-                account => 
+                account =>
                     account.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     account.email.toLowerCase().includes(searchTerm.toLowerCase())
             );
@@ -106,7 +110,17 @@ const AccountManagement = () => {
 
     return (
         <div className="account-management-container">
-            <h2>Quản Lý Tài Khoản</h2>
+            <div className="header-container">
+                <h2>Quản Lý Tài Khoản</h2>
+                <button 
+                    className="refresh-button" 
+                    onClick={loadAccounts}
+                    title="Tải lại giao diện"
+                    disabled={loading}
+                >
+                    <i className="fa fa-refresh"></i>
+                </button>
+            </div>
             <h3>Danh Sách Tài Khoản Người Dùng</h3>
             
             <div className="search-container">

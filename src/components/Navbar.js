@@ -22,8 +22,6 @@ const Navbar = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // Implement search functionality
-    console.log('Searching for:', searchQuery);
   };
 
   const handleLogout = () => {
