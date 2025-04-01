@@ -34,6 +34,7 @@ import {
   fetchRevenueByMonth,
   fetchRevenueByWeek
 } from '../api/transaction_api';
+import LatestOrder from './LatestOrder';
 
 ChartJS.register(
   CategoryScale,
@@ -392,64 +393,18 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="chart-card service-chart">
+        {/* <div className="chart-card service-chart">
           <div className="chart-header">
             <h3>Phân bổ dịch vụ</h3>
           </div>
           <div className="chart-container">
             <Doughnut data={serviceData} options={serviceOptions} />
           </div>
-        </div>
+        </div> */}
 
-        <div className="chart-card recent-orders">
-          <div className="chart-header">
-            <h3>Đơn hàng gần đây</h3>
-          </div>
-          <div className="recent-orders-list">
-            <table>
-              <thead>
-                <tr>
-                  <th>Mã đơn</th>
-                  <th>Khách hàng</th>
-                  <th>Dịch vụ</th>
-                  <th>Giá trị</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>#WD1205</td>
-                  <td>Nguyễn Văn A</td>
-                  <td>Combo tiệc cưới</td>
-                  <td>5,000,000đ</td>
-                  <td><span className="status-badge completed">Hoàn thành</span></td>
-                </tr>
-                <tr>
-                  <td>#WD1206</td>
-                  <td>Trần Thị B</td>
-                  <td>Chụp ảnh cưới</td>
-                  <td>3,500,000đ</td>
-                  <td><span className="status-badge pending">Đang xử lý</span></td>
-                </tr>
-                <tr>
-                  <td>#WD1207</td>
-                  <td>Lê Văn C</td>
-                  <td>Trang trí sảnh</td>
-                  <td>2,800,000đ</td>
-                  <td><span className="status-badge in-progress">Đang thực hiện</span></td>
-                </tr>
-                <tr>
-                  <td>#WD1208</td>
-                  <td>Phạm Thị D</td>
-                  <td>Combo tiệc cưới</td>
-                  <td>6,200,000đ</td>
-                  <td><span className="status-badge pending">Đang xử lý</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
+
+      <LatestOrder />
 
       <div className="chart-card detail-chart">
         <div className="chart-header">
