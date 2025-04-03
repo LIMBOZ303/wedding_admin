@@ -12,9 +12,7 @@ const AccountManagement = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Định nghĩa hàm loadAccounts ở mức component
     const loadAccounts = async () => {
-        // Hiển thị SweetAlert2 Loading
         setLoading(true);
         Swal.fire({
             title: 'Đang tải dữ liệu...',
@@ -25,7 +23,7 @@ const AccountManagement = () => {
         });
         try {
             const data = await fetchAccounts();
-            
+
             // Thêm thông tin trạng thái từ API
             const accountsWithStatus = await Promise.all(
                 data.map(async (account) => {
@@ -36,7 +34,6 @@ const AccountManagement = () => {
                                 ...account,
                                 isOnline: statusResponse.data.isOnline,
                                 lastActive: statusResponse.data.lastActive
-                                // Đã loại bỏ inactiveTimeFormatted
                             };
                         }
                         return account;
@@ -46,7 +43,7 @@ const AccountManagement = () => {
                     }
                 })
             );
-            
+
             setAccounts(accountsWithStatus);
             setFilteredAccounts(accountsWithStatus);
             setError('');
@@ -63,12 +60,10 @@ const AccountManagement = () => {
         }
     };
 
-    // Lấy danh sách tài khoản từ API khi component được mount
     useEffect(() => {
         loadAccounts();
     }, []);
 
-    // Lọc tài khoản khi người dùng tìm kiếm
     useEffect(() => {
         if (searchTerm.trim() === '') {
             setFilteredAccounts(accounts);
@@ -85,7 +80,7 @@ const AccountManagement = () => {
     // Format thời gian hoạt động
     const formatLastActive = (lastActive) => {
         if (!lastActive) return 'Không có dữ liệu';
-        
+
         const date = new Date(lastActive);
         return date.toLocaleString('vi-VN', {
             year: 'numeric',
@@ -112,8 +107,8 @@ const AccountManagement = () => {
         <div className="account-management-container">
             <div className="header-container">
                 <h2>Quản Lý Tài Khoản</h2>
-                <button 
-                    className="refresh-button" 
+                <button
+                    className="refresh-button"
                     onClick={loadAccounts}
                     title="Tải lại giao diện"
                     disabled={loading}
@@ -122,13 +117,13 @@ const AccountManagement = () => {
                 </button>
             </div>
             <h3>Danh Sách Tài Khoản Người Dùng</h3>
-            
+
             <div className="search-container">
                 <div className="search-box">
                     <FontAwesomeIcon icon={faSearch} />
-                    <input 
-                        type="text" 
-                        placeholder="Tìm kiếm theo tên hoặc email..." 
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm theo tên hoặc email..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -150,9 +145,9 @@ const AccountManagement = () => {
                             <tr key={account._id}>
                                 <td className="status-cell-prominent">
                                     <div className="status-indicator">
-                                        <FontAwesomeIcon 
-                                            icon={faCircle} 
-                                            className={account.isOnline ? "status-online" : "status-offline"} 
+                                        <FontAwesomeIcon
+                                            icon={faCircle}
+                                            className={account.isOnline ? "status-online" : "status-offline"}
                                         />
                                         <span>{account.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}</span>
                                     </div>

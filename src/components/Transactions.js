@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 import '../public/styles/Transaction.css';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import { fetchTransaction } from '../api/transaction_api';
-import LoadingSpinner from '../components/LoadingSpinner';
+import LoadingSpinner from './LoadingSpinner';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faSync,
@@ -244,7 +244,7 @@ function Transactions() {
                     onClick={getTransactions}
                     disabled={loading}
                 >
-                    <FontAwesomeIcon style={{width: 50, height: 50}} icon={faSync} spin={loading} /></button>
+                    <FontAwesomeIcon style={{ width: 50, height: 50 }} icon={faSync} spin={loading} /></button>
             </div>
 
             <div className="filters-container">

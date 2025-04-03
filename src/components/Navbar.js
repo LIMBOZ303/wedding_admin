@@ -25,7 +25,6 @@ const Navbar = () => {
   };
 
   const handleLogout = () => {
-    // Implement logout
     navigate('/');
   };
 
@@ -39,7 +38,6 @@ const Navbar = () => {
     if (showUserMenu) setShowUserMenu(false);
   };
 
-  // Chuyển đến trang chat và đánh dấu đã đọc tất cả tin nhắn
   const navigateToChat = () => {
     navigate('/admin-chat');
     markAllMessagesAsRead();
@@ -57,22 +55,7 @@ const Navbar = () => {
 
   return (
     <nav className="navbar">
-      <div className="navbar-search">
-        <form onSubmit={handleSearch}>
-          <div className="search-input">
-            <FontAwesomeIcon icon={faSearch} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </form>
-      </div>
-
       <div className="navbar-actions">
-        {/* Chat Button */}
         <div className="chat-container">
           <button 
             className="chat-button" 
@@ -86,43 +69,6 @@ const Navbar = () => {
           </button>
         </div>
 
-        <div className="notification-container">
-          <button 
-            className="notification-button" 
-            onClick={toggleNotifications}
-            aria-label="Thông báo"
-          >
-            <FontAwesomeIcon icon={faBell} />
-            {unreadNotifications > 0 && (
-              <span className="notification-badge">{unreadNotifications}</span>
-            )}
-          </button>
-
-          {showNotifications && (
-            <div className="dropdown-menu notification-menu">
-              <div className="dropdown-header">
-                <h3>Thông báo</h3>
-                <button className="mark-as-read">Đánh dấu đã đọc</button>
-              </div>
-              <div className="notification-list">
-                {notifications.length === 0 ? (
-                  <p className="no-notifications">Không có thông báo mới</p>
-                ) : (
-                  notifications.map((notification) => (
-                    <div 
-                      key={notification.id} 
-                      className={`notification-item ${notification.read ? 'read' : 'unread'}`}
-                    >
-                      <p className="notification-message">{notification.message}</p>
-                      <span className="notification-time">{notification.time}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
         <div className="profile-container">
           <button 
             className="profile-button" 
@@ -134,23 +80,6 @@ const Navbar = () => {
             </div>
             <span className="username">{user?.name || 'Admin'}</span>
           </button>
-
-          {showUserMenu && (
-            <div className="dropdown-menu profile-menu">
-              <div className="menu-item">
-                <FontAwesomeIcon icon={faUser} />
-                <span>Hồ sơ</span>
-              </div>
-              <div className="menu-item">
-                <FontAwesomeIcon icon={faCog} />
-                <span>Cài đặt</span>
-              </div>
-              <div className="menu-item logout" onClick={handleLogout}>
-                <FontAwesomeIcon icon={faSignOutAlt} />
-                <span>Đăng xuất</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </nav>
