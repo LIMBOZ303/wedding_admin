@@ -2,7 +2,15 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
-export const AppContext = createContext();
+export const AppContext = createContext({
+  user: null,
+  setUser: () => {},
+  darkMode: false,
+  setDarkMode: () => {},
+  unreadMessages: 0,
+  setUnreadMessages: () => {},
+  markAllMessagesAsRead: () => {}
+});
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -79,16 +87,19 @@ export const AppProvider = ({ children }) => {
     setUnreadMessages(0);
   };
 
+  const contextValue = {
+    user, 
+    setUser, 
+    darkMode, 
+    setDarkMode, 
+    socket,
+    unreadMessages,
+    setUnreadMessages,
+    markAllMessagesAsRead
+  };
+
   return (
-    <AppContext.Provider value={{ 
-      user, 
-      setUser, 
-      darkMode, 
-      setDarkMode, 
-      socket,
-      unreadMessages,
-      markAllMessagesAsRead
-    }}>
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
