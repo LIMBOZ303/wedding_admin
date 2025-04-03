@@ -1,4 +1,3 @@
-// Login.js
 import React, { useState, useContext } from 'react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +10,7 @@ const Login = () => {
   const [password, setPassword] = useState('123456');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // Trạng thái để điều khiển ẩn/hiện mật khẩu
   const navigate = useNavigate();
   const { setUser } = useContext(AppContext);
 
@@ -33,9 +33,7 @@ const Login = () => {
       const response = await login(email, password);
 
       if (response && response.status === true) {
-        // Lưu thông tin user vào AppContext
         setUser(response.user);
-        // Nếu cần, lưu vào localStorage để các API khác lấy được thông tin
         localStorage.setItem('userId', response.user._id);
         localStorage.setItem('userRole', response.user.role);
 
@@ -78,18 +76,26 @@ const Login = () => {
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="Nhập email hoặc tên người dùng"
             required
           />
         </div>
         <div className="input-group">
           <label htmlFor="password">Mật khẩu:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="password-input-container">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nhập mật khẩu"
+              required
+            />
+            <i
+              className={`fa ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}
+              onClick={() => setShowPassword(!showPassword)}
+            ></i>
+          </div>
         </div>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={loading} className="submit-button">

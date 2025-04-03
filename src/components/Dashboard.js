@@ -22,8 +22,7 @@ import {
   Filler
 } from 'chart.js';
 import '../public/styles/Home.css';
-import Swal from 'sweetalert2';
-
+import LatestOrder from './LatestOrder';
 import {
   fetchTransactionStats,
   fetchTransactionStatsByStatus,
@@ -34,7 +33,6 @@ import {
   fetchRevenueByMonth,
   fetchRevenueByWeek
 } from '../api/transaction_api';
-import LatestOrder from './LatestOrder';
 
 ChartJS.register(
   CategoryScale,
@@ -60,6 +58,17 @@ const Dashboard = () => {
   const [weekRevenue, setWeekRevenue] = useState([]);
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
 
+  // Trạng thái loading riêng biệt cho từng phần dữ liệu từ API
+  const [loadingTransactionStats, setLoadingTransactionStats] = useState(true);
+  const [loadingRevenueStats, setLoadingRevenueStats] = useState(true);
+  const [loadingMonthlyRevenue, setLoadingMonthlyRevenue] = useState(true);
+  const [loadingCurrentMonthRevenue, setLoadingCurrentMonthRevenue] = useState(true);
+  const [loadingStatsByStatus, setLoadingStatsByStatus] = useState(true);
+  const [loadingStatsByUser, setLoadingStatsByUser] = useState(true);
+  const [loadingRevenueByYear, setLoadingRevenueByYear] = useState(true);
+  const [loadingQuarterRevenue, setLoadingQuarterRevenue] = useState(true);
+  const [loadingWeekRevenue, setLoadingWeekRevenue] = useState(true);
+
   const chosenStatus = 'active';
   const sampleUserId = '603d2f5e2e2e2e2e2e2e2e2e';
   const currentYear = new Date().getFullYear();
@@ -67,28 +76,25 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      Swal.fire({
-        title: 'Đang tải dữ liệu thống kê...',
-        position: 'center',
-        width: '300px',
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
-      });
-
       try {
+        // Fetch Transaction Stats
+        setLoadingTransactionStats(true);
         const transResponse = await fetchTransactionStats();
         if (transResponse.success) {
           setTransactionStats(transResponse.data);
         }
+        setLoadingTransactionStats(false);
 
+        // Fetch Revenue Stats
+        setLoadingRevenueStats(true);
         const revenueResponse = await fetchRevenueStats();
         if (revenueResponse.success) {
           setRevenueStats(revenueResponse.data);
         }
+        setLoadingRevenueStats(false);
 
+        // Fetch Monthly Revenue
+        setLoadingMonthlyRevenue(true);
         const revenueByMonthData = await Promise.all(
           Array.from({ length: 6 }, async (_, i) => {
             const res = await fetchRevenueByMonth(currentYear, i + 1);
@@ -96,21 +102,36 @@ const Dashboard = () => {
           })
         );
         setMonthlyRevenue(revenueByMonthData);
+        setLoadingMonthlyRevenue(false);
 
+        // Fetch Current Month Revenue
+        setLoadingCurrentMonthRevenue(true);
         const currentMonthRevenueRes = await fetchRevenueByMonth(currentYear, currentMonth);
         if (currentMonthRevenueRes.success && currentMonthRevenueRes.data) {
           setCurrentMonthRevenue(currentMonthRevenueRes.data.totalDeposit);
         }
+        setLoadingCurrentMonthRevenue(false);
 
+        // Fetch Stats by Status
+        setLoadingStatsByStatus(true);
         const statusRes = await fetchTransactionStatsByStatus(chosenStatus);
         setStatsByStatus(statusRes);
+        setLoadingStatsByStatus(false);
 
+        // Fetch Stats by User
+        setLoadingStatsByUser(true);
         const userRes = await fetchTransactionStatsByUser(sampleUserId);
         setStatsByUser(userRes);
+        setLoadingStatsByUser(false);
 
+        // Fetch Revenue by Year
+        setLoadingRevenueByYear(true);
         const revYearRes = await fetchRevenueByYear(currentYear);
         setRevenueByYear(revYearRes);
+        setLoadingRevenueByYear(false);
 
+        // Fetch Quarter Revenue
+        setLoadingQuarterRevenue(true);
         const quarterData = await Promise.all(
           Array.from({ length: 4 }, async (_, i) => {
             const res = await fetchRevenueByQuarter(currentYear, i + 1);
@@ -118,7 +139,10 @@ const Dashboard = () => {
           })
         );
         setQuarterRevenue(quarterData);
+        setLoadingQuarterRevenue(false);
 
+        // Fetch Week Revenue
+        setLoadingWeekRevenue(true);
         const weekData = await Promise.all(
           Array.from({ length: 53 }, async (_, i) => {
             const res = await fetchRevenueByWeek(currentYear, i + 1);
@@ -126,17 +150,16 @@ const Dashboard = () => {
           })
         );
         setWeekRevenue(weekData);
+        setLoadingWeekRevenue(false);
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-      } finally {
-        Swal.close();
       }
     };
     fetchData();
   }, [chosenStatus, sampleUserId, currentYear, currentMonth]);
 
-  // ============== TÍNH TOÁN DỮ LIỆU ==============
+  // Tính toán dữ liệu
   const totalTransactions =
     transactionStats && transactionStats.byStatus
       ? transactionStats.byStatus.reduce((sum, stat) => sum + stat.count, 0)
@@ -146,8 +169,8 @@ const Dashboard = () => {
       ? transactionStats.byUser.length
       : 0;
   const newOrders = 45;
-  
-  // ============== BIỂU ĐỒ DOANH THU THEO THÁNG (Line Chart) ==============
+
+  // Biểu đồ doanh thu theo tháng (Line Chart)
   const revenueData = {
     labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
     datasets: [
@@ -178,7 +201,7 @@ const Dashboard = () => {
     },
   };
 
-  // ============== BIỂU ĐỒ ĐƠN HÀNG (Bar Chart) ==============
+  // Biểu đồ đơn hàng (Bar Chart)
   const orderData = {
     labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
     datasets: [
@@ -197,7 +220,7 @@ const Dashboard = () => {
     scales: { y: { beginAtZero: true } },
   };
 
-  // ============== BIỂU ĐỒ PHÂN BỔ DỊCH VỤ (Doughnut Chart) ==============
+  // Biểu đồ phân bổ dịch vụ (Doughnut Chart)
   const serviceData = {
     labels: ['Trang trí', 'Chụp ảnh', 'Đặt tiệc', 'Makeup', 'Trang phục'],
     datasets: [
@@ -230,7 +253,7 @@ const Dashboard = () => {
     },
   };
 
-  // ============== CÁC THẺ THỐNG KÊ (STATS CARDS) ==============
+  // Thẻ thống kê (Stats Cards)
   const statsCards = [
     {
       title: 'Tổng khách hàng',
@@ -270,7 +293,7 @@ const Dashboard = () => {
     },
   ];
 
-  // ============== BIỂU ĐỒ DOANH THU THEO QUÝ (Bar Chart) ==============
+  // Biểu đồ doanh thu theo quý (Bar Chart)
   const quarterLabels = ['Quý 1', 'Quý 2', 'Quý 3', 'Quý 4'];
   const quarterData = {
     labels: quarterLabels,
@@ -298,7 +321,7 @@ const Dashboard = () => {
     },
   };
 
-  // ============== BIỂU ĐỒ DOANH THU THEO TUẦN (Line Chart) ==============
+  // Biểu đồ doanh thu theo tuần (Line Chart)
   const weekLabels = Array.from({ length: 53 }, (_, i) => `Tuần ${i + 1}`);
   const weekData = {
     labels: weekLabels,
@@ -346,25 +369,33 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="stats-cards">
         {statsCards.map((card, index) => (
           <div className="stats-card" key={index}>
-            <div className="stats-card-content">
-              <div className="stats-card-info">
-                <h3>{card.title}</h3>
-                <p className="stats-value">{card.value}</p>
-                <span className={`stats-change ${card.changeType}`}>
-                  {card.change} so với tháng trước
-                </span>
+            {(card.title === 'Tổng khách hàng' || card.title === 'Giao dịch') && loadingTransactionStats ? (
+              <div className="spinner"></div>
+            ) : card.title.includes('Doanh Thu') && loadingCurrentMonthRevenue ? (
+              <div className="spinner"></div>
+            ) : (
+              <div className="stats-card-content">
+                <div className="stats-card-info">
+                  <h3>{card.title}</h3>
+                  <p className="stats-value">{card.value}</p>
+                  <span className={`stats-change ${card.changeType}`}>
+                    {card.change} so với tháng trước
+                  </span>
+                </div>
+                <div className="stats-card-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
+                  <FontAwesomeIcon icon={card.icon} />
+                </div>
               </div>
-              <div className="stats-card-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
-                <FontAwesomeIcon icon={card.icon} />
-              </div>
-            </div>
+            )}
           </div>
         ))}
       </div>
 
+      {/* Charts Grid */}
       <div className="charts-grid">
         <div className="chart-card revenue-chart">
           <div className="chart-header">
@@ -373,7 +404,11 @@ const Dashboard = () => {
             </h3>
           </div>
           <div className="chart-container">
-            <Line data={revenueData} options={revenueOptions} />
+            {loadingMonthlyRevenue ? (
+              <div className="spinner"></div>
+            ) : (
+              <Line data={revenueData} options={revenueOptions} />
+            )}
           </div>
         </div>
 
@@ -384,38 +419,38 @@ const Dashboard = () => {
             </h3>
           </div>
           <div className="chart-container">
-            <Bar data={orderData} options={orderOptions} />
+            <Bar data={orderData} options={orderOptions} /> {/* Dữ liệu tĩnh, không cần loading */}
           </div>
         </div>
-
-        {/* <div className="chart-card service-chart">
-          <div className="chart-header">
-            <h3>Phân bổ dịch vụ</h3>
-          </div>
-          <div className="chart-container">
-            <Doughnut data={serviceData} options={serviceOptions} />
-          </div>
-        </div> */}
-
       </div>
 
       <LatestOrder />
 
+      {/* Quarter Revenue Chart */}
       <div className="chart-card detail-chart">
         <div className="chart-header">
           <h3>Doanh thu theo quý</h3>
         </div>
         <div className="chart-container" style={{ height: '300px' }}>
-          <Bar data={quarterData} options={quarterOptions} />
+          {loadingQuarterRevenue ? (
+            <div className="spinner"></div>
+          ) : (
+            <Bar data={quarterData} options={quarterOptions} />
+          )}
         </div>
       </div>
 
+      {/* Week Revenue Chart */}
       <div className="chart-card detail-chart">
         <div className="chart-header">
           <h3>Doanh thu theo tuần</h3>
         </div>
         <div className="chart-container" style={{ height: '300px' }}>
-          <Line data={weekData} options={weekOptions} />
+          {loadingWeekRevenue ? (
+            <div className="spinner"></div>
+          ) : (
+            <Line data={weekData} options={weekOptions} />
+          )}
         </div>
       </div>
     </div>

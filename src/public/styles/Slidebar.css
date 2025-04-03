@@ -5,10 +5,9 @@
     width: 300px;
     height: 100%;
     background-color: #ffffff;
-    padding-top: 20px;
-    color: white;
+    padding-top: 0; /* Đã xóa padding-top để tránh khoảng trống không cần thiết */
+    color: #333; /* Thay đổi màu chữ phù hợp với nền trắng */
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
     z-index: 1000;
     display: flex;
     flex-direction: column;
@@ -35,6 +34,7 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    overflow: hidden; /* Tránh logo bị tràn */
 }
 
 .logo {
@@ -43,6 +43,8 @@
     font-weight: 700;
     margin: 0;
     white-space: nowrap;
+    overflow: hidden; /* Tránh chữ bị tràn */
+    text-overflow: ellipsis; /* Hiển thị dấu ... khi bị cắt */
 }
 
 .collapse-btn,
@@ -58,6 +60,7 @@
     align-items: center;
     justify-content: center;
     transition: background-color var(--transition-fast), color var(--transition-fast);
+    flex-shrink: 0; /* Ngăn nút bị co lại khi không đủ không gian */
 }
 
 .collapse-btn:hover,
@@ -76,63 +79,24 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--spacing-md) 0;
-    scrollbar-width: none;
+    scrollbar-width: thin; /* Thu nhỏ thanh cuộn */
     -ms-overflow-style: none;
+}
+
+/* Tùy chỉnh thanh cuộn cho hiệu ứng tốt hơn */
+.sidebar-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
 }
 
 .menu-list {
     list-style: none;
     padding: 0;
-}
-
-.sidebar li {
-    margin: 15px 0;
-}
-
-.sidebar a {
-    position: relative;
-    color: white;
-    text-decoration: none;
-    font-size: 18px;
-    padding: 10px 20px;
-    display: block;
-    transition: background-color 0.3s, color 0.3s;
-}
-
-.sidebar a::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 0%;
-    height: 3px;
-    /* Tăng độ dày viền từ 2px lên 3px */
-    background-color: white;
-    transition: width 0.3s;
-}
-
-.sidebar a:hover {
-    background-color: #3498db;
-}
-
-.sidebar a:hover::after {
-    width: 100%;
-}
-
-.menu-button {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    background-color: #ffffff;
-    border: none;
-    color: #000000;
-    font-size: 24px;
-    cursor: pointer;
-    border-radius: 4px;
-    z-index: 1001;
-    transition: right 0.3s ease;
+    margin: 0; /* Loại bỏ margin mặc định */
 }
 
 .menu-item {
@@ -147,6 +111,7 @@
     transition: color var(--transition-fast), background-color var(--transition-fast);
     border-left: 3px solid transparent;
     text-decoration: none;
+    overflow: hidden; /* Ngăn chữ bị tràn */
 }
 
 .sidebar.closed .menu-item a {
@@ -173,6 +138,7 @@
     font-size: var(--font-size-lg);
     width: 24px;
     margin-right: var(--spacing-md);
+    flex-shrink: 0; /* Ngăn icon bị co lại */
 }
 
 .sidebar.closed .menu-icon {
@@ -181,6 +147,9 @@
 
 .menu-text {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Hiển thị dấu ... khi bị cắt */
+    max-width: calc(100% - 40px); /* Chừa không gian cho icon */
 }
 
 /* Sidebar Footer */
@@ -209,6 +178,9 @@
 
 .theme-toggle span {
     margin-left: var(--spacing-md);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar.closed .theme-toggle {
@@ -220,7 +192,20 @@
     display: none;
 }
 
-/* Responsive Styles */
+/* Main Content Adjustment */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 20px;
+    transition: margin-left var(--transition-normal), width var(--transition-normal);
+    width: calc(100% - var(--sidebar-width));
+}
+
+.sidebar.closed ~ .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+    width: calc(100% - var(--sidebar-collapsed-width));
+}
+
+/* Responsive Styles - Tối ưu hóa */
 @media screen and (max-width: 768px) {
     .sidebar {
         transform: translateX(calc(-1 * var(--sidebar-width)));
@@ -233,122 +218,35 @@
     .sidebar.closed {
         transform: translateX(calc(-1 * var(--sidebar-collapsed-width)));
     }
-}
-
-/* Dark Mode Styles */
-.dark-mode .sidebar {
-    background-color: var(--dark-background-secondary);
-}
-
-.dark-mode .logo {
-    color: var(--dark-primary-color);
-}
-
-.dark-mode .menu-item.active a {
-    background-color: var(--dark-primary-light);
-    color: var(--dark-primary-color);
-    border-left-color: var(--dark-primary-color);
-}
-
-.dark-mode .menu-item a:hover,
-.dark-mode .collapse-btn:hover,
-.dark-mode .expand-btn:hover,
-.dark-mode .theme-toggle:hover {
-    background-color: var(--dark-primary-light);
-    color: var(--dark-primary-color);
-}
-
-.dark-mode .sidebar-header,
-.dark-mode .sidebar-footer {
-    border-color: var(--dark-border-color);
-}
-
-/* Responsive Main Content */
-.main-content {
-    margin-left: 250px;
-    padding: 20px;
-    transition: margin-left 0.3s ease;
-    width: calc(100% - 250px);
-}
-
-.sidebar.closed~.main-content,
-.main-content.sidebar-closed {
-    margin-left: 0;
-    width: 100%;
-}
-
-/* Responsive for all containers inside each component */
-.home-container,
-.dashboard-container,
-.category-container,
-.product-container,
-.account-container,
-.combo-container,
-.statistics-container,
-.blog-container,
-.transaction-container {
-    transition: margin-left 0.3s ease;
-}
-
-.sidebar.closed~.main-content .home-container,
-.sidebar.closed~.main-content .dashboard-container,
-.sidebar.closed~.main-content .category-container,
-.sidebar.closed~.main-content .product-container,
-.sidebar.closed~.main-content .account-container,
-.sidebar.closed~.main-content .combo-container,
-.sidebar.closed~.main-content .statistics-container,
-.sidebar.closed~.main-content .blog-container,
-.sidebar.closed~.main-content .transaction-container {
-    margin-left: 0;
-}
-
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        box-shadow: none;
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-    }
-
-    .sidebar.closed {
-        transform: translateX(-100%);
-    }
-
+    
     .main-content {
         margin-left: 0;
         width: 100%;
         padding: 15px;
     }
-
-    .menu-button {
-        top: 10px;
-        right: 10px;
-    }
-
-    .sidebar.closed .menu-button {
-        right: -50px;
-        top: 10px;
-        background-color: rgba(44, 62, 80, 0.8);
-    }
 }
 
-/* Style cho nút refresh nằm bên phải */
-.refresh-button {
-    background: transparent;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    margin-right: 10px;
-    transition: color 0.3s;
-}
-
-.refresh-button:hover {
-    color: #3498db;
-}
-
-.refresh-button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
+/* Đảm bảo CSS biến hoạt động đúng dù không có định nghĩa CSS vars */
+:root {
+    --sidebar-width: 300px;
+    --sidebar-collapsed-width: 60px;
+    --transition-normal: 0.3s ease;
+    --transition-fast: 0.2s ease;
+    --spacing-xs: 4px;
+    --spacing-md: 12px;
+    --spacing-xl: 20px;
+    --primary-color: #3498db;
+    --primary-light: rgba(52, 152, 219, 0.1);
+    --text-secondary: #333;
+    --divider-color: #e0e0e0;
+    --border-radius-md: 4px;
+    --border-radius-full: 50%;
+    --header-height: 60px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    
+    --dark-background-secondary: #1e1e2e;
+    --dark-primary-color: #5e9eff;
+    --dark-primary-light: rgba(94, 158, 255, 0.1);
+    --dark-border-color: #3a3a3a;
 }

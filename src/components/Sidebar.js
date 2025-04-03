@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -20,26 +20,54 @@ import '../public/styles/Slidebar.css';
 import { AppContext } from '../AppContext';
 
 const Sidebar = () => {
-  const [open, setOpen] = useState(true);
+  // Lưu trạng thái sidebar vào localStorage để duy trì trạng thái giữa các lần tải lại
+  const [open, setOpen] = useState(() => {
+    const savedState = localStorage.getItem('sidebarOpen');
+    return savedState !== null ? JSON.parse(savedState) : true;
+  });
+  
   const navigate = useNavigate();
   const location = useLocation();
   const { darkMode, setDarkMode } = useContext(AppContext) || { darkMode: false, setDarkMode: () => {} };
+
+  // Lưu trạng thái sidebar mỗi khi thay đổi
+  useEffect(() => {
+    localStorage.setItem('sidebarOpen', JSON.stringify(open));
+  }, [open]);
+
+  // Đóng sidebar tự động trên thiết bị di động
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth <= 768 && open) {
+        setOpen(false);
+      }
+    };
+
+    // Kiểm tra kích thước màn hình khi component được tạo
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [open]);
 
   const toggleSidebar = () => {
     setOpen(!open);
   };
 
   const handleNavigation = (path) => {
+    navigate(path);
+    // Chỉ đóng sidebar khi ở màn hình nhỏ
     if (window.innerWidth <= 768) {
       setOpen(false);
     }
-    navigate(path);
   };
 
   const toggleDarkMode = () => {
     if (setDarkMode) {
-      setDarkMode(!darkMode);
-      if (!darkMode) {
+      const newMode = !darkMode;
+      setDarkMode(newMode);
+      
+      if (newMode) {
         document.body.classList.add('dark-mode');
       } else {
         document.body.classList.remove('dark-mode');
@@ -47,7 +75,7 @@ const Sidebar = () => {
     }
   };
 
-  // Define menu items with icons
+  // Định nghĩa các mục menu với icons
   const menuItems = [
     { path: '/home', icon: faHome, text: 'Trang chủ' },
     { path: '/products', icon: faBoxes, text: 'Quản Lý Dịch Vụ' },
@@ -61,17 +89,25 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className={`sidebar ${open ? 'open' : 'closed'}`}>
+    <div className={`sidebar ${open ? 'open' : 'closed'} ${darkMode ? 'dark-mode' : ''}`}>
       <div className="sidebar-header">
         {open ? (
           <div className="logo-container">
             <h2 className="logo">Wedding Admin</h2>
-            <button className="collapse-btn" onClick={toggleSidebar}>
+            <button 
+              className="collapse-btn" 
+              onClick={toggleSidebar}
+              aria-label="Thu gọn sidebar"
+            >
               <FontAwesomeIcon icon={faChevronLeft} />
             </button>
           </div>
         ) : (
-          <button className="expand-btn" onClick={toggleSidebar}>
+          <button 
+            className="expand-btn" 
+            onClick={toggleSidebar}
+            aria-label="Mở rộng sidebar"
+          >
             <FontAwesomeIcon icon={faBars} />
           </button>
         )}
@@ -85,12 +121,13 @@ const Sidebar = () => {
               className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
             >
               <a 
-                href="#" 
+                href="#!" 
                 onClick={(e) => { 
                   e.preventDefault(); 
                   handleNavigation(item.path); 
                 }}
                 title={!open ? item.text : ''}
+                aria-label={item.text}
               >
                 <span className="menu-icon">
                   <FontAwesomeIcon icon={item.icon} />
@@ -101,15 +138,8 @@ const Sidebar = () => {
           ))}
         </ul>
       </div>
-      
-      <div className="sidebar-footer">
-        <button className="theme-toggle" onClick={toggleDarkMode} title={open ? '' : (darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode')}>
-          <FontAwesomeIcon icon={darkMode ? faSun : faMoon} />
-          {open && <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>}
-        </button>
-      </div>
     </div>
   );
 };
 
-export default Sidebar;
+export default React.memo(Sidebar);
