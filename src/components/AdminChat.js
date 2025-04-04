@@ -255,18 +255,33 @@ const AdminChat = () => {
             console.log('Thông tin chi tiết người dùng:', JSON.stringify(userInfo, null, 2));
 
             if (userInfo && userInfo.data) {
-                // First check for userName from API response (highest priority)
-                let userName = userInfo.data.userName || null;
-                
-                // If userName is not available, try to extract from other fields
-                if (!userName) {
-                    userName = extractUserName(userInfo.data);
-                }
-                
+                // Sử dụng hàm extractUserName để lấy tên người dùng
+                let userName = extractUserName(userInfo.data);
                 const userEmail = userInfo.data.email || '';
                 const userAvatar = userInfo.data.avatar || userInfo.data.avatarUrl || '';
 
-                console.log('Tên người dùng được sử dụng:', userName);
+                console.log('Đã trích xuất tên người dùng:', userName);
+
+                // Thử sử dụng trường khác nếu tên là "Khách hàng"
+                if (userName === 'Khách hàng' && userInfo.data) {
+                    console.log(`🔄 Thử tìm tên trong các trường khác:`, Object.keys(userInfo.data).join(', '));
+
+                    // Thử tìm trong các trường có thể chứa tên
+                    for (const key in userInfo.data) {
+                        const value = userInfo.data[key];
+                        if (typeof value === 'string' && value.length > 0 && key !== 'email' && key !== '_id' && key !== 'id' && key !== 'userId') {
+                            console.log(`🔍 Thử dùng trường ${key} với giá trị: ${value}`);
+                            userName = value;
+                            break;
+                        }
+                    }
+                }
+
+                // Nếu vẫn không có tên thì dùng email
+                if (userName === 'Khách hàng' && userEmail) {
+                    userName = userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1);
+                    console.log('📧 Sử dụng tên từ email:', userName);
+                }
 
                 setCurrentUserInfo({
                     name: userName,
@@ -435,34 +450,53 @@ const AdminChat = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Helper function to extract user name from user data
-    const extractUserName = (user) => {
-        // Prioritize userName from the API if available
-        if (user.userName) {
-            return user.userName;
+    // Hàm trích xuất tên người dùng từ dữ liệu
+    const extractUserName = (userData) => {
+        console.log('Dữ liệu người dùng nhận được để trích xuất tên:', userData);
+
+        // Kiểm tra các thuộc tính phổ biến chứa tên người dùng
+        if (userData.name) {
+            console.log('Sử dụng trường name:', userData.name);
+            return userData.name;
         }
-        
-        // If we have a name property, use that
-        if (user.name) {
-            return user.name;
+        if (userData.fullName) {
+            console.log('Sử dụng trường fullName:', userData.fullName);
+            return userData.fullName;
         }
-        
-        // Try using firstName and lastName fields
-        if (user.firstName && user.lastName) {
-            return `${user.firstName} ${user.lastName}`;
-        } else if (user.firstName) {
-            return user.firstName;
-        } else if (user.lastName) {
-            return user.lastName;
+        if (userData.displayName) {
+            console.log('Sử dụng trường displayName:', userData.displayName);
+            return userData.displayName;
         }
-        
-        // Try using email as a fallback
-        if (user.email) {
-            return user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1);
+        if (userData.username) {
+            console.log('Sử dụng trường username:', userData.username);
+            return userData.username;
         }
-        
-        // Final fallback to ID or generic name
-        return user.id || user.userId || 'Khách hàng';
+        if (userData.firstName && userData.lastName) {
+            const fullName = `${userData.firstName} ${userData.lastName}`;
+            console.log('Sử dụng họ và tên:', fullName);
+            return fullName;
+        }
+        if (userData.firstName) {
+            console.log('Sử dụng tên:', userData.firstName);
+            return userData.firstName;
+        }
+        if (userData.lastName) {
+            console.log('Sử dụng họ:', userData.lastName);
+            return userData.lastName;
+        }
+
+        // Nếu có email, lấy phần trước @
+        if (userData.email) {
+            const emailName = userData.email.split('@')[0];
+            // Biến đổi thành dạng tên hợp lý (viết hoa chữ cái đầu)
+            const emailUserName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+            console.log('Sử dụng tên từ email:', emailUserName);
+            return emailUserName;
+        }
+
+        // Mặc định trả về "Khách hàng"
+        console.log('Không tìm thấy tên người dùng, sử dụng mặc định "Khách hàng"');
+        return 'Khách hàng';
     };
 
     // Format thời gian
@@ -523,17 +557,15 @@ const AdminChat = () => {
 
     // Rút gọn tin nhắn
     const truncateMessage = (message, maxLength, messageType) => {
-        // Check if it's an image by messageType or message content
+        // Check if it's an image by type or content
         if (messageType === 'image' || (message && typeof message === 'string' && message.startsWith('data:image/'))) {
             return '[Hình ảnh]';
         }
         
-        // Handle null/undefined/non-string messages
         if (!message || typeof message !== 'string') {
             return '';
         }
         
-        // Truncate text messages if needed
         return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
     };
 
@@ -725,29 +757,28 @@ const AdminChat = () => {
                             ) : (
                                 <div className="messages-container">
                                     {messages.map((message, index) => {
-                                        // Prioritize userName from message object
-                                        let senderName = message.userName || null;
+                                        // Xác định tên người gửi cho tin nhắn
+                                        let senderName = message.userName || 'Admin';
                                         let senderInfo = null;
 
-                                        // If userName is not available in the message
-                                        if (!senderName) {
-                                            if (message.senderType === 'admin') {
-                                                senderName = 'Admin';
+                                        // Nếu không phải admin gửi và không có userName trong message
+                                        if (message.senderType !== 'admin' && !message.userName) {
+                                            // Tìm trong danh sách người dùng dựa vào senderId
+                                            const userInList = users.find(u => u.userId === message.senderId);
+                                            if (userInList && userInList.name) {
+                                                // Nếu tìm thấy tên từ danh sách users
+                                                senderName = userInList.name;
+                                                senderInfo = userInList;
+                                                console.log(`📝 Sử dụng tên người dùng từ danh sách: ${senderName}`);
+                                            } else if (currentUserInfo && currentUserId === message.senderId) {
+                                                // Nếu đang chat với người dùng này, sử dụng thông tin hiện tại
+                                                senderName = currentUserInfo.name || 'Khách hàng';
+                                                senderInfo = currentUserInfo;
+                                                console.log(`📝 Sử dụng tên người dùng hiện tại: ${senderName}`);
                                             } else {
-                                                // For non-admin messages without userName, try to find it in users list
-                                                const userInList = users.find(u => u.userId === message.senderId);
-                                                if (userInList && userInList.name) {
-                                                    // Use name from users list
-                                                    senderName = userInList.name;
-                                                    senderInfo = userInList;
-                                                } else if (currentUserInfo && currentUserId === message.senderId) {
-                                                    // Use current user info if available
-                                                    senderName = currentUserInfo.name || 'Khách hàng';
-                                                    senderInfo = currentUserInfo;
-                                                } else {
-                                                    // Fallback to sender ID
-                                                    senderName = message.senderId;
-                                                }
+                                                // Mặc định sử dụng senderId nếu không tìm thấy tên
+                                                senderName = message.senderId;
+                                                console.log(`⚠️ Không tìm thấy tên người dùng, sử dụng ID: ${senderName}`);
                                             }
                                         }
 
@@ -757,7 +788,7 @@ const AdminChat = () => {
                                         // Determine if this is an image message
                                         const isImage = message.messageType === 'image' || 
                                                       (message.message && typeof message.message === 'string' && 
-                                                        message.message.startsWith('data:image/'));
+                                                       message.message.startsWith('data:image/'));
 
                                         return (
                                             <React.Fragment key={index}>
@@ -766,10 +797,12 @@ const AdminChat = () => {
                                                         <span>{formatMessageDate(message.createdAt)}</span>
                                                     </div>
                                                 )}
-                                                <div className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}>
+                                                <div
+                                                    className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}
+                                                >
                                                     <div className="message-content">
                                                         <div className="message-sender">
-                                                            <span className="sender-name">{senderName}</span>
+                                                            {senderName}
                                                             {senderInfo?.email && (
                                                                 <small className="sender-email"> ({senderInfo.email})</small>
                                                             )}
