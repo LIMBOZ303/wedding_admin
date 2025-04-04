@@ -28,7 +28,7 @@ export const fetchAllChatUsers = async () => {
 // Gửi tin nhắn mới
 export const sendMessage = async (messageData) => {
     try {
-        const { senderId, receiverId, message, senderType, messageType = 'text' } = messageData;
+        const { senderId, receiverId, message, senderType, messageType = 'text', userName = '' } = messageData;
         
         // Chuẩn bị dữ liệu tin nhắn
         const payload = {
@@ -36,7 +36,8 @@ export const sendMessage = async (messageData) => {
             receiverId,
             message,
             senderType,
-            messageType
+            messageType,
+            userName
         };
         
         // Kiểm tra nếu là ảnh, đảm bảo thông tin base64 hợp lệ
