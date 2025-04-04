@@ -57,8 +57,10 @@ const Dashboard = () => {
   const [quarterRevenue, setQuarterRevenue] = useState([]);
   const [weekRevenue, setWeekRevenue] = useState([]);
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
+  const [monthlyOrderStats, setMonthlyOrderStats] = useState([]); // Thống kê đơn hàng theo tháng
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Trạng thái loading riêng biệt cho từng phần dữ liệu từ API
+  // Trạng thái loading
   const [loadingTransactionStats, setLoadingTransactionStats] = useState(true);
   const [loadingRevenueStats, setLoadingRevenueStats] = useState(true);
   const [loadingMonthlyRevenue, setLoadingMonthlyRevenue] = useState(true);
@@ -68,6 +70,7 @@ const Dashboard = () => {
   const [loadingRevenueByYear, setLoadingRevenueByYear] = useState(true);
   const [loadingQuarterRevenue, setLoadingQuarterRevenue] = useState(true);
   const [loadingWeekRevenue, setLoadingWeekRevenue] = useState(true);
+  const [loadingMonthlyOrderStats, setLoadingMonthlyOrderStats] = useState(true);
 
   const chosenStatus = 'active';
   const sampleUserId = '603d2f5e2e2e2e2e2e2e2e2e';
@@ -93,7 +96,7 @@ const Dashboard = () => {
         }
         setLoadingRevenueStats(false);
 
-        // Fetch Monthly Revenue
+        // Fetch Monthly Revenue (6 tháng đầu năm)
         setLoadingMonthlyRevenue(true);
         const revenueByMonthData = await Promise.all(
           Array.from({ length: 6 }, async (_, i) => {
@@ -152,12 +155,23 @@ const Dashboard = () => {
         setWeekRevenue(weekData);
         setLoadingWeekRevenue(false);
 
+        // Fetch Monthly Order Stats (12 tháng trong năm được chọn)
+        setLoadingMonthlyOrderStats(true);
+        const monthlyOrderData = await Promise.all(
+          Array.from({ length: 12 }, async (_, i) => {
+            const res = await fetchRevenueByMonth(selectedYear, i + 1);
+            return res.success && res.data ? res.data : { totalDeposit: 0, transactionCount: 0 };
+          })
+        );
+        setMonthlyOrderStats(monthlyOrderData);
+        setLoadingMonthlyOrderStats(false);
+
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
     };
     fetchData();
-  }, [chosenStatus, sampleUserId, currentYear, currentMonth]);
+  }, [chosenStatus, sampleUserId, currentYear, currentMonth, selectedYear]);
 
   // Tính toán dữ liệu
   const totalTransactions =
@@ -201,14 +215,16 @@ const Dashboard = () => {
     },
   };
 
-  // Biểu đồ đơn hàng (Bar Chart)
+  // Biểu đồ đơn hàng theo tháng (Bar Chart)
   const orderData = {
-    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
+    labels: Array.from({ length: 12 }, (_, i) => `Tháng ${i + 1}`),
     datasets: [
       {
         label: 'Số đơn hàng',
-        data: [65, 72, 86, 81, 93, 105],
+        data: monthlyOrderStats.map(stat => stat.transactionCount),
         backgroundColor: 'rgba(92, 124, 250, 0.7)',
+        borderColor: 'rgba(92, 124, 250, 1)',
+        borderWidth: 1,
       },
     ],
   };
@@ -216,8 +232,17 @@ const Dashboard = () => {
   const orderOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { position: 'top' } },
-    scales: { y: { beginAtZero: true } },
+    plugins: {
+      legend: { position: 'top', labels: { usePointStyle: true, pointStyle: 'circle' } },
+      tooltip: {
+        callbacks: {
+          label: context => `${context.dataset.label}: ${context.raw}`,
+        },
+      },
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { stepSize: 1 } },
+    },
   };
 
   // Biểu đồ phân bổ dịch vụ (Doughnut Chart)
@@ -417,9 +442,23 @@ const Dashboard = () => {
             <h3>
               <FontAwesomeIcon icon={faShoppingCart} /> Đơn hàng theo tháng
             </h3>
+            <div className="year-selector">
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+              >
+                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="chart-container">
-            <Bar data={orderData} options={orderOptions} /> {/* Dữ liệu tĩnh, không cần loading */}
+            {loadingMonthlyOrderStats ? (
+              <div className="spinner"></div>
+            ) : (
+              <Bar data={orderData} options={orderOptions} />
+            )}
           </div>
         </div>
       </div>

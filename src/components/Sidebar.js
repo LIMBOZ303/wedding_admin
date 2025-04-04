@@ -1,49 +1,39 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faHome, 
-  faBoxes, 
-  faUsers, 
-  faBoxArchive, 
-  faBlog, 
-  faExchangeAlt, 
+import {
+  faHome,
+  faBoxes,
+  faUsers,
+  faBoxArchive,
+  faBlog,
+  faExchangeAlt,
   faSignOutAlt,
-  faMoon,
-  faSun,
   faBars,
   faChevronLeft,
   faComments,
   faUserCheck
 } from '@fortawesome/free-solid-svg-icons';
 import '../public/styles/Slidebar.css';
-import { AppContext } from '../AppContext';
 
 const Sidebar = () => {
-  // Lưu trạng thái sidebar vào localStorage để duy trì trạng thái giữa các lần tải lại
   const [open, setOpen] = useState(() => {
     const savedState = localStorage.getItem('sidebarOpen');
     return savedState !== null ? JSON.parse(savedState) : true;
   });
-  
+
   const navigate = useNavigate();
   const location = useLocation();
-  const { darkMode, setDarkMode } = useContext(AppContext) || { darkMode: false, setDarkMode: () => {} };
-
-  // Lưu trạng thái sidebar mỗi khi thay đổi
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(open));
   }, [open]);
 
-  // Đóng sidebar tự động trên thiết bị di động
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth <= 768 && open) {
         setOpen(false);
       }
     };
-
-    // Kiểm tra kích thước màn hình khi component được tạo
     handleResize();
 
     window.addEventListener('resize', handleResize);
@@ -56,26 +46,11 @@ const Sidebar = () => {
 
   const handleNavigation = (path) => {
     navigate(path);
-    // Chỉ đóng sidebar khi ở màn hình nhỏ
     if (window.innerWidth <= 768) {
       setOpen(false);
     }
   };
 
-  const toggleDarkMode = () => {
-    if (setDarkMode) {
-      const newMode = !darkMode;
-      setDarkMode(newMode);
-      
-      if (newMode) {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
-      }
-    }
-  };
-
-  // Định nghĩa các mục menu với icons
   const menuItems = [
     { path: '/home', icon: faHome, text: 'Trang chủ' },
     { path: '/products', icon: faBoxes, text: 'Quản Lý Dịch Vụ' },
@@ -89,13 +64,13 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className={`sidebar ${open ? 'open' : 'closed'} ${darkMode ? 'dark-mode' : ''}`}>
+    <div className={`sidebar ${open ? 'open' : 'closed'}`}>
       <div className="sidebar-header">
         {open ? (
           <div className="logo-container">
             <h2 className="logo">Wedding Admin</h2>
-            <button 
-              className="collapse-btn" 
+            <button
+              className="collapse-btn"
               onClick={toggleSidebar}
               aria-label="Thu gọn sidebar"
             >
@@ -103,8 +78,8 @@ const Sidebar = () => {
             </button>
           </div>
         ) : (
-          <button 
-            className="expand-btn" 
+          <button
+            className="expand-btn"
             onClick={toggleSidebar}
             aria-label="Mở rộng sidebar"
           >
@@ -116,15 +91,15 @@ const Sidebar = () => {
       <div className="sidebar-content">
         <ul className="menu-list">
           {menuItems.map((item, index) => (
-            <li 
-              key={index} 
+            <li
+              key={index}
               className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
             >
-              <a 
-                href="#!" 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  handleNavigation(item.path); 
+              <a
+                href="#!"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleNavigation(item.path);
                 }}
                 title={!open ? item.text : ''}
                 aria-label={item.text}
