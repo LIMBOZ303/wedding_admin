@@ -28,7 +28,24 @@ export const fetchAllChatUsers = async () => {
 // Gửi tin nhắn mới
 export const sendMessage = async (messageData) => {
     try {
-        const response = await axios.post(`${API_URL}/message`, messageData);
+        const { senderId, receiverId, message, senderType, messageType = 'text' } = messageData;
+        
+        // Chuẩn bị dữ liệu tin nhắn
+        const payload = {
+            senderId,
+            receiverId,
+            message,
+            senderType,
+            messageType
+        };
+        
+        // Kiểm tra nếu là ảnh, đảm bảo thông tin base64 hợp lệ
+        if (messageType === 'image' && !message.startsWith('data:image/')) {
+            console.error('Invalid image format. Base64 image data required.');
+            throw new Error('Invalid image format');
+        }
+        
+        const response = await axios.post(`${API_URL}/message`, payload);
         return response.data;
     } catch (error) {
         console.error('Error sending message:', error);

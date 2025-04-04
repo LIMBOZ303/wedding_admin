@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { fetchChatHistory, fetchAllChatUsers, sendMessage } from '../api/chat_api';
 import { getUserById } from '../api/users_api';
 import { io } from 'socket.io-client';
 import '../styles/AdminChat.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { AppContext } from '../AppContext';
 import {
     faPaperPlane,
     faCircle,
@@ -15,7 +16,10 @@ import {
     faEnvelope,
     faCheck,
     faCheckDouble,
-    faArrowDown
+    faArrowDown,
+    faImage,
+    faTimes,
+    faExpand
 } from '@fortawesome/free-solid-svg-icons';
 
 const AdminChat = () => {
@@ -30,6 +34,23 @@ const AdminChat = () => {
     const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
+    const [localUnreadCount, setLocalUnreadCount] = useState(0);
+    
+    // Safely get context, providing fallbacks if not available
+    const appContext = useContext(AppContext) || {};
+    const setUnreadMessages = appContext.setUnreadMessages || (() => {
+        console.warn('setUnreadMessages not available in AppContext, using local state');
+        setLocalUnreadCount(prev => prev + 1);
+    });
+    
+    // Image upload state
+    const [imageUpload, setImageUpload] = useState(null);
+    const [imagePreview, setImagePreview] = useState('');
+    const fileInputRef = useRef(null);
+
+    // Image modal state
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [modalImage, setModalImage] = useState('');
 
     // Kết nối Socket.IO khi component được mount
     useEffect(() => {
@@ -67,17 +88,40 @@ const AdminChat = () => {
     const handleNewMessage = async (data) => {
         const { message, userId } = data;
 
+        // Đảm bảo message có messageType
+        const processedMessage = {
+            ...message,
+            messageType: message.messageType || (
+                message.message && message.message.startsWith('data:image/') ? 'image' : 'text'
+            )
+        };
+
         // Xác định ID người dùng từ tin nhắn
-        const senderId = message.senderId;
+        const senderId = processedMessage.senderId;
 
         console.log('------------------------------------');
         console.log('📩 NHẬN TIN NHẮN MỚI');
         console.log('📱 ID người gửi:', senderId);
-        console.log('💬 Nội dung:', message.message);
-        console.log('🔢 Thông tin tin nhắn đầy đủ:', JSON.stringify(message, null, 2));
+        console.log('💬 Nội dung:', processedMessage.messageType === 'image' ? '[Hình ảnh]' : processedMessage.message);
+        console.log('📝 Loại tin nhắn:', processedMessage.messageType);
+        console.log('🔢 Thông tin tin nhắn đầy đủ:', JSON.stringify(processedMessage, null, 2));
+
+        // Cập nhật số tin nhắn chưa đọc trong AppContext nếu tin nhắn từ người dùng
+        if (processedMessage.senderType !== 'admin') {
+            // Nếu đang không xem tin nhắn của người dùng này, tăng số tin nhắn chưa đọc
+            if (currentUserId !== senderId) {
+                try {
+                    setUnreadMessages(prev => prev + 1);
+                } catch (error) {
+                    console.error('Error updating unread messages count:', error);
+                    // Fallback to local state if context fails
+                    setLocalUnreadCount(prev => prev + 1);
+                }
+            }
+        }
 
         // Nếu tin nhắn từ người dùng (không phải admin), lấy thông tin người dùng
-        if (message.senderType !== 'admin' && senderId) {
+        if (processedMessage.senderType !== 'admin' && senderId) {
             try {
                 console.log('🔍 Đang truy vấn thông tin người dùng với ID:', senderId);
                 const userInfo = await getUserById(senderId);
@@ -135,8 +179,9 @@ const AdminChat = () => {
                                 ...updatedUsers[existingUserIndex],
                                 name: userName,
                                 email: userEmail,
-                                lastMessage: message.message,
-                                lastMessageTime: message.createdAt,
+                                lastMessage: processedMessage.message,
+                                lastMessageType: processedMessage.messageType,
+                                lastMessageTime: processedMessage.createdAt,
                                 unreadCount: updatedUsers[existingUserIndex].unreadCount + 1
                             };
                             return updatedUsers;
@@ -149,8 +194,9 @@ const AdminChat = () => {
                                 userId: senderId,
                                 name: userName,
                                 email: userEmail,
-                                lastMessage: message.message,
-                                lastMessageTime: message.createdAt,
+                                lastMessage: processedMessage.message,
+                                lastMessageType: processedMessage.messageType,
+                                lastMessageTime: processedMessage.createdAt,
                                 unreadCount: 1,
                                 avatar: userInfo.data.avatar || ''
                             },
@@ -171,8 +217,9 @@ const AdminChat = () => {
                         {
                             userId: senderId,
                             name: 'Khách hàng',
-                            lastMessage: message.message,
-                            lastMessageTime: message.createdAt,
+                            lastMessage: processedMessage.message,
+                            lastMessageType: processedMessage.messageType,
+                            lastMessageTime: processedMessage.createdAt,
                             unreadCount: 1
                         },
                         ...prevUsers
@@ -184,7 +231,7 @@ const AdminChat = () => {
         // Nếu đang chat với người dùng này, cập nhật tin nhắn và đánh dấu đã đọc
         if (currentUserId === userId || currentUserId === senderId) {
             console.log('📨 Cập nhật tin nhắn vào cuộc trò chuyện hiện tại');
-            setMessages(prevMessages => [...prevMessages, message]);
+            setMessages(prevMessages => [...prevMessages, processedMessage]);
 
             // Đánh dấu tin nhắn đã đọc
             console.log('✓ Đánh dấu tin nhắn đã đọc');
@@ -198,8 +245,35 @@ const AdminChat = () => {
     const handleMessageSent = (data) => {
         const { message } = data;
 
+        // Đảm bảo message có messageType
+        const processedMessage = {
+            ...message,
+            messageType: message.messageType || (
+                message.message && message.message.startsWith('data:image/') ? 'image' : 'text'
+            )
+        };
+
+        console.log('✅ Tin nhắn đã được gửi:', processedMessage.messageType === 'image' ? '[Hình ảnh]' : processedMessage.message);
+
         // Thêm tin nhắn mới vào danh sách
-        setMessages(prevMessages => [...prevMessages, message]);
+        setMessages(prevMessages => [...prevMessages, processedMessage]);
+
+        // Cập nhật thông tin người dùng hiện tại trong danh sách
+        setUsers(prevUsers => {
+            const userIndex = prevUsers.findIndex(user => user.userId === processedMessage.receiverId);
+            
+            if (userIndex >= 0) {
+                const updatedUsers = [...prevUsers];
+                updatedUsers[userIndex] = {
+                    ...updatedUsers[userIndex],
+                    lastMessage: processedMessage.message,
+                    lastMessageType: processedMessage.messageType,
+                    lastMessageTime: processedMessage.createdAt
+                };
+                return updatedUsers;
+            }
+            return prevUsers;
+        });
     };
 
     // Lấy danh sách người dùng đã chat và thông tin của họ
@@ -250,7 +324,13 @@ const AdminChat = () => {
                                     ...user,
                                     name: finalUserName,
                                     email: userEmail,
-                                    avatar: userAvatar
+                                    avatar: userAvatar,
+                                    // Thêm lastMessageType mặc định nếu không tồn tại
+                                    lastMessageType: user.lastMessageType || (
+                                        user.lastMessage && user.lastMessage.startsWith('data:image') 
+                                            ? 'image' 
+                                            : 'text'
+                                    )
                                 };
                             }
 
@@ -258,7 +338,8 @@ const AdminChat = () => {
                                 ...user,
                                 name: 'Khách hàng',
                                 email: '',
-                                avatar: ''
+                                avatar: '',
+                                lastMessageType: user.lastMessageType || 'text'
                             };
                         } catch (error) {
                             console.error(`Lỗi khi lấy thông tin người dùng ${user.userId}:`, error);
@@ -266,7 +347,8 @@ const AdminChat = () => {
                                 ...user,
                                 name: 'Khách hàng',
                                 email: '',
-                                avatar: ''
+                                avatar: '',
+                                lastMessageType: user.lastMessageType || 'text'
                             };
                         }
                     })
@@ -344,7 +426,14 @@ const AdminChat = () => {
             setLoading(true);
             const result = await fetchChatHistory(userId);
             if (result.success) {
-                setMessages(result.data);
+                // Process messages to ensure they have messageType
+                const processedMessages = result.data.map(msg => ({
+                    ...msg,
+                    messageType: msg.messageType || (
+                        msg.message && msg.message.startsWith('data:image/') ? 'image' : 'text'
+                    )
+                }));
+                setMessages(processedMessages);
                 // Đảm bảo cuộn xuống sau khi dữ liệu đã tải
                 setTimeout(scrollToBottom, 100);
             }
@@ -369,14 +458,36 @@ const AdminChat = () => {
 
     // Gửi tin nhắn mới
     const handleSendMessage = () => {
-        if (!messageInput.trim() || !currentUserId || !socket) return;
+        if ((!messageInput.trim() && !imagePreview) || !currentUserId || !socket) return;
 
-        // Chuẩn bị dữ liệu tin nhắn
+        // Nếu có hình ảnh để gửi
+        if (imagePreview) {
+            // Chuẩn bị dữ liệu tin nhắn hình ảnh
+            const messageData = {
+                senderId: 'admin',
+                receiverId: currentUserId,
+                message: imagePreview,
+                senderType: 'admin',
+                messageType: 'image'
+            };
+
+            // Gửi tin nhắn hình ảnh qua socket
+            socket.emit('sendMessage', messageData);
+
+            // Reset image state
+            setImagePreview('');
+            setImageUpload(null);
+            
+            return;
+        }
+
+        // Chuẩn bị dữ liệu tin nhắn văn bản
         const messageData = {
             senderId: 'admin',
             receiverId: currentUserId,
             message: messageInput.trim(),
-            senderType: 'admin'
+            senderType: 'admin',
+            messageType: 'text'
         };
 
         // Gửi tin nhắn qua socket
@@ -384,6 +495,42 @@ const AdminChat = () => {
 
         // Reset input
         setMessageInput('');
+    };
+
+    // Xử lý khi chọn file hình ảnh
+    const handleImageSelect = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Kiểm tra nếu file là hình ảnh
+        if (!file.type.match('image.*')) {
+            alert('Vui lòng chọn file hình ảnh');
+            return;
+        }
+
+        // Kiểm tra kích thước file (giới hạn 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Kích thước ảnh không được vượt quá 5MB');
+            return;
+        }
+
+        setImageUpload(file);
+        
+        // Đọc file và hiển thị preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setImagePreview(e.target.result);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // Xóa hình ảnh đã chọn
+    const handleRemoveImage = () => {
+        setImageUpload(null);
+        setImagePreview('');
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     // Xử lý khi nhấn phím Enter để gửi tin nhắn
@@ -515,7 +662,16 @@ const AdminChat = () => {
     };
 
     // Rút gọn tin nhắn
-    const truncateMessage = (message, maxLength) => {
+    const truncateMessage = (message, maxLength, messageType) => {
+        // Check if it's an image by type or content
+        if (messageType === 'image' || (message && typeof message === 'string' && message.startsWith('data:image/'))) {
+            return '[Hình ảnh]';
+        }
+        
+        if (!message || typeof message !== 'string') {
+            return '';
+        }
+        
         return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
     };
 
@@ -548,6 +704,22 @@ const AdminChat = () => {
             return () => container.removeEventListener('scroll', checkScrollPosition);
         }
     }, []);
+
+    // Hiển thị modal hình ảnh khi click vào hình ảnh
+    const openImageModal = (imageUrl) => {
+        setModalImage(imageUrl);
+        setShowImageModal(true);
+        // Prevent scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+    };
+
+    // Đóng modal hình ảnh
+    const closeImageModal = () => {
+        setShowImageModal(false);
+        setModalImage('');
+        // Restore scrolling
+        document.body.style.overflow = 'auto';
+    };
 
     return (
         <div className="admin-chat-container">
@@ -600,7 +772,7 @@ const AdminChat = () => {
                                                 {user.email && <span className="user-email-inline"> ({user.email})</span>}
                                             </h6>
                                             <div className="user-id-display">ID: {user.userId}</div>
-                                            <p>{truncateMessage(user.lastMessage, 30)}</p>
+                                            <p>{truncateMessage(user.lastMessage, 30, user.lastMessageType)}</p>
                                             <small>{formatTime(user.lastMessageTime)}</small>
                                         </div>
                                         {user.unreadCount > 0 && (
@@ -743,6 +915,11 @@ const AdminChat = () => {
                                         // Hiển thị ngày nếu cần
                                         const showDateHeader = shouldShowDate(messages, index);
 
+                                        // Determine if this is an image message - either by messageType or by checking if content is base64 image
+                                        const isImage = message.messageType === 'image' || 
+                                                      (message.message && typeof message.message === 'string' && 
+                                                       message.message.startsWith('data:image/'));
+
                                         return (
                                             <React.Fragment key={index}>
                                                 {showDateHeader && (
@@ -763,7 +940,23 @@ const AdminChat = () => {
                                                                 <div className="message-sender-id">ID: {message.senderId}</div>
                                                             </div>
                                                         )}
-                                                        <p>{message.message}</p>
+                                                        
+                                                        {isImage ? (
+                                                            <div className="message-image-container">
+                                                                <img 
+                                                                    src={message.message} 
+                                                                    alt="Hình ảnh" 
+                                                                    className="message-image"
+                                                                    onClick={() => openImageModal(message.message)}
+                                                                />
+                                                                <div className="image-expand-icon">
+                                                                    <FontAwesomeIcon icon={faExpand} />
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p>{message.message}</p>
+                                                        )}
+                                                        
                                                         <div className="message-footer">
                                                             <small className="message-time">{formatTime(message.createdAt)}</small>
                                                             {message.senderType === 'admin' && (
@@ -790,27 +983,76 @@ const AdminChat = () => {
                         </div>
 
                         {currentUserId && (
-                            <div className="chat-input">
-                                <input
-                                    type="text"
-                                    value={messageInput}
-                                    onChange={(e) => setMessageInput(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder="Nhập tin nhắn..."
-                                    disabled={!currentUserId}
-                                />
-                                <button
-                                    className="send-button"
-                                    onClick={handleSendMessage}
-                                    disabled={!messageInput.trim() || !currentUserId}
-                                >
-                                    <FontAwesomeIcon icon={faPaperPlane} />
-                                </button>
+                            <div className="chat-input-container">
+                                {/* Image preview */}
+                                {imagePreview && (
+                                    <div className="image-preview-container">
+                                        <div className="image-preview">
+                                            <img src={imagePreview} alt="Preview" />
+                                            <button 
+                                                className="remove-image-btn" 
+                                                onClick={handleRemoveImage}
+                                                title="Xóa ảnh"
+                                            >
+                                                <FontAwesomeIcon icon={faTimes} />
+                                            </button>
+                                        </div>
+                                        <p className="image-ready-text">Ảnh đã sẵn sàng để gửi</p>
+                                    </div>
+                                )}
+                                
+                                <div className="chat-input">
+                                    <input
+                                        type="text"
+                                        value={messageInput}
+                                        onChange={(e) => setMessageInput(e.target.value)}
+                                        onKeyPress={handleKeyPress}
+                                        placeholder={imagePreview ? "Ấn gửi để gửi ảnh..." : "Nhập tin nhắn..."}
+                                        disabled={!!imagePreview}
+                                    />
+                                    
+                                    {/* Image upload button */}
+                                    <button 
+                                        className="upload-image-button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={!!imagePreview}
+                                        title="Gửi hình ảnh"
+                                    >
+                                        <FontAwesomeIcon icon={faImage} />
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: 'none' }}
+                                            onChange={handleImageSelect}
+                                        />
+                                    </button>
+                                    
+                                    <button
+                                        className="send-button"
+                                        onClick={handleSendMessage}
+                                        disabled={(!messageInput.trim() && !imagePreview) || !currentUserId}
+                                    >
+                                        <FontAwesomeIcon icon={faPaperPlane} />
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Image Modal */}
+            {showImageModal && (
+                <div className={`image-modal ${showImageModal ? 'active' : ''}`} onClick={closeImageModal}>
+                    <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <img src={modalImage} alt="Full size" />
+                        <button className="image-modal-close" onClick={closeImageModal}>
+                            <FontAwesomeIcon icon={faTimes} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
