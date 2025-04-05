@@ -1,17 +1,21 @@
 .admin-chat-container {
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: 100vh;
+    max-height: 100vh;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     background-color: #fff;
     overflow: hidden;
+    position: relative;
 }
 
 .chat-header {
     padding: 16px 20px;
     background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
+    flex-shrink: 0;
+    height: 60px;
 }
 
 .chat-header h2 {
@@ -25,7 +29,7 @@
     display: flex;
     flex: 1;
     overflow: hidden;
-    height: calc(100% - 60px); /* Chiều cao trừ đi header */
+    height: calc(100vh - 60px);
 }
 
 /* User List Styles */
@@ -35,6 +39,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    flex-shrink: 0;
     overflow: hidden;
 }
 
@@ -45,6 +50,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    height: 56px;
+    flex-shrink: 0;
 }
 
 .user-list-header h5 {
@@ -74,12 +81,14 @@
 .user-list {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 0;
+    scrollbar-width: thin;
 }
 
 .user-item {
     display: flex;
-    padding: 12px 15px;
+    padding: 15px;
     border-bottom: 1px solid #e9ecef;
     cursor: pointer;
     transition: background-color 0.2s;
@@ -92,7 +101,7 @@
 
 .user-item.active {
     background-color: #e9f5ff;
-    border-left: 3px solid #0d6efd;
+    border-left: 4px solid #0d6efd;
 }
 
 .user-item.unread {
@@ -143,13 +152,21 @@
 }
 
 .user-info h6 {
-    margin: 0 0 3px 0;
-    font-size: 0.85rem;
+    margin: 0 0 5px 0;
+    font-size: 1.05rem;
     font-weight: 600;
     color: #212529;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding-right: 5px;
+}
+
+.user-name-highlight {
+    color: #0d6efd;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
 }
 
 .user-info p {
@@ -214,7 +231,6 @@
     display: flex;
     flex-direction: column;
     background-color: #f8f9fa;
-    position: relative;
     height: 100%;
     overflow: hidden;
 }
@@ -224,6 +240,8 @@
     background-color: white;
     border-bottom: 1px solid #e9ecef;
     z-index: 10;
+    flex-shrink: 0;
+    height: 70px;
 }
 
 .chat-window-header h5 {
@@ -242,17 +260,28 @@
 
 .user-details {
     display: flex;
-    align-items: center;
+    flex: 1;
 }
 
 .header-avatar {
     width: 45px;
     height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-avatar .default-avatar {
+    background-color: #e9f5ff;
+    color: #0d6efd;
+    font-size: 1.2rem;
 }
 
 .current-user-info h5 {
+    display: flex;
+    align-items: center;
     margin: 0 0 3px 0;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: #212529;
     text-align: left;
@@ -306,24 +335,24 @@
     color: #10b981;
 }
 
-/* Chat Messages Area - Wrapper for messages */
+/* Chat Messages Wrapper */
 .chat-messages-wrapper {
-    position: relative;
     flex: 1;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
-    height: calc(100% - 70px); /* Trừ đi chiều cao của header */
+    overflow: hidden;
+    position: relative;
 }
 
-/* Chat Messages Styles */
+/* Chat Messages */
 .chat-messages {
     position: absolute;
     top: 0;
-    bottom: 70px; /* Chiều cao của chat-input */
+    bottom: 80px; /* Adjust based on chat input height */
     left: 0;
     right: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 15px;
     scroll-behavior: smooth;
 }
@@ -438,10 +467,19 @@
 }
 
 .message-sender {
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    line-height: 1.3;
+}
+
+.message-sender .sender-name {
+    font-weight: 700;
     color: #0d6efd;
-    margin-bottom: 5px;
+    display: inline-block;
+}
+
+.message.sent .message-sender .sender-name {
+    color: rgba(255, 255, 255, 1);
 }
 
 .message-sender-id {
@@ -489,8 +527,8 @@
 
 /* Scroll Button Styles */
 .scroll-bottom-button {
-    position: fixed;
-    right: 25px;
+    position: absolute;
+    right: 20px;
     bottom: 90px;
     width: 40px;
     height: 40px;
@@ -503,7 +541,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    z-index: 100;
+    z-index: 50;
     animation: fadeIn 0.3s ease-in-out;
     transition: transform 0.2s, background-color 0.2s;
 }
@@ -517,20 +555,26 @@
     transform: translateY(0);
 }
 
-/* Chat Input Styles */
-.chat-input {
-    height: 70px;
-    display: flex;
-    padding: 15px;
-    background-color: white;
-    border-top: 1px solid #e9ecef;
+/* Chat Input Container */
+.chat-input-container {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 99;
-    width: 100%;
+    background-color: white;
+    border-top: 1px solid #e9ecef;
+    padding: 12px 15px;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Chat Input Styles */
+.chat-input {
+    display: flex;
+    width: 100%;
+    align-items: center;
 }
 
 .chat-input input {
@@ -584,35 +628,64 @@
 
 /* Responsive styles */
 @media (max-width: 768px) {
+    .admin-chat-container {
+        height: 100vh;
+        border-radius: 0;
+    }
+    
     .chat-content {
         flex-direction: column;
+        height: calc(100vh - 60px);
     }
     
     .user-list-container {
         width: 100%;
-        height: 200px;
+        height: 35vh;
+        min-height: 200px;
         border-right: none;
         border-bottom: 1px solid #e9ecef;
     }
     
-    .chat-messages-wrapper {
-        height: calc(100% - 60px); /* Điều chỉnh cho màn hình nhỏ */
+    .chat-window {
+        height: 65vh;
     }
     
     .chat-messages {
-        bottom: 60px; /* Điều chỉnh cho màn hình nhỏ */
+        bottom: 60px;
     }
     
-    .chat-input {
-        height: 60px; /* Giảm chiều cao trên mobile */
-        padding: 10px; /* Giảm padding trên mobile */
+    .chat-input-container {
+        padding: 8px 10px;
+    }
+    
+    .chat-input input {
+        padding: 8px 12px;
+    }
+    
+    .send-button, .upload-image-button {
+        width: 36px;
+        height: 36px;
     }
     
     .scroll-bottom-button {
         right: 15px;
-        bottom: 80px;
-        width: 35px; /* Giảm kích thước nút trên mobile */
-        height: 35px;
+        bottom: 70px;
+        width: 36px;
+        height: 36px;
+    }
+    
+    .user-name-badge {
+        font-size: 0.75rem;
+        padding: 2px 6px;
+        margin-left: 4px;
+    }
+    
+    .user-info h6 {
+        font-size: 0.85rem;
+    }
+    
+    .message-sender {
+        font-size: 0.8rem;
     }
 }
 
@@ -647,6 +720,9 @@
     background-color: rgba(92, 124, 250, 0.1);
     border-radius: 0.5rem;
     margin-bottom: 0.5rem;
+    max-height: 160px;
+    overflow: hidden;
+    border: 1px dashed rgba(92, 124, 250, 0.3);
 }
 
 .image-preview {
@@ -655,6 +731,9 @@
     max-width: 200px;
     max-height: 150px;
     margin-right: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    overflow: hidden;
 }
 
 .image-preview img {
@@ -662,6 +741,7 @@
     max-height: 150px;
     border-radius: 0.5rem;
     border: 1px solid rgba(92, 124, 250, 0.3);
+    display: block;
 }
 
 .remove-image-btn {
@@ -680,10 +760,12 @@
     cursor: pointer;
     font-size: 0.75rem;
     transition: background-color 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .remove-image-btn:hover {
     background-color: #e03131;
+    transform: scale(1.05);
 }
 
 .image-ready-text {
@@ -691,6 +773,7 @@
     margin: 0;
     font-size: 0.8rem;
     color: var(--primary-color, #5c7cfa);
+    font-weight: 500;
     vertical-align: middle;
 }
 
@@ -806,4 +889,47 @@
 
 .message-image-container:hover .image-expand-icon {
     opacity: 1;
+}
+
+/* Custom scrollbars */
+.user-list::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.user-list::-webkit-scrollbar-track,
+.chat-messages::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+.user-list::-webkit-scrollbar-thumb,
+.chat-messages::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.user-list::-webkit-scrollbar-thumb:hover,
+.chat-messages::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Add a badge for the user name in the chat header */
+.user-name-badge {
+    display: inline-block;
+    background-color: #e9f5ff;
+    color: #0d6efd;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-left: 8px;
+    border: 1px solid rgba(13, 110, 253, 0.2);
+    box-shadow: 0 1px 3px rgba(13, 110, 253, 0.1);
+}
+
+.user-header-info {
+    margin-left: 12px;
+    flex: 1;
 } 

@@ -22,6 +22,21 @@ import {
     faExpand
 } from '@fortawesome/free-solid-svg-icons';
 
+// User Name Display Component
+const UserNameDisplay = ({ userName, highlight = false, badge = false, fallback = 'Khách hàng' }) => {
+    const displayName = userName || fallback;
+    
+    if (badge) {
+        return <span className="user-name-badge">{displayName}</span>;
+    }
+    
+    return (
+        <span className={highlight ? "user-name-highlight" : "sender-name"}>
+            {displayName}
+        </span>
+    );
+};
+
 const AdminChat = () => {
     const [users, setUsers] = useState([]);
     const [messages, setMessages] = useState([]);
@@ -92,15 +107,31 @@ const AdminChat = () => {
     const handleNewMessage = async (data) => {
         const { message, userId } = data;
 
-        // Đảm bảo message có messageType và userName
+        // Get user name based on sender type
+        let userName = message.userName;
+        
+        if (message.senderType === 'user') {
+            // For user messages, try to find a consistent user name
+            if (!userName) {
+                const userInList = users.find(u => u.userId === message.senderId);
+                if (userInList && userInList.name) {
+                    userName = userInList.name;
+                    console.log(`Using existing name for user ${message.senderId}: ${userName}`);
+                }
+            }
+        } else if (message.senderType === 'admin') {
+            // For admin messages, use the receiver's name (current user)
+            userName = currentUserInfo?.name || findUserName(message.receiverId) || 'Khách hàng';
+        }
+
+        // Create processed message with user name
         const processedMessage = {
             ...message,
-            messageType: message.messageType || (
-                message.message && message.message.startsWith('data:image/') ? 'image' : 'text'
-            ),
-            // Ensure userName is defined
-            userName: message.userName || (message.senderType === 'admin' ? 'Admin' : message.senderId)
+            messageType: message.message && message.message.startsWith('data:image/') ? 'image' : 'text',
+            userName: userName || (message.senderType === 'user' ? message.senderId : 'Khách hàng')
         };
+        
+        console.log(`Message from ${processedMessage.senderType} to ${processedMessage.receiverId}: ${processedMessage.userName}`);
 
         // Xác định ID người dùng từ tin nhắn
         const senderId = processedMessage.senderId;
@@ -135,10 +166,18 @@ const AdminChat = () => {
             console.log('🔄 Cập nhật thông tin người dùng trong danh sách');
             setUsers(prevUsers => {
                 const updatedUsers = [...prevUsers];
+                
+                // Lưu tên người dùng từ tin nhắn nếu có
+                const updatedName = processedMessage.userName && processedMessage.userName !== 'Khách hàng' && processedMessage.userName !== senderId
+                    ? processedMessage.userName 
+                    : updatedUsers[existingUserIndex].name;
+                    
+                console.log(`📝 Cập nhật tên người dùng: ${updatedName}`);
+                
                 updatedUsers[existingUserIndex] = {
                     ...updatedUsers[existingUserIndex],
-                    // Update the name if a userName is provided in the message
-                    name: processedMessage.userName || updatedUsers[existingUserIndex].name,
+                    // QUAN TRỌNG: Lưu userName từ tin nhắn để sử dụng cho tên cuộc trò chuyện
+                    name: updatedName,
                     lastMessage: processedMessage.message,
                     lastMessageType: processedMessage.messageType,
                     lastMessageTime: processedMessage.createdAt,
@@ -151,10 +190,18 @@ const AdminChat = () => {
         } else if (processedMessage.senderType !== 'admin') {
             // Người dùng chưa có trong danh sách, thêm mới
             console.log('➕ Thêm người dùng mới vào danh sách chat');
+            
+            // Ensure we're using the best available name for the new user
+            const userDisplayName = (processedMessage.userName && processedMessage.userName !== senderId) 
+                ? processedMessage.userName 
+                : 'Khách hàng';
+                
+            console.log(`📝 Tên người dùng mới: ${userDisplayName}`);
+            
             setUsers(prevUsers => [
                 {
                     userId: senderId,
-                    name: processedMessage.userName || senderId,
+                    name: userDisplayName,
                     lastMessage: processedMessage.message,
                     lastMessageType: processedMessage.messageType,
                     lastMessageTime: processedMessage.createdAt,
@@ -180,6 +227,12 @@ const AdminChat = () => {
     // Xử lý xác nhận tin nhắn đã gửi
     const handleMessageSent = (data) => {
         const { message } = data;
+        
+        // Get the user name for admin messages
+        let userName = message.userName;
+        if (message.senderType === 'admin' && (!userName || userName === 'Admin')) {
+            userName = currentUserInfo?.name || findUserName(message.receiverId) || 'Khách hàng';
+        }
 
         // Đảm bảo message có messageType và userName
         const processedMessage = {
@@ -187,8 +240,8 @@ const AdminChat = () => {
             messageType: message.messageType || (
                 message.message && message.message.startsWith('data:image/') ? 'image' : 'text'
             ),
-            // Ensure userName is defined
-            userName: message.userName || (message.senderType === 'admin' ? 'Admin' : message.senderId)
+            // Use user's name for admin messages instead of 'Admin'
+            userName: userName || message.senderId
         };
 
         console.log('✅ Tin nhắn đã được gửi:', processedMessage.messageType === 'image' ? '[Hình ảnh]' : processedMessage.message);
@@ -203,9 +256,9 @@ const AdminChat = () => {
             
             if (userIndex >= 0) {
                 const updatedUsers = [...prevUsers];
+                // Preserve the existing user name - don't override it
                 updatedUsers[userIndex] = {
                     ...updatedUsers[userIndex],
-                    name: updatedUsers[userIndex].name || processedMessage.receiverId, // Preserve existing name
                     lastMessage: processedMessage.message,
                     lastMessageType: processedMessage.messageType,
                     lastMessageTime: processedMessage.createdAt
@@ -225,10 +278,15 @@ const AdminChat = () => {
             if (result.success) {
                 // Map the user data, ensuring userName property is processed
                 const usersWithInfo = result.data.map(user => {
+                    // Extract a consistent name for this user
+                    const userName = user.userName || user.name || extractUserName(user) || 'Khách hàng';
+                    
+                    console.log(`User ${user.userId} name: ${userName}`);
+                    
                     return {
                         ...user,
-                        // If the API returns userName, use it; otherwise try to get it from other properties
-                        name: user.userName || user.name || extractUserName(user) || 'Khách hàng',
+                        // Store the user name consistently for this conversation
+                        name: userName,
                         lastMessageType: user.lastMessageType || (
                             user.lastMessage && user.lastMessage.startsWith('data:image') 
                                 ? 'image' 
@@ -254,9 +312,16 @@ const AdminChat = () => {
             const userInfo = await getUserById(userId);
             console.log('Thông tin chi tiết người dùng:', JSON.stringify(userInfo, null, 2));
 
-            if (userInfo && userInfo.data) {
-                // Sử dụng hàm extractUserName để lấy tên người dùng
-                let userName = extractUserName(userInfo.data);
+            // First, check if user is in our list and has a name
+            const existingUser = users.find(u => u.userId === userId);
+            let userName = existingUser?.name;
+            
+            // Don't override existing custom names with API data unless the existing name is generic
+            const isGenericName = !userName || userName === 'Khách hàng' || userName === userId;
+            
+            if (isGenericName && userInfo && userInfo.data) {
+                // If we don't have a good name, extract one from the API response
+                userName = extractUserName(userInfo.data);
                 const userEmail = userInfo.data.email || '';
                 const userAvatar = userInfo.data.avatar || userInfo.data.avatarUrl || '';
 
@@ -283,22 +348,44 @@ const AdminChat = () => {
                     console.log('📧 Sử dụng tên từ email:', userName);
                 }
 
+                // Set current user info with the name
                 setCurrentUserInfo({
                     name: userName,
                     email: userEmail,
                     avatar: userAvatar
                 });
+                
+                // Update the user name in the list if it's a better name than what we had
+                if (userName !== 'Khách hàng' && userName !== userId) {
+                    setUsers(prevUsers => {
+                        const userIndex = prevUsers.findIndex(user => user.userId === userId);
+                        if (userIndex >= 0 && (prevUsers[userIndex].name === 'Khách hàng' || prevUsers[userIndex].name === userId)) {
+                            console.log(`Updating user name in list to: ${userName}`);
+                            const updatedUsers = [...prevUsers];
+                            updatedUsers[userIndex] = {
+                                ...updatedUsers[userIndex],
+                                name: userName
+                            };
+                            return updatedUsers;
+                        }
+                        return prevUsers;
+                    });
+                }
             } else {
+                // Use the existing name from our list if available
                 setCurrentUserInfo({
-                    name: 'Khách hàng',
-                    email: '',
-                    avatar: ''
+                    name: userName || 'Khách hàng',
+                    email: userInfo?.data?.email || '',
+                    avatar: userInfo?.data?.avatar || userInfo?.data?.avatarUrl || ''
                 });
             }
         } catch (error) {
             console.error(`Lỗi khi lấy thông tin người dùng ${userId}:`, error);
+            
+            // Use existing name from list if available, otherwise fallback
+            const existingUser = users.find(u => u.userId === userId);
             setCurrentUserInfo({
-                name: 'Khách hàng',
+                name: existingUser?.name || 'Khách hàng',
                 email: '',
                 avatar: ''
             });
@@ -313,17 +400,61 @@ const AdminChat = () => {
             const result = await fetchChatHistory(userId);
             if (result.success) {
                 // Process messages to ensure they have messageType and handle userName
-                const processedMessages = result.data.map(msg => ({
-                    ...msg,
-                    messageType: msg.messageType || (
-                        msg.message && msg.message.startsWith('data:image/') ? 'image' : 'text'
-                    ),
-                    // If userName is not provided, use default values
-                    userName: msg.userName || (msg.senderType === 'admin' ? 'Admin' : userId)
-                }));
+                const processedMessages = result.data.map(msg => {
+                    // Get userName from various sources
+                    let userName;
+                    
+                    if (msg.senderType === 'user') {
+                        // For user messages, try to use the userName from the message
+                        userName = msg.userName || findUserName(userId) || currentUserInfo?.name;
+                    } else {
+                        // For admin messages, use the current user's name
+                        userName = currentUserInfo?.name || findUserName(userId);
+                    }
+                    
+                    return {
+                        ...msg,
+                        messageType: msg.messageType || (
+                            msg.message && msg.message.startsWith('data:image/') ? 'image' : 'text'
+                        ),
+                        userName: userName || 'Khách hàng'
+                    };
+                });
+                
                 setMessages(processedMessages);
-                // Đảm bảo cuộn xuống sau khi dữ liệu đã tải
-                setTimeout(scrollToBottom, 100);
+                
+                // Update chat name if we found a good userName in the messages
+                const userMessages = processedMessages.filter(msg => msg.senderType === 'user');
+                if (userMessages.length > 0) {
+                    const lastUserMessage = userMessages[userMessages.length - 1];
+                    if (lastUserMessage.userName && lastUserMessage.userName !== 'Khách hàng' && lastUserMessage.userName !== userId) {
+                        console.log(`Using name from message history: ${lastUserMessage.userName}`);
+                        
+                        // Update the user's name in the user list
+                        setUsers(prevUsers => {
+                            const userIndex = prevUsers.findIndex(user => user.userId === userId);
+                            if (userIndex >= 0) {
+                                const updatedUsers = [...prevUsers];
+                                if (lastUserMessage.userName !== updatedUsers[userIndex].name) {
+                                    console.log(`Updating user name in list from ${updatedUsers[userIndex].name} to ${lastUserMessage.userName}`);
+                                    updatedUsers[userIndex] = {
+                                        ...updatedUsers[userIndex],
+                                        name: lastUserMessage.userName
+                                    };
+                                    return updatedUsers;
+                                }
+                            }
+                            return prevUsers;
+                        });
+                    }
+                }
+                
+                // Đảm bảo cuộn xuống sau khi dữ liệu đã tải và DOM đã được cập nhật
+                setTimeout(() => {
+                    if (messagesEndRef.current) {
+                        messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 300);
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
@@ -349,8 +480,10 @@ const AdminChat = () => {
     const handleSendMessage = () => {
         if ((!messageInput.trim() && !imagePreview) || !currentUserId || !socket) return;
 
-        // Get current user name from state
-        const userName = currentUserInfo?.name || 'Admin';
+        // Find the current user's name from the users list or currentUserInfo
+        const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
+
+        console.log('👤 Gửi tin nhắn tới người dùng:', userName);
 
         // Nếu có hình ảnh để gửi
         if (imagePreview) {
@@ -361,7 +494,7 @@ const AdminChat = () => {
                 message: imagePreview,
                 senderType: 'admin',
                 messageType: 'image',
-                userName: userName
+                userName: userName  // Use user's name instead of 'Admin'
             };
 
             // Gửi tin nhắn hình ảnh qua socket
@@ -381,7 +514,7 @@ const AdminChat = () => {
             message: messageInput.trim(),
             senderType: 'admin',
             messageType: 'text',
-            userName: userName
+            userName: userName  // Use user's name instead of 'Admin'
         };
 
         // Gửi tin nhắn qua socket
@@ -414,6 +547,12 @@ const AdminChat = () => {
         const reader = new FileReader();
         reader.onload = (e) => {
             setImagePreview(e.target.result);
+            // Tự động cuộn xuống để hiển thị ảnh preview
+            setTimeout(() => {
+                if (messagesContainerRef.current) {
+                    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+                }
+            }, 100);
         };
         reader.readAsDataURL(file);
     };
@@ -425,6 +564,13 @@ const AdminChat = () => {
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+        // Focus lại vào input sau khi xóa ảnh
+        setTimeout(() => {
+            const inputElement = document.querySelector('.chat-input input');
+            if (inputElement) {
+                inputElement.focus();
+            }
+        }, 100);
     };
 
     // Xử lý khi nhấn phím Enter để gửi tin nhắn
@@ -555,18 +701,16 @@ const AdminChat = () => {
         return currentDate !== prevDate;
     };
 
-    // Rút gọn tin nhắn
+    // Customize the message truncation for the user list
     const truncateMessage = (message, maxLength, messageType) => {
-        // Check if it's an image by type or content
-        if (messageType === 'image' || (message && typeof message === 'string' && message.startsWith('data:image/'))) {
+        if (!message) return '';
+        
+        if (messageType === 'image') {
             return '[Hình ảnh]';
         }
         
-        if (!message || typeof message !== 'string') {
-            return '';
-        }
-        
-        return message.length > maxLength ? message.substring(0, maxLength) + '...' : message;
+        if (message.length <= maxLength) return message;
+        return message.substring(0, maxLength) + '...';
     };
 
     // Kiểm tra nếu nên hiển thị nút cuộn xuống
@@ -613,6 +757,12 @@ const AdminChat = () => {
         setModalImage('');
         // Restore scrolling
         document.body.style.overflow = 'auto';
+    };
+
+    // Add a helper function to find user name by ID
+    const findUserName = (userId) => {
+        const user = users.find(u => u.userId === userId);
+        return user ? user.name : null;
     };
 
     return (
@@ -664,13 +814,12 @@ const AdminChat = () => {
                                             </div>
                                         )}
                                     </div>
+                                    
                                     <div className="user-item-content">
                                         <div className="user-info">
                                             <h6>
-                                                {user.name || 'Khách hàng'}
-                                                {user.email && <span className="user-email-inline"> ({user.email})</span>}
+                                                <UserNameDisplay userName={user.name} highlight={true} />
                                             </h6>
-                                            <div className="user-id-display">ID: {user.userId}</div>
                                             <p>{truncateMessage(user.lastMessage, 30, user.lastMessageType)}</p>
                                             <small>{formatTime(user.lastMessageTime)}</small>
                                         </div>
@@ -692,39 +841,42 @@ const AdminChat = () => {
                         {currentUserId ? (
                             <div className="current-user-info">
                                 <div className="user-details">
-                                    <div className="user-avatar header-avatar">
-                                        {currentUserInfo?.avatar ? (
-                                            <img src={currentUserInfo.avatar} alt={currentUserInfo.name || 'User'} />
-                                        ) : (
-                                            <div className="default-avatar">
-                                                <FontAwesomeIcon icon={faUser} />
-                                            </div>
-                                        )}
+                                    <div className="header-avatar">
+                                        <div className="default-avatar">
+                                            <FontAwesomeIcon icon={faUser} />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h5>{currentUserInfo?.name || 'Khách hàng'}</h5>
-                                        <div className="user-id-display header">ID: {currentUserId}</div>
+                                    <div className="user-header-info">
+                                        <h5>
+                                            <UserNameDisplay 
+                                                userName={currentUserInfo?.name || findUserName(currentUserId)} 
+                                                highlight={true} 
+                                            />
+                                            <UserNameDisplay 
+                                                userName={currentUserInfo?.name || findUserName(currentUserId)} 
+                                                badge={true} 
+                                            />
+                                        </h5>
                                         {currentUserInfo?.email && (
                                             <div className="user-email">
                                                 <FontAwesomeIcon icon={faEnvelope} className="info-icon" />
-                                                {currentUserInfo.email}
+                                                <span>{currentUserInfo.email}</span>
                                             </div>
                                         )}
+                                        <div className="user-id-display header">
+                                            ID: {currentUserId}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="chat-actions">
                                     <button 
                                         className={`action-button ${refreshingMessages ? 'refreshing' : ''}`} 
-                                        onClick={() => fetchMessages(currentUserId)} 
+                                        onClick={() => fetchMessages(currentUserId)}
                                         title="Tải lại tin nhắn"
                                         disabled={refreshingMessages}
                                     >
                                         <FontAwesomeIcon icon={faSync} />
                                     </button>
-                                    <div className="online-status">
-                                        <FontAwesomeIcon icon={faCircle} className="online-icon" />
-                                        <span>Online</span>
-                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -757,65 +909,37 @@ const AdminChat = () => {
                             ) : (
                                 <div className="messages-container">
                                     {messages.map((message, index) => {
-                                        // Xác định tên người gửi cho tin nhắn
-                                        let senderName = message.userName || 'Admin';
-                                        let senderInfo = null;
-
-                                        // Nếu không phải admin gửi và không có userName trong message
-                                        if (message.senderType !== 'admin' && !message.userName) {
-                                            // Tìm trong danh sách người dùng dựa vào senderId
-                                            const userInList = users.find(u => u.userId === message.senderId);
-                                            if (userInList && userInList.name) {
-                                                // Nếu tìm thấy tên từ danh sách users
-                                                senderName = userInList.name;
-                                                senderInfo = userInList;
-                                                console.log(`📝 Sử dụng tên người dùng từ danh sách: ${senderName}`);
-                                            } else if (currentUserInfo && currentUserId === message.senderId) {
-                                                // Nếu đang chat với người dùng này, sử dụng thông tin hiện tại
-                                                senderName = currentUserInfo.name || 'Khách hàng';
-                                                senderInfo = currentUserInfo;
-                                                console.log(`📝 Sử dụng tên người dùng hiện tại: ${senderName}`);
-                                            } else {
-                                                // Mặc định sử dụng senderId nếu không tìm thấy tên
-                                                senderName = message.senderId;
-                                                console.log(`⚠️ Không tìm thấy tên người dùng, sử dụng ID: ${senderName}`);
-                                            }
+                                        const isImage = message.messageType === 'image';
+                                        let senderName = '';
+                                        
+                                        // Get the user's name regardless of who sent the message
+                                        if (message.senderType === 'user') {
+                                            // For user messages, get their name
+                                            senderName = message.userName || findUserName(message.senderId) || currentUserInfo?.name || 'Khách hàng';
+                                        } else {
+                                            // For admin messages, we'll still display the current user's name (not "Admin")
+                                            senderName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
                                         }
 
-                                        // Hiển thị ngày nếu cần
-                                        const showDateHeader = shouldShowDate(messages, index);
-
-                                        // Determine if this is an image message
-                                        const isImage = message.messageType === 'image' || 
-                                                      (message.message && typeof message.message === 'string' && 
-                                                       message.message.startsWith('data:image/'));
-
                                         return (
-                                            <React.Fragment key={index}>
-                                                {showDateHeader && (
+                                            <React.Fragment key={message._id || index}>
+                                                {shouldShowDate(messages, index) && (
                                                     <div className="date-separator">
                                                         <span>{formatMessageDate(message.createdAt)}</span>
                                                     </div>
                                                 )}
-                                                <div
-                                                    className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}
-                                                >
+                                                
+                                                <div className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}>
                                                     <div className="message-content">
                                                         <div className="message-sender">
-                                                            {senderName}
-                                                            {senderInfo?.email && (
-                                                                <small className="sender-email"> ({senderInfo.email})</small>
-                                                            )}
-                                                            {message.senderType !== 'admin' && (
-                                                                <div className="message-sender-id">ID: {message.senderId}</div>
-                                                            )}
+                                                            <UserNameDisplay userName={senderName} highlight={true} />
                                                         </div>
                                                         
                                                         {isImage ? (
                                                             <div className="message-image-container">
-                                                                <img 
-                                                                    src={message.message} 
-                                                                    alt="Hình ảnh" 
+                                                                <img
+                                                                    src={message.message}
+                                                                    alt="Hình ảnh"
                                                                     className="message-image"
                                                                     onClick={() => openImageModal(message.message)}
                                                                 />
@@ -828,12 +952,7 @@ const AdminChat = () => {
                                                         )}
                                                         
                                                         <div className="message-footer">
-                                                            <small className="message-time">{formatTime(message.createdAt)}</small>
-                                                            {message.senderType === 'admin' && (
-                                                                <small className="message-status">
-                                                                    <FontAwesomeIcon icon={message.read ? faCheckDouble : faCheck} />
-                                                                </small>
-                                                            )}
+                                                            <span className="message-time">{formatTime(message.createdAt)}</span>
                                                         </div>
                                                     </div>
                                                 </div>
