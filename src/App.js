@@ -18,6 +18,7 @@ import './public/styles/theme.css';
 import './public/styles/Slidebar.css';
 import './public/styles/Home.css';
 import './App.css';
+import ComboManagement from './components/ComboManagement';
 
 const App = () => {
     const location = useLocation();
@@ -31,6 +32,7 @@ const App = () => {
                 <Routes>
                     <Route path="/" element={<Login />} />
                     <Route path="/home" element={<Dashboard />} />
+                    <Route path="/combo" element={<ComboManagement />} />
                     <Route path="/products" element={<ProductManagement />} />
                     <Route path="/accounts" element={<AccountManagement />} />
                     <Route path="/user-status" element={<UserStatusDashboard />} />

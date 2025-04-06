@@ -1,183 +1,481 @@
 .plans-container {
-    width: 100%;
-    margin: 20px auto;
-    background: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
+    padding: 2rem;
+    max-width: 100%;
+    margin: 0 auto;
+    background-color: #f8f9fa;
 }
 
-h2 {
+.plans-container h2 {
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    font-size: 2rem;
     text-align: center;
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 2em;
-    font-weight: bold;
+    font-weight: 600;
+}
+
+.search-container {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    padding: 0 1rem;
+}
+
+.search-input {
+    width: 100%;
+    max-width: 600px;
+    padding: 0.8rem 1.2rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.table-container {
+    margin: 0 1rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: auto;
 }
 
 .plans-table {
     width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    min-width: 600px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    min-width: 1200px; /* Ensure minimum width for all columns */
 }
 
-.plans-table th,
-.plans-table td {
-    border: 1px solid #ddd;
-    padding: 12px 8px;
-    text-align: center;
+.plans-table thead {
+    background-color: #2c3e50;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 .plans-table th {
-    background: #007bff;
-    color: white;
+    padding: 1rem;
+    text-align: left;
     font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    position: relative;
 }
 
-.plans-table tr:nth-child(even) {
-    background: #f9f9f9;
+.plans-table th:hover {
+    background-color: #34495e;
 }
 
-.plans-table tr:hover {
-    background: #f1f1f1;
-}
-
-.error-text {
-    text-align: center;
-    color: #dc3545;
-    font-size: 18px;
-}
-
-.loading-message {
-    text-align: center;
-    font-size: 18px;
-    padding: 20px;
-    color: #007bff;
-}
-.modal {
-    display: flex;
-    position: fixed;
-    z-index: 1000;
+.plans-table th::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
     left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #3498db;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.plans-table th:hover::after {
+    transform: scaleX(1);
+}
+
+.plans-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    color: #444;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Column specific widths */
+.plans-table th:nth-child(1), 
+.plans-table td:nth-child(1) { /* STT */
+    width: 80px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.plans-table th:nth-child(2),
+.plans-table td:nth-child(2) { /* Tên kế hoạch */
+    width: 150px;
+    min-width: 150px;
+}
+
+.plans-table th:nth-child(3),
+.plans-table td:nth-child(3) { /* Sảnh */
+    width: 100px;
+    min-width: 100px;
+}
+
+.plans-table th:nth-child(4),
+.plans-table td:nth-child(4) { /* Hình ảnh */
+    width: 100px;
+    min-width: 100px;
+}
+
+.plans-table th:nth-child(5),
+.plans-table td:nth-child(5) { /* Ngày sự kiện */
+    width: 120px;
+    min-width: 120px;
+}
+
+.plans-table th:nth-child(6),
+.plans-table td:nth-child(6) { /* Số khách */
+    width: 100px;
+    min-width: 100px;
+}
+
+.plans-table th:nth-child(7),
+.plans-table td:nth-child(7) { /* Tổng giá */
+    width: 150px;
+    min-width: 150px;
+}
+
+.plans-table th:nth-child(8),
+.plans-table td:nth-child(8) { /* Chênh lệch giá */
+    width: 150px;
+    min-width: 150px;
+}
+
+.plans-table th:nth-child(9),
+.plans-table td:nth-child(9) { /* Người phụ trách */
+    width: 150px;
+    min-width: 150px;
+}
+
+.plans-table th:nth-child(10),
+.plans-table td:nth-child(10) { /* Chi tiết */
+    width: 100px;
+    min-width: 100px;
+    text-align: center;
+}
+
+.plans-table tbody tr {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.plans-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.view-details-btn {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    width: 100px;
+}
+
+.view-details-btn:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+.sanh-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sanh-image:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.no-data {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+    background-color: #f8f9fa;
+}
+
+/* Sort indicators */
+.sort-indicator {
+    display: inline-block;
+    margin-left: 5px;
+    transition: transform 0.3s ease;
+}
+
+.sort-indicator.asc {
+    transform: rotate(180deg);
+}
+
+/* Price formatting */
+.price-cell {
+    text-align: right;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+/* Date formatting */
+.date-cell {
+    text-align: center;
+    font-family: 'Roboto Mono', monospace;
+    color: #2c3e50;
+}
+
+/* Status indicators */
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
     top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .modal-content {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-    padding: 30px;
+    background: white;
+    padding: 2.5rem;
+    border-radius: 20px;
     width: 90%;
-    max-width: 600px;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow-y: auto;
     position: relative;
-    animation: fadeIn 0.3s;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease;
 }
-.modal-content .detail-row {
-    display: flex;
-    justify-content: space-between;
-    margin: 10px 0;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
     }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h2 {
+    color: #2c3e50;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #eee;
+}
+
+.modal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.modal-section {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.modal-section h3 {
+    color: #2c3e50;
+    font-size: 1.3rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.modal-section h4 {
+    color: #34495e;
+    font-size: 1.1rem;
+    margin: 1rem 0;
+}
+
+.modal-section p {
+    margin: 0.8rem 0;
+    line-height: 1.6;
+    color: #444;
+    display: flex;
+    align-items: baseline;
+}
+
+.modal-section strong {
+    color: #2c3e50;
+    font-weight: 600;
+    min-width: 120px;
+    margin-right: 0.5rem;
+}
+
+.service-summary {
+    background-color: #e8f4fc;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #3498db;
+}
+
+.service-count {
+    font-weight: 600;
+    color: #3498db;
+    margin-left: 0.5rem;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.items-section {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.items-section h4 {
+    color: #3498db;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
 }
 
 .close {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    color: #ff4d4d;
-    font-size: 28px;
-    font-weight: bold;
+    right: 1.5rem;
+    top: 1rem;
+    font-size: 2rem;
     cursor: pointer;
+    color: #666;
+    transition: all 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f8f9fa;
 }
 
 .close:hover {
-    color: #ff1a1a;
+    color: #e74c3c;
+    background-color: #fee;
+    transform: rotate(90deg);
 }
 
-.modal-content h2 {
-    margin-top: 0;
-    color: #333333;
-    font-size: 24px;
-    border-bottom: 2px solid #f0f0f0;
-    padding-bottom: 10px;
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-.modal-content p {
-    margin: 15px 0;
-    color: #555555;
-    line-height: 1.6;
-    font-size: 16px;
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
 }
 
-strong {
-    color: #000000;
-    font-weight: 600;
-}
-.sanh-image {
-    width: 100px;
-    height: auto;
-    max-width: 100%;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-.zoomed-modal {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 50%;
-    height: 50%;
-    display: grid;
-    z-index: 1000;
-    text-align: center;
-    margin: auto;
-    padding: auto;
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
 }
 
-.zoomed-content {
-    position: relative;
+::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
 }
-.zoomed-image {
-    max-width: 90%;
-    max-height: 90%;
-    border-radius: 8px;
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+    .plans-container {
+        padding: 1rem;
+    }
+    
+    .table-container {
+        margin: 0;
+    }
 }
-@media screen and (max-width: 768px) {
+
+@media (max-width: 768px) {
+    .plans-container h2 {
+        font-size: 1.5rem;
+    }
+    
+    .search-input {
+        font-size: 0.9rem;
+    }
+    
     .modal-content {
-        padding: 20px;
+        padding: 1.5rem;
     }
+    
+    .modal-section {
+        padding: 1rem;
+    }
+    
+    .items-grid {
+        grid-template-columns: 1fr;
+    }
+}
 
-    .modal-content h2 {
-        font-size: 20px;
-    }
+/* Row number formatting */
+.row-number {
+    font-weight: 500;
+    color: #2c3e50;
+    text-align: center;
+    font-family: 'Roboto Mono', monospace;
+    background-color: #f8f9fa;
+}
 
-    .modal-content p {
-        font-size: 14px;
-    }
+.number-cell {
+    text-align: right;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 500;
+}
 
-    .modal-content .detail-row {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+/* Update hover effect to not change the row number background */
+.plans-table tbody tr:hover .row-number {
+    background-color: #f8f9fa;
 }

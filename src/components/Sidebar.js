@@ -57,7 +57,7 @@ const Sidebar = () => {
     { path: '/accounts', icon: faUsers, text: 'Quản Lý Tài Khoản' },
     { path: '/user-status', icon: faUserCheck, text: 'Đang Online' },
     { path: '/plans', icon: faBoxArchive, text: 'Quản Lý Kế Hoạch' },
-    { path: '/', icon: faBoxArchive, text: 'Quản lý Combo'},
+    { path: '/combo', icon: faBoxArchive, text: 'Quản lý Combo'},
     { path: '/blog', icon: faBlog, text: 'Blog' },
     { path: '/transaction', icon: faExchangeAlt, text: 'Giao Dịch' },
     { path: '/admin-chat', icon: faComments, text: 'Chat Với Khách Hàng' },
