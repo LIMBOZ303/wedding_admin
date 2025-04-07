@@ -17,6 +17,35 @@ export const fetchAllPlans = async () => {
     }
 };
 
+// Lấy danh sách các kế hoạch không có UserId
+export const fetchPlansNoUser = async () => {
+    try {
+        const response = await axios.get(`${PLAN_API_URL}/no-user`);
+        if (response.data.status) {
+            return response.data.data;
+        } else {
+            throw new Error(response.data.message || 'Error fetching plans without user');
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách kế hoạch không có user:', error);
+        throw error;
+    }
+};
+// Lấy danh sách các kế hoạch có UserId
+export const fetchPlanswithUser = async () => {
+    try {
+        const response = await axios.get(`${PLAN_API_URL}/with-user`);
+        if (response.data.status) {
+            return response.data.data;
+        } else {
+            throw new Error(response.data.message || 'Error fetching plans without user');
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy danh sách kế hoạch không có user:', error);
+        throw error;
+    }
+};
+
 // Lấy thông tin chi tiết kế hoạch theo ID
 export const fetchPlanById = async (planId) => {
     try {
@@ -53,7 +82,7 @@ export const updatePlan = async (planId, updatedData) => {
 // Xóa kế hoạch
 export const deletePlan = async (planId) => {
     try {
-        const response = await axios.delete(`${PLAN_API_URL}/delete/${planId}`);
+        const response = await axios.delete(`${PLAN_API_URL}/${planId}`);
         return response.data;
     } catch (error) {
         console.error(`Lỗi khi xóa kế hoạch có ID ${planId}:`, error);
