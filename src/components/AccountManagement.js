@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAccounts, getUserStatus } from '../api/users_api';
-import Swal from 'sweetalert2';
 import '../public/styles/AccountManagement.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faExclamationCircle, faUsers, faCircle, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faExclamationCircle, faUsers, faCircle, faClock, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 const AccountManagement = () => {
     const [accounts, setAccounts] = useState([]);
@@ -14,13 +13,6 @@ const AccountManagement = () => {
 
     const loadAccounts = async () => {
         setLoading(true);
-        Swal.fire({
-            title: 'Đang tải dữ liệu...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
         try {
             const data = await fetchAccounts();
 
@@ -49,13 +41,7 @@ const AccountManagement = () => {
             setError('');
         } catch (err) {
             setError('Không thể tải dữ liệu tài khoản.');
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi',
-                text: 'Không thể tải dữ liệu tài khoản.',
-            });
         } finally {
-            Swal.close();
             setLoading(false);
         }
     };
@@ -130,7 +116,14 @@ const AccountManagement = () => {
                 </div>
             </div>
 
-            {filteredAccounts.length > 0 ? (
+            {loading ? (
+                <div className="loading-state">
+                    <div className="loading-spinner">
+                        <FontAwesomeIcon icon={faSpinner} spin />
+                    </div>
+                    <p>Đang tải dữ liệu...</p>
+                </div>
+            ) : filteredAccounts.length > 0 ? (
                 <table className="account-table">
                     <thead>
                         <tr>

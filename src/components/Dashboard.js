@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUsers,
@@ -57,8 +57,10 @@ const Dashboard = () => {
   const [quarterRevenue, setQuarterRevenue] = useState([]);
   const [weekRevenue, setWeekRevenue] = useState([]);
   const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
-  const [monthlyOrderStats, setMonthlyOrderStats] = useState([]); // Thống kê đơn hàng theo tháng
+  const [monthlyOrderStats, setMonthlyOrderStats] = useState([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedWeekRange, setSelectedWeekRange] = useState('1-12');
+  const [selectedQuarter, setSelectedQuarter] = useState(1);
 
   // Trạng thái loading
   const [loadingTransactionStats, setLoadingTransactionStats] = useState(true);
@@ -76,6 +78,98 @@ const Dashboard = () => {
   const sampleUserId = '603d2f5e2e2e2e2e2e2e2e2e';
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
+
+  // Hàm lấy dữ liệu thống kê theo tháng
+  const fetchMonthlyData = async () => {
+    try {
+      setLoadingMonthlyRevenue(true);
+      const revenueByMonthData = await Promise.all(
+        Array.from({ length: 6 }, async (_, i) => {
+          const res = await fetchRevenueByMonth(selectedYear, i + 1);
+          return res.success && res.data ? res.data.totalDeposit : 0;
+        })
+      );
+      setMonthlyRevenue(revenueByMonthData);
+    } catch (error) {
+      console.error('Error fetching monthly revenue:', error);
+    } finally {
+      setLoadingMonthlyRevenue(false);
+    }
+  };
+
+  // Hàm lấy dữ liệu thống kê theo quý
+  const fetchQuarterData = async () => {
+    try {
+      setLoadingQuarterRevenue(true);
+      const quarterData = await Promise.all(
+        Array.from({ length: 4 }, async (_, i) => {
+          const res = await fetchRevenueByQuarter(selectedYear, i + 1);
+          if (res.success && res.data) {
+            return {
+              totalDeposit: res.data.totalDeposit || 0,
+              transactionCount: res.data.transactionCount || 0
+            };
+          }
+          return { totalDeposit: 0, transactionCount: 0 };
+        })
+      );
+      setQuarterRevenue(quarterData);
+    } catch (error) {
+      console.error('Error fetching quarter revenue:', error);
+      setQuarterRevenue(Array(4).fill({ totalDeposit: 0, transactionCount: 0 }));
+    } finally {
+      setLoadingQuarterRevenue(false);
+    }
+  };
+
+  // Hàm lấy dữ liệu thống kê theo tuần
+  const fetchWeekData = async () => {
+    try {
+      setLoadingWeekRevenue(true);
+      
+      // Lấy phạm vi tuần từ selectedWeekRange
+      const [startWeek, endWeek] = selectedWeekRange.split('-').map(Number);
+      const weekCount = endWeek - startWeek + 1;
+      
+      const weekData = await Promise.all(
+        Array.from({ length: weekCount }, async (_, i) => {
+          const weekNumber = startWeek + i;
+          const res = await fetchRevenueByWeek(selectedYear, weekNumber);
+          if (res.success && res.data) {
+            return {
+              totalDeposit: res.data.totalDeposit || 0,
+              transactionCount: res.data.transactionCount || 0
+            };
+          }
+          return { totalDeposit: 0, transactionCount: 0 };
+        })
+      );
+      setWeekRevenue(weekData);
+    } catch (error) {
+      console.error('Error fetching week revenue:', error);
+      setWeekRevenue([]);
+    } finally {
+      setLoadingWeekRevenue(false);
+    }
+  };
+
+  // Hàm lấy dữ liệu thống kê đơn hàng theo tháng
+  const fetchMonthlyOrderData = async () => {
+    try {
+      setLoadingMonthlyOrderStats(true);
+      const monthlyOrderData = await Promise.all(
+        Array.from({ length: 12 }, async (_, i) => {
+          const res = await fetchRevenueByMonth(selectedYear, i + 1);
+          return res.success && res.data ? res.data : { totalDeposit: 0, transactionCount: 0 };
+        })
+      );
+      setMonthlyOrderStats(monthlyOrderData);
+    } catch (error) {
+      console.error('Error fetching monthly order stats:', error);
+    } finally {
+      setLoadingMonthlyOrderStats(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,15 +191,7 @@ const Dashboard = () => {
         setLoadingRevenueStats(false);
 
         // Fetch Monthly Revenue (6 tháng đầu năm)
-        setLoadingMonthlyRevenue(true);
-        const revenueByMonthData = await Promise.all(
-          Array.from({ length: 6 }, async (_, i) => {
-            const res = await fetchRevenueByMonth(currentYear, i + 1);
-            return res.success && res.data ? res.data.totalDeposit : 0;
-          })
-        );
-        setMonthlyRevenue(revenueByMonthData);
-        setLoadingMonthlyRevenue(false);
+        await fetchMonthlyData();
 
         // Fetch Current Month Revenue
         setLoadingCurrentMonthRevenue(true);
@@ -134,37 +220,13 @@ const Dashboard = () => {
         setLoadingRevenueByYear(false);
 
         // Fetch Quarter Revenue
-        setLoadingQuarterRevenue(true);
-        const quarterData = await Promise.all(
-          Array.from({ length: 4 }, async (_, i) => {
-            const res = await fetchRevenueByQuarter(currentYear, i + 1);
-            return res.success && res.data ? res.data : { totalDeposit: 0, transactionCount: 0 };
-          })
-        );
-        setQuarterRevenue(quarterData);
-        setLoadingQuarterRevenue(false);
+        await fetchQuarterData();
 
         // Fetch Week Revenue
-        setLoadingWeekRevenue(true);
-        const weekData = await Promise.all(
-          Array.from({ length: 53 }, async (_, i) => {
-            const res = await fetchRevenueByWeek(currentYear, i + 1);
-            return res.success && res.data ? res.data : { totalDeposit: 0, transactionCount: 0 };
-          })
-        );
-        setWeekRevenue(weekData);
-        setLoadingWeekRevenue(false);
+        await fetchWeekData();
 
         // Fetch Monthly Order Stats (12 tháng trong năm được chọn)
-        setLoadingMonthlyOrderStats(true);
-        const monthlyOrderData = await Promise.all(
-          Array.from({ length: 12 }, async (_, i) => {
-            const res = await fetchRevenueByMonth(selectedYear, i + 1);
-            return res.success && res.data ? res.data : { totalDeposit: 0, transactionCount: 0 };
-          })
-        );
-        setMonthlyOrderStats(monthlyOrderData);
-        setLoadingMonthlyOrderStats(false);
+        await fetchMonthlyOrderData();
 
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -172,6 +234,16 @@ const Dashboard = () => {
     };
     fetchData();
   }, [chosenStatus, sampleUserId, currentYear, currentMonth, selectedYear]);
+
+  // Cập nhật dữ liệu khi năm được chọn thay đổi
+  useEffect(() => {
+    fetchMonthlyOrderData();
+  }, [selectedYear]);
+
+  // Cập nhật dữ liệu khi quý được chọn thay đổi
+  useEffect(() => {
+    fetchQuarterData();
+  }, [selectedYear]);
 
   // Tính toán dữ liệu
   const totalTransactions =
@@ -186,7 +258,7 @@ const Dashboard = () => {
 
   // Biểu đồ doanh thu theo tháng (Line Chart)
   const revenueData = {
-    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
+    labels: [`Tháng 1/${selectedYear}`, `Tháng 2/${selectedYear}`, `Tháng 3/${selectedYear}`, `Tháng 4/${selectedYear}`, `Tháng 5/${selectedYear}`, `Tháng 6/${selectedYear}`],
     datasets: [
       {
         label: 'Doanh thu (VND)',
@@ -319,61 +391,232 @@ const Dashboard = () => {
   ];
 
   // Biểu đồ doanh thu theo quý (Bar Chart)
-  const quarterLabels = ['Quý 1', 'Quý 2', 'Quý 3', 'Quý 4'];
+  const quarterLabels = [`Quý 1/${selectedYear}`, `Quý 2/${selectedYear}`, `Quý 3/${selectedYear}`, `Quý 4/${selectedYear}`];
   const quarterData = {
     labels: quarterLabels,
     datasets: [
       {
         label: 'Doanh thu (VND)',
         data: quarterRevenue.map(q => q.totalDeposit),
-        backgroundColor: 'rgba(76, 175, 80, 0.7)',
+        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+        borderRadius: 8,
+        barThickness: 20,
       },
+      {
+        label: 'Số giao dịch',
+        data: quarterRevenue.map(q => q.transactionCount),
+        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1,
+        borderRadius: 8,
+        barThickness: 20,
+      }
     ],
   };
   const quarterOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top' },
-      tooltip: {
-        callbacks: {
-          label: context => `${context.dataset.label}: ${context.raw.toLocaleString()} VND`,
-        },
+      legend: { 
+        position: 'top',
+        labels: { 
+          usePointStyle: true, 
+          pointStyle: 'circle',
+          padding: 20,
+          font: {
+            size: 12
+          }
+        }
       },
+      tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#333',
+        titleFont: {
+          size: 13,
+          weight: 'normal'
+        },
+        bodyColor: '#666',
+        bodyFont: {
+          size: 12
+        },
+        padding: 12,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context) {
+            const label = context.dataset.label || '';
+            const value = context.raw;
+            if (label.includes('Doanh thu')) {
+              return `${label}: ${value.toLocaleString()} VND`;
+            }
+            return `${label}: ${value}`;
+          }
+        }
+      }
     },
     scales: {
-      y: { beginAtZero: true, ticks: { callback: value => value.toLocaleString() + ' VND' } },
-    },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+          drawBorder: false
+        },
+        ticks: {
+          font: {
+            size: 11
+          },
+          callback: function(value) {
+            if (this.chart.data.datasets[0].data.includes(value)) {
+              return value.toLocaleString() + ' VND';
+            }
+            return value;
+          }
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 11,
+            weight: 'bold'
+          }
+        }
+      }
+    }
   };
 
   // Biểu đồ doanh thu theo tuần (Line Chart)
-  const weekLabels = Array.from({ length: 53 }, (_, i) => `Tuần ${i + 1}`);
+  const [startWeek, endWeek] = selectedWeekRange.split('-').map(Number);
+  const weekLabels = Array.from(
+    { length: endWeek - startWeek + 1 }, 
+    (_, i) => `Tuần ${startWeek + i}/${selectedYear}`
+  );
+  
   const weekData = {
     labels: weekLabels,
     datasets: [
       {
         label: 'Doanh thu (VND)',
         data: weekRevenue.map(w => w.totalDeposit),
-        fill: false,
-        borderColor: 'rgba(255, 193, 7, 1)',
-        tension: 0.2,
+        fill: true,
+        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        tension: 0.4,
+        yAxisID: 'y',
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
       },
+      {
+        label: 'Số giao dịch',
+        data: weekRevenue.map(w => w.transactionCount),
+        fill: false,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        tension: 0.4,
+        yAxisID: 'y1',
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+      }
     ],
   };
   const weekOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top' },
-      tooltip: {
-        callbacks: {
-          label: context => `${context.dataset.label}: ${context.raw.toLocaleString()} VND`,
-        },
+      legend: { 
+        position: 'top',
+        labels: { 
+          usePointStyle: true, 
+          pointStyle: 'circle',
+          padding: 20,
+          font: {
+            size: 12
+          }
+        }
       },
+      tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        titleColor: '#333',
+        titleFont: {
+          size: 13,
+          weight: 'normal'
+        },
+        bodyColor: '#666',
+        bodyFont: {
+          size: 12
+        },
+        padding: 12,
+        borderColor: 'rgba(0, 0, 0, 0.1)',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context) {
+            const label = context.dataset.label || '';
+            const value = context.raw;
+            if (label.includes('Doanh thu')) {
+              return `${label}: ${value.toLocaleString()} VND`;
+            }
+            return `${label}: ${value}`;
+          }
+        }
+      }
     },
     scales: {
-      y: { beginAtZero: true, ticks: { callback: value => value.toLocaleString() + ' VND' } },
-    },
+      y: {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+          drawBorder: false
+        },
+        ticks: {
+          font: {
+            size: 11
+          },
+          callback: value => value.toLocaleString() + ' VND'
+        }
+      },
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false,
+          drawBorder: false
+        },
+        ticks: {
+          font: {
+            size: 11
+          },
+          callback: value => value
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxRotation: 45,
+          minRotation: 45,
+          font: {
+            size: 11
+          },
+          autoSkip: true,
+          maxTicksLimit: 12
+        }
+      }
+    }
   };
 
   return (
@@ -466,13 +709,113 @@ const Dashboard = () => {
       <LatestOrder />
 
       {/* Quarter Revenue Chart */}
-      <div className="chart-card detail-chart">
-        <div className="chart-header">
-          <h3>Doanh thu theo quý</h3>
+      <div style={{
+        background: '#fff',
+        borderRadius: '12px',
+        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+        marginBottom: '24px',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
+        }}>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: '#333',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>Doanh thu theo quý</h3>
+          <div style={{
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <label style={{
+                fontSize: '14px',
+                color: '#666',
+                fontWeight: 500
+              }}>Năm:</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '6px',
+                  backgroundColor: '#fff',
+                  fontSize: '14px',
+                  color: '#333',
+                  cursor: 'pointer',
+                  minWidth: '100px'
+                }}
+              >
+                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <label style={{
+                fontSize: '14px',
+                color: '#666',
+                fontWeight: 500
+              }}>Quý:</label>
+              <select
+                value={selectedQuarter}
+                onChange={(e) => setSelectedQuarter(Number(e.target.value))}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '6px',
+                  backgroundColor: '#fff',
+                  fontSize: '14px',
+                  color: '#333',
+                  cursor: 'pointer',
+                  minWidth: '100px'
+                }}
+              >
+                {Array.from({ length: 4 }, (_, i) => i + 1).map(quarter => (
+                  <option key={quarter} value={quarter}>Quý {quarter}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
-        <div className="chart-container" style={{ height: '300px' }}>
+        <div style={{
+          padding: '20px',
+          height: '300px',
+          position: 'relative',
+          background: '#fff'
+        }}>
           {loadingQuarterRevenue ? (
-            <div className="spinner"></div>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '50%',
+              borderTopColor: '#4CAF50',
+              animation: 'spin 1s linear infinite',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
+            }}></div>
           ) : (
             <Bar data={quarterData} options={quarterOptions} />
           )}
@@ -480,13 +823,114 @@ const Dashboard = () => {
       </div>
 
       {/* Week Revenue Chart */}
-      <div className="chart-card detail-chart">
-        <div className="chart-header">
-          <h3>Doanh thu theo tuần</h3>
+      <div style={{
+        background: '#fff',
+        borderRadius: '12px',
+        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+        marginBottom: '24px',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
+        }}>
+          <h3 style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            color: '#333',
+            margin: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>Doanh thu theo tuần</h3>
+          <div style={{
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'center'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <label style={{
+                fontSize: '14px',
+                color: '#666',
+                fontWeight: 500
+              }}>Năm:</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '6px',
+                  backgroundColor: '#fff',
+                  fontSize: '14px',
+                  color: '#333',
+                  cursor: 'pointer',
+                  minWidth: '100px'
+                }}
+              >
+                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <label style={{
+                fontSize: '14px',
+                color: '#666',
+                fontWeight: 500
+              }}>Tuần:</label>
+              <select
+                value={selectedWeekRange}
+                onChange={(e) => setSelectedWeekRange(e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid rgba(0, 0, 0, 0.1)',
+                  borderRadius: '6px',
+                  backgroundColor: '#fff',
+                  fontSize: '14px',
+                  color: '#333',
+                  cursor: 'pointer',
+                  minWidth: '100px'
+                }}
+              >
+                <option value="1-12">Tuần 1-12</option>
+                <option value="13-26">Tuần 13-26</option>
+                <option value="27-39">Tuần 27-39</option>
+                <option value="40-53">Tuần 40-53</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div className="chart-container" style={{ height: '300px' }}>
+        <div style={{
+          padding: '20px',
+          height: '300px',
+          position: 'relative',
+          background: '#fff'
+        }}>
           {loadingWeekRevenue ? (
-            <div className="spinner"></div>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '50%',
+              borderTopColor: '#4CAF50',
+              animation: 'spin 1s linear infinite',
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)'
+            }}></div>
           ) : (
             <Line data={weekData} options={weekOptions} />
           )}
