@@ -1,128 +1,292 @@
-/* Giao diện trang chi tiết dịch vụ */
-.catering-detail {
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 20px;
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+/* Catering Detail Styles */
+.catering-detail-container {
+  max-width: 1000px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+.catering-detail-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.catering-detail-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.catering-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+}
+
+.catering-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.back-button {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-3px);
+}
+
+.back-button span {
+  font-size: 16px;
+}
+
+.success-message {
+  background-color: #2ecc71;
+  color: white;
+  padding: 12px 20px;
   text-align: center;
-  transition: transform 0.3s ease-in-out;
+  animation: fadeIn 0.5s ease;
 }
 
-.catering-detail h2 {
-  color: #333;
-  margin-bottom: 20px;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.catering-detail img {
-  width: 100%;
-  max-width: 400px;
-  height: auto;
+.catering-content {
+  display: flex;
+  flex-direction: column;
+  padding: 30px;
+  gap: 30px;
+}
+
+@media (min-width: 768px) {
+  .catering-content {
+    flex-direction: row;
+  }
+}
+
+.catering-image-container {
+  flex: 1;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
   border-radius: 8px;
-  margin-bottom: 15px;
-  transition: transform 0.3s ease-in-out;
+  overflow: hidden;
 }
 
-.catering-detail img:hover {
+.catering-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.catering-image:hover {
   transform: scale(1.05);
 }
 
-.catering-detail p {
-  font-size: 16px;
-  color: #555;
-  margin-bottom: 10px;
-}
-
-.catering-detail p strong {
-  color: #222;
-}
-
-/* Form chỉnh sửa */
-.edit-form {
-  margin-top: 20px;
-  text-align: left;
-  background: #f9f9f9;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.edit-form h3 {
-  font-size: 18px;
-  margin-bottom: 10px;
-  color: #333;
-}
-
-.edit-form input,
-.edit-form textarea {
+.no-image {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #999;
   font-size: 16px;
-  outline: none;
-  transition: border 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  padding: 20px;
 }
 
-.edit-form input:focus,
-.edit-form textarea:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+.catering-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.edit-form textarea {
-  min-height: 80px;
-  resize: vertical;
+.info-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-/* Nút cập nhật & xóa */
-.button-update,
-.button-delete {
-  width: 100%; /* Nút rộng bằng khung */
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease-in-out;
-  display: block;
-  margin-top: 10px;
-  font-weight: bold;
+.info-group label {
+  font-weight: 600;
+  color: #555;
+  font-size: 14px;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-group p {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.info-group .price {
+  font-size: 20px;
+  font-weight: 600;
+  color: #e74c3c;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #3498db;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.edit-input:focus {
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  padding: 0 30px 30px;
+  justify-content: flex-end;
+}
+
+.button-update,
+.button-edit,
+.button-delete,
+.button-cancel {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .button-update {
-  background-color: #28a745;
+  background-color: #2ecc71;
   color: white;
 }
 
 .button-update:hover {
-  background-color: #218838;
-  transform: scale(1.02);
+  background-color: #27ae60;
+  transform: translateY(-2px);
+}
+
+.button-edit {
+  background-color: #3498db;
+  color: white;
+}
+
+.button-edit:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
 }
 
 .button-delete {
-  background-color: #dc3545;
+  background-color: #e74c3c;
   color: white;
 }
 
 .button-delete:hover {
-  background-color: #c82333;
-  transform: scale(1.02);
+  background-color: #c0392b;
+  transform: translateY(-2px);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .catering-detail {
-    width: 90%;
-    padding: 15px;
-  }
+.button-cancel {
+  background-color: #95a5a6;
+  color: white;
+}
 
+.button-cancel:hover {
+  background-color: #7f8c8d;
+  transform: translateY(-2px);
+}
+
+/* Loading and Error States */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  text-align: center;
+  padding: 20px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(52, 152, 219, 0.2);
+  border-radius: 50%;
+  border-top-color: #3498db;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.error-container p {
+  color: #e74c3c;
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .catering-detail-container {
+    margin: 15px auto;
+    padding: 0 15px;
+  }
+  
+  .catering-header {
+    padding: 15px 20px;
+  }
+  
+  .catering-content {
+    padding: 20px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    padding: 0 20px 20px;
+  }
+  
   .button-update,
-  .button-delete {
+  .button-edit,
+  .button-delete,
+  .button-cancel {
     width: 100%;
-    margin-bottom: 10px;
   }
 }

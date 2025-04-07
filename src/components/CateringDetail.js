@@ -10,6 +10,8 @@ const CateringDetail = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [editName, setEditName] = useState("");
+    const [isEditing, setIsEditing] = useState(false);
+    const [updateSuccess, setUpdateSuccess] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -39,8 +41,14 @@ const CateringDetail = () => {
             const updatedData = { name: editName };
             const res = await updateCatering(id, updatedData);
             if (res.status) {
-                alert("Cập nhật thành công!");
+                setUpdateSuccess(true);
                 setCateringDetail(prev => ({ ...prev, name: editName }));
+                setIsEditing(false);
+                
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    setUpdateSuccess(false);
+                }, 3000);
             }
         } catch (err) {
             console.error("Lỗi khi cập nhật dịch vụ:", err);
@@ -63,25 +71,113 @@ const CateringDetail = () => {
         }
     };
 
-    if (loading) return <p>Đang tải...</p>;
-    if (error) return <p>{error}</p>;
+    if (loading) return (
+        <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <p>Đang tải thông tin...</p>
+        </div>
+    );
+    
+    if (error) return (
+        <div className="error-container">
+            <div className="error-icon">⚠️</div>
+            <p>{error}</p>
+            <button className="back-button" onClick={() => navigate(-1)}>Quay lại</button>
+        </div>
+    );
 
     return (
-        <div className="catering-detail">
-            <h2>Chi Tiết Dịch Vụ</h2>
-            {cateringDetail?.imageUrl && (
-                <img src={cateringDetail.imageUrl} alt={cateringDetail.name} />
-            )}
-            <div className="edit-form">
-                <h3>Chỉnh Sửa Thông Tin</h3>
-                <input 
-                    type="text" 
-                    placeholder="Tên dịch vụ" 
-                    value={editName} 
-                    onChange={(e) => setEditName(e.target.value)} 
-                />
-                <button onClick={handleUpdate} className="button-update">Cập Nhật</button>
-                <button onClick={handleDelete} className="button-delete">Xóa</button>
+        <div className="catering-detail-container">
+            <div className="catering-detail-card">
+                <div className="catering-header">
+                    <h2>Chi Tiết Dịch Vụ</h2>
+                    <button className="back-button" onClick={() => navigate(-1)}>
+                        <span>←</span> Quay lại
+                    </button>
+                </div>
+                
+                {updateSuccess && (
+                    <div className="success-message">
+                        Cập nhật thành công!
+                    </div>
+                )}
+                
+                <div className="catering-content">
+                    <div className="catering-image-container">
+                        {cateringDetail?.imageUrl ? (
+                            <img 
+                                src={cateringDetail.imageUrl} 
+                                alt={cateringDetail.name} 
+                                className="catering-image"
+                            />
+                        ) : (
+                            <div className="no-image">
+                                <span>Không có hình ảnh</span>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="catering-info">
+                        <div className="info-group">
+                            <label>ID:</label>
+                            <p>{cateringDetail?._id}</p>
+                        </div>
+                        
+                        <div className="info-group">
+                            <label>Tên dịch vụ:</label>
+                            {isEditing ? (
+                                <input 
+                                    type="text" 
+                                    value={editName} 
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    className="edit-input"
+                                    autoFocus
+                                />
+                            ) : (
+                                <p>{cateringDetail?.name}</p>
+                            )}
+                        </div>
+                        
+                        {cateringDetail?.description && (
+                            <div className="info-group">
+                                <label>Mô tả:</label>
+                                <p>{cateringDetail.description}</p>
+                            </div>
+                        )}
+                        
+                        {cateringDetail?.price && (
+                            <div className="info-group">
+                                <label>Giá:</label>
+                                <p className="price">{cateringDetail.price.toLocaleString()} VNĐ</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                
+                <div className="action-buttons">
+                    {isEditing ? (
+                        <>
+                            <button onClick={handleUpdate} className="button-update">
+                                Lưu thay đổi
+                            </button>
+                            <button onClick={() => {
+                                setIsEditing(false);
+                                setEditName(cateringDetail?.name || "");
+                            }} className="button-cancel">
+                                Hủy
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button onClick={() => setIsEditing(true)} className="button-edit">
+                                Chỉnh sửa
+                            </button>
+                            <button onClick={handleDelete} className="button-delete">
+                                Xóa
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );
