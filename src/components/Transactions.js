@@ -2,13 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import '../public/styles/Transaction.css';
 import { fetchTransaction } from '../api/transaction_api';
+import { fetchPlanById } from '../api/plan_api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faSync,
     faCheckCircle,
     faExclamationTriangle,
-    faSearch,
-    faFilter
+    faSearch
 } from '@fortawesome/free-solid-svg-icons';
 
 function Transactions() {
@@ -16,18 +16,56 @@ function Transactions() {
     const [loadingTransactions, setLoadingTransactions] = useState(false); // Loading khi lấy danh sách
     const [loadingConfirm, setLoadingConfirm] = useState({}); // Loading riêng cho từng nút xác nhận
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [planNames, setPlanNames] = useState({});
+    const [loadingPlanNames, setLoadingPlanNames] = useState({});
 
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
+
+    // Hàm lấy thông tin tên kế hoạch
+    const fetchPlanName = async (planId) => {
+        if (loadingPlanNames[planId] || planNames[planId]) return; 
+
+        try {
+            setLoadingPlanNames(prev => ({ ...prev, [planId]: true }));
+            const response = await fetchPlanById(planId);
+            if (response.status) {
+                setPlanNames(prev => ({
+                    ...prev,
+                    [planId]: response.data.name
+                }));
+            }
+        } catch (error) {
+            console.error(`Lỗi khi lấy thông tin kế hoạch ${planId}:`, error);
+            setPlanNames(prev => ({
+                ...prev,
+                [planId]: null
+            }));
+        } finally {
+            setLoadingPlanNames(prev => ({ ...prev, [planId]: false }));
+        }
+    };
 
     const getTransactions = useCallback(async () => {
         try {
             setLoadingTransactions(true);
             const data = await fetchTransaction(userId, userRole);
             if (data.status) {
-                setTransactions(data.data || []);
+                // Sắp xếp để giao dịch chờ xác nhận hiển thị đầu tiên
+                const sortedData = [...(data.data || [])].sort((a, b) => {
+                    if (a.status === 'pending' && b.status !== 'pending') return -1;
+                    if (a.status !== 'pending' && b.status === 'pending') return 1;
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+                setTransactions(sortedData);
+                
+                // Fetch plan names for new transactions only
+                sortedData.forEach(tx => {
+                    if (tx.planId && !planNames[tx.planId] && !loadingPlanNames[tx.planId]) {
+                        fetchPlanName(tx.planId);
+                    }
+                });
             } else {
                 console.error('Không lấy được danh sách giao dịch:', data.message);
             }
@@ -57,7 +95,7 @@ function Transactions() {
             );
 
             if (response.data.status) {
-                getTransactions(); // Tải lại danh sách sau khi xác nhận thành công
+                getTransactions();
             } else {
                 console.error('Không thể xác nhận giao dịch:', response.data.message);
             }
@@ -74,9 +112,7 @@ function Transactions() {
             (tx.userId?.name && tx.userId.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (tx.userId?.email && tx.userId.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        const matchesStatus = statusFilter === 'all' || tx.status === statusFilter;
-
-        return matchesSearch && matchesStatus;
+        return matchesSearch;
     });
 
     const requestSort = (key) => {
@@ -91,6 +127,10 @@ function Transactions() {
         let sortableItems = [...filteredTransactions];
         if (sortConfig.key) {
             sortableItems.sort((a, b) => {
+                // Luôn ưu tiên giao dịch chờ xác nhận lên đầu
+                if (a.status === 'pending' && b.status !== 'pending') return -1;
+                if (a.status !== 'pending' && b.status === 'pending') return 1;
+
                 let aValue, bValue;
 
                 if (sortConfig.key === 'userName') {
@@ -166,18 +206,6 @@ function Transactions() {
                         className="search-input"
                     />
                 </div>
-                <div className="filter-container">
-                    <FontAwesomeIcon icon={faFilter} className="filter-icon" />
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="all">Tất cả trạng thái</option>
-                        <option value="active">Đã xác nhận</option>
-                        <option value="pending">Chờ xác nhận</option>
-                    </select>
-                </div>
             </div>
 
             <div className="table-responsive">
@@ -204,7 +232,7 @@ function Transactions() {
                                     Email {getSortIcon('userEmail')}
                                 </th>
                                 <th onClick={() => requestSort('planId')}>
-                                    Gói (planId) {getSortIcon('planId')}
+                                    Tên kế hoạch {getSortIcon('planId')}
                                 </th>
                                 <th onClick={() => requestSort('status')}>
                                     Trạng thái {getSortIcon('status')}
@@ -218,12 +246,16 @@ function Transactions() {
                                     <td className="transaction-id">{tx._id}</td>
                                     <td>{tx.userId?.name || 'N/A'}</td>
                                     <td>{tx.userId?.email || 'N/A'}</td>
-                                    <td>{tx.planId || 'N/A'}</td>
+                                    <td>
+                                        {loadingPlanNames[tx.planId] ? 'Đang tải...' : 
+                                         planNames[tx.planId] === null ? 'Không có tên kế hoạch' :
+                                         planNames[tx.planId] || 'Không có tên kế hoạch'}
+                                    </td>
                                     <td>{getStatusBadge(tx.status)}</td>
                                     <td>
                                         {tx.status === 'active' ? (
-                                            <button className="button-confirmed" disabled>
-                                                <FontAwesomeIcon icon={faCheckCircle} /> Đã xác nhận
+                                            <button className="button-confirmed" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                                                <FontAwesomeIcon icon={faCheckCircle} /> Đã kích hoạt
                                             </button>
                                         ) : (
                                             <button

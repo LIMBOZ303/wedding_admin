@@ -79,6 +79,24 @@ const Dashboard = () => {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
+  // Hàm lấy số tuần của ngày hiện tại
+  const getCurrentWeek = () => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 1);
+    const diff = now - start;
+    const oneWeek = 1000 * 60 * 60 * 24 * 7;
+    return Math.ceil(diff / oneWeek);
+  };
+
+  // Hàm xác định phạm vi tuần chứa tuần hiện tại
+  const getCurrentWeekRange = () => {
+    const currentWeek = getCurrentWeek();
+    if (currentWeek <= 12) return '1-12';
+    if (currentWeek <= 26) return '13-26';
+    if (currentWeek <= 39) return '27-39';
+    return '40-53';
+  };
+
   // Hàm lấy dữ liệu thống kê theo tháng
   const fetchMonthlyData = async () => {
     try {
@@ -171,6 +189,40 @@ const Dashboard = () => {
     }
   };
 
+  // Tính toán doanh thu tháng hiện tại và tháng trước
+  const getCurrentAndPreviousMonthData = () => {
+    if (!monthlyOrderStats || monthlyOrderStats.length === 0) {
+      return {
+        orders: { current: 0, previous: 0 },
+        revenue: { current: 0, previous: 0 }
+      };
+    }
+    
+    const currentMonthIndex = currentMonth - 1;
+    const previousMonthIndex = currentMonth === 1 ? 11 : currentMonth - 2;
+    
+    const currentMonthData = monthlyOrderStats[currentMonthIndex] || { transactionCount: 0, totalDeposit: 0 };
+    const prevMonthData = monthlyOrderStats[previousMonthIndex] || { transactionCount: 0, totalDeposit: 0 };
+    
+    return {
+      orders: {
+        current: currentMonthData.transactionCount || 0,
+        previous: prevMonthData.transactionCount || 0
+      },
+      revenue: {
+        current: currentMonthData.totalDeposit || 0,
+        previous: prevMonthData.totalDeposit || 0
+      }
+    };
+  };
+
+  // Tính phần trăm thay đổi
+  const calculatePercentageChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? '+100' : '0';
+    const change = ((current - previous) / previous) * 100;
+    return change > 0 ? `+${change.toFixed(0)}` : change.toFixed(0);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -233,7 +285,7 @@ const Dashboard = () => {
       }
     };
     fetchData();
-  }, [chosenStatus, sampleUserId, currentYear, currentMonth, selectedYear]);
+  }, [currentYear, currentMonth]);
 
   // Cập nhật dữ liệu khi năm được chọn thay đổi
   useEffect(() => {
@@ -245,6 +297,23 @@ const Dashboard = () => {
     fetchQuarterData();
   }, [selectedYear]);
 
+  // Cập nhật dữ liệu khi phạm vi tuần thay đổi
+  useEffect(() => {
+    fetchWeekData();
+  }, [selectedYear, selectedWeekRange]);
+
+  // Cập nhật useEffect để tự động cập nhật khi sang tuần mới
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newWeekRange = getCurrentWeekRange();
+      if (newWeekRange !== selectedWeekRange) {
+        setSelectedWeekRange(newWeekRange);
+      }
+    }, 1000 * 60 * 60); // Kiểm tra mỗi giờ
+
+    return () => clearInterval(interval);
+  }, [selectedWeekRange]);
+
   // Tính toán dữ liệu
   const totalTransactions =
     transactionStats && transactionStats.byStatus
@@ -254,7 +323,6 @@ const Dashboard = () => {
     transactionStats && transactionStats.byUser
       ? transactionStats.byUser.length
       : 0;
-  const newOrders = 45;
 
   // Biểu đồ doanh thu theo tháng (Line Chart)
   const revenueData = {
@@ -351,6 +419,8 @@ const Dashboard = () => {
   };
 
   // Thẻ thống kê (Stats Cards)
+  const monthlyData = getCurrentAndPreviousMonthData();
+  
   const statsCards = [
     {
       title: 'Tổng khách hàng',
@@ -362,22 +432,34 @@ const Dashboard = () => {
       changeType: 'positive'
     },
     {
-      title: 'Đơn hàng mới',
-      value: newOrders,
+      title: `Đơn hàng (Tháng ${currentMonth})`,
+      value: loadingMonthlyOrderStats ? (
+        <div className="spinner" style={{ 
+          width: '20px', 
+          height: '20px',
+          margin: '0 auto'
+        }}></div>
+      ) : monthlyData.orders.current.toLocaleString(),
       icon: faShoppingCart,
       color: 'var(--accent-color)',
       bgColor: '#FFEDED',
-      change: '+5%',
-      changeType: 'positive'
+      change: loadingMonthlyOrderStats ? '...' : `${calculatePercentageChange(monthlyData.orders.current, monthlyData.orders.previous)}%`,
+      changeType: monthlyData.orders.current >= monthlyData.orders.previous ? 'positive' : 'negative'
     },
     {
-      title: 'Doanh Thu Tháng ' + currentMonth,
-      value: currentMonthRevenue.toLocaleString() + ' VND',
+      title: `Doanh Thu Tháng ${currentMonth}`,
+      value: loadingMonthlyOrderStats ? (
+        <div className="spinner" style={{ 
+          width: '20px', 
+          height: '20px',
+          margin: '0 auto'
+        }}></div>
+      ) : `${monthlyData.revenue.current.toLocaleString()} VND`,
       icon: faMoneyBillWave,
       color: 'var(--success-color)',
       bgColor: '#EBFBEC',
-      change: '+22%',
-      changeType: 'positive'
+      change: loadingMonthlyOrderStats ? '...' : `${calculatePercentageChange(monthlyData.revenue.current, monthlyData.revenue.previous)}%`,
+      changeType: monthlyData.revenue.current >= monthlyData.revenue.previous ? 'positive' : 'negative'
     },
     {
       title: 'Giao dịch',
@@ -641,24 +723,20 @@ const Dashboard = () => {
       <div className="stats-cards">
         {statsCards.map((card, index) => (
           <div className="stats-card" key={index}>
-            {(card.title === 'Tổng khách hàng' || card.title === 'Giao dịch') && loadingTransactionStats ? (
-              <div className="spinner"></div>
-            ) : card.title.includes('Doanh Thu') && loadingCurrentMonthRevenue ? (
-              <div className="spinner"></div>
-            ) : (
-              <div className="stats-card-content">
-                <div className="stats-card-info">
-                  <h3>{card.title}</h3>
-                  <p className="stats-value">{card.value}</p>
-                  <span className={`stats-change ${card.changeType}`}>
-                    {card.change} so với tháng trước
-                  </span>
-                </div>
-                <div className="stats-card-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
-                  <FontAwesomeIcon icon={card.icon} />
-                </div>
+            <div className="stats-card-content">
+              <div className="stats-card-info">
+                <h3>{card.title}</h3>
+                <p className="stats-value">
+                  {typeof card.value === 'object' ? card.value : card.value}
+                </p>
+                <span className={`stats-change ${card.changeType}`}>
+                  {card.change} so với tháng trước
+                </span>
               </div>
-            )}
+              <div className="stats-card-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
+                <FontAwesomeIcon icon={card.icon} />
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -703,6 +781,33 @@ const Dashboard = () => {
               <Bar data={orderData} options={orderOptions} />
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Week Revenue Chart */}
+      <div className="chart-card week-revenue-chart">
+        <div className="chart-header">
+          <h3>
+            <FontAwesomeIcon icon={faChartLine} /> Doanh thu theo tuần (Tuần hiện tại: {getCurrentWeek()})
+          </h3>
+          <div className="week-range-selector">
+            <select
+              value={selectedWeekRange}
+              onChange={(e) => setSelectedWeekRange(e.target.value)}
+            >
+              <option value="1-12">Tuần 1-12</option>
+              <option value="13-26">Tuần 13-26</option>
+              <option value="27-39">Tuần 27-39</option>
+              <option value="40-53">Tuần 40-53</option>
+            </select>
+          </div>
+        </div>
+        <div className="chart-container">
+          {loadingWeekRevenue ? (
+            <div className="spinner"></div>
+          ) : (
+            <Line data={weekData} options={weekOptions} />
+          )}
         </div>
       </div>
 
@@ -818,121 +923,6 @@ const Dashboard = () => {
             }}></div>
           ) : (
             <Bar data={quarterData} options={quarterOptions} />
-          )}
-        </div>
-      </div>
-
-      {/* Week Revenue Chart */}
-      <div style={{
-        background: '#fff',
-        borderRadius: '12px',
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
-        marginBottom: '24px',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: '#333',
-            margin: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>Doanh thu theo tuần</h3>
-          <div style={{
-            display: 'flex',
-            gap: '16px',
-            alignItems: 'center'
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <label style={{
-                fontSize: '14px',
-                color: '#666',
-                fontWeight: 500
-              }}>Năm:</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '6px',
-                  backgroundColor: '#fff',
-                  fontSize: '14px',
-                  color: '#333',
-                  cursor: 'pointer',
-                  minWidth: '100px'
-                }}
-              >
-                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <label style={{
-                fontSize: '14px',
-                color: '#666',
-                fontWeight: 500
-              }}>Tuần:</label>
-              <select
-                value={selectedWeekRange}
-                onChange={(e) => setSelectedWeekRange(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '6px',
-                  backgroundColor: '#fff',
-                  fontSize: '14px',
-                  color: '#333',
-                  cursor: 'pointer',
-                  minWidth: '100px'
-                }}
-              >
-                <option value="1-12">Tuần 1-12</option>
-                <option value="13-26">Tuần 13-26</option>
-                <option value="27-39">Tuần 27-39</option>
-                <option value="40-53">Tuần 40-53</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div style={{
-          padding: '20px',
-          height: '300px',
-          position: 'relative',
-          background: '#fff'
-        }}>
-          {loadingWeekRevenue ? (
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: '3px solid rgba(0, 0, 0, 0.1)',
-              borderRadius: '50%',
-              borderTopColor: '#4CAF50',
-              animation: 'spin 1s linear infinite',
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}></div>
-          ) : (
-            <Line data={weekData} options={weekOptions} />
           )}
         </div>
       </div>
