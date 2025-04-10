@@ -29,6 +29,7 @@ const Blog = () => {
   });
   const [editorContent, setEditorContent] = useState("");
   const [updateEditorContent, setUpdateEditorContent] = useState("");
+  const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
 
   // Fetch blog data
   const fetchBlogs = useCallback(async () => {
@@ -67,7 +68,6 @@ const Blog = () => {
     const content = editorContent;
     const summary = form.summary.value;
     const category = form.category.value;
-    const coverImage = form.coverImage.value;
     const tags = form.tags.value
       .split(",")
       .map((tag) => tag.trim())
@@ -89,57 +89,82 @@ const Blog = () => {
       return;
     }
 
+    // Xử lý file ảnh
+    const coverImageFile = form.coverImage.files[0];
+    if (!coverImageFile) {
+      showNotification("Ảnh bìa không được để trống", true);
+      return;
+    }
+
     // Kiểm tra kích thước nội dung (nếu quá lớn có thể gây lỗi)
     if (content.length > 500000) { // ~500KB
       showNotification("Nội dung quá lớn. Vui lòng giảm kích thước hình ảnh hoặc số lượng hình ảnh.", true);
       return;
     }
 
-    try {
-      showNotification("Đang xử lý...", false);
+    // Chuyển đổi file thành base64
+    const reader = new FileReader();
+    reader.readAsDataURL(coverImageFile);
+    
+    reader.onload = async () => {
+      const coverImageBase64 = reader.result;
 
-      // Chuẩn bị dữ liệu đầy đủ cho API
-      const blogData = {
-        title,
-        content,
-        summary,
-        category,
-        coverImage: coverImage || "https://via.placeholder.com/800x400?text=Wedding+Blog", // Đảm bảo có ảnh bìa mặc định
-        tags: tags.length > 0 ? tags : ["wedding"], // Đảm bảo có ít nhất 1 tag
-        author: adminUserId, 
-        userId: adminUserId,
-        authorName: "Admin", // Thêm tên tác giả
-        id_user: adminUserId, // Một số API sử dụng id_user thay vì userId
-        user_id: adminUserId, // Một số API sử dụng user_id
-        authorId: adminUserId, // Một số API sử dụng authorId
-        isPublished: true,
-        status: "published", // Một số API sử dụng status thay vì isPublished
-        publishedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      console.log("Sending blog data:", {...blogData, contentLength: content.length});
-      
-      const response = await addBlog(
-        blogData,
-        adminUserId
-      );
-      
-      if (response.status) {
-        showNotification("Thêm bài viết thành công");
-        form.reset();
-        setEditorContent("");
-        fetchBlogs();
-      } else {
-        // Log lỗi cụ thể từ response để debug
-        console.error("API Error:", response);
-        showNotification(response.message || "Lỗi khi thêm bài viết", true);
+      // Kiểm tra kích thước ảnh (ví dụ: giới hạn 1MB)
+      if (coverImageBase64.length > 1048576) {
+        showNotification("Ảnh bìa quá lớn. Vui lòng chọn ảnh nhỏ hơn 1MB.", true);
+        return;
       }
-    } catch (err) {
-      console.error("Error adding blog:", err);
-      showNotification("Lỗi kết nối mạng, vui lòng thử lại sau", true);
-    }
+
+      try {
+        showNotification("Đang xử lý...", false);
+
+        // Chuẩn bị dữ liệu đầy đủ cho API
+        const blogData = {
+          title,
+          content,
+          summary,
+          category,
+          coverImage: coverImageBase64,
+          tags: tags.length > 0 ? tags : ["wedding"], // Đảm bảo có ít nhất 1 tag
+          author: adminUserId, 
+          userId: adminUserId,
+          authorName: "Admin", // Thêm tên tác giả
+          id_user: adminUserId, // Một số API sử dụng id_user thay vì userId
+          user_id: adminUserId, // Một số API sử dụng user_id
+          authorId: adminUserId, // Một số API sử dụng authorId
+          isPublished: true,
+          status: "published", // Một số API sử dụng status thay vì isPublished
+          publishedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        console.log("Sending blog data:", {...blogData, contentLength: content.length});
+        
+        const response = await addBlog(
+          blogData,
+          adminUserId
+        );
+        
+        if (response.status) {
+          showNotification("Thêm bài viết thành công");
+          form.reset();
+          setEditorContent("");
+          fetchBlogs();
+        } else {
+          // Log lỗi cụ thể từ response để debug
+          console.error("API Error:", response);
+          showNotification(response.message || "Lỗi khi thêm bài viết", true);
+        }
+      } catch (err) {
+        console.error("Error adding blog:", err);
+        showNotification("Lỗi kết nối mạng, vui lòng thử lại sau", true);
+      }
+    };
+
+    reader.onerror = () => {
+      showNotification("Lỗi khi đọc file ảnh", true);
+    };
   };
 
   // Open update form modal
@@ -173,7 +198,6 @@ const Blog = () => {
     const content = updateEditorContent;
     const summary = form["update-summary"].value;
     const category = form["update-category"].value;
-    const coverImage = form["update-coverImage"].value;
     const tags = form["update-tags"].value
       .split(",")
       .map((tag) => tag.trim())
@@ -202,53 +226,85 @@ const Blog = () => {
       return;
     }
 
-    try {
-      showNotification("Đang cập nhật...", false);
+    // Xử lý file ảnh nếu có
+    let coverImageBase64 = currentBlog.coverImage; // Giữ nguyên ảnh cũ nếu không upload ảnh mới
+    const coverImageFile = form["update-coverImage"].files[0];
 
-      // Chuẩn bị dữ liệu đầy đủ cho API
-      const blogData = {
-        _id: blogId, // Đảm bảo ID được gửi trong body
-        title,
-        content,
-        summary,
-        category,
-        coverImage: coverImage || "https://via.placeholder.com/800x400?text=Wedding+Blog", // Đảm bảo có ảnh bìa mặc định
-        tags: tags.length > 0 ? tags : ["wedding"], // Đảm bảo có ít nhất 1 tag
-        author: adminUserId,
-        userId: adminUserId,
-        authorName: "Admin", // Thêm tên tác giả
-        id_user: adminUserId, // Một số API sử dụng id_user thay vì userId
-        user_id: adminUserId, // Một số API sử dụng user_id
-        authorId: adminUserId, // Một số API sử dụng authorId
-        isPublished,
-        status: isPublished ? "published" : "draft", // Một số API sử dụng status thay vì isPublished
-        publishedAt: isPublished ? new Date().toISOString() : null,
-        updatedAt: new Date().toISOString()
+    // Hàm helper để xử lý logic cập nhật
+    const updateBlogLogic = async (coverImageToUse) => {
+      try {
+        showNotification("Đang cập nhật...", false);
+
+        // Chuẩn bị dữ liệu đầy đủ cho API
+        const blogData = {
+          _id: blogId, // Đảm bảo ID được gửi trong body
+          title,
+          content,
+          summary,
+          category,
+          coverImage: coverImageToUse,
+          tags: tags.length > 0 ? tags : ["wedding"], // Đảm bảo có ít nhất 1 tag
+          author: adminUserId,
+          userId: adminUserId,
+          authorName: "Admin", // Thêm tên tác giả
+          id_user: adminUserId, // Một số API sử dụng id_user thay vì userId
+          user_id: adminUserId, // Một số API sử dụng user_id
+          authorId: adminUserId, // Một số API sử dụng authorId
+          isPublished,
+          status: isPublished ? "published" : "draft", // Một số API sử dụng status thay vì isPublished
+          publishedAt: isPublished ? new Date().toISOString() : null,
+          updatedAt: new Date().toISOString()
+        };
+
+        console.log("Updating blog data:", {...blogData, id: blogId, contentLength: content.length});
+        
+        const response = await updateBlog(
+          blogId,
+          blogData,
+          adminUserId
+        );
+
+        if (response.status) {
+          showNotification("Cập nhật bài viết thành công");
+          closeUpdateForm();
+          fetchBlogs();
+        } else {
+          // Log lỗi cụ thể từ response để debug
+          console.error("API Error:", response);
+          showNotification(
+            response.message || "Lỗi khi cập nhật bài viết",
+            true
+          );
+        }
+      } catch (err) {
+        console.error("Error updating blog:", err);
+        showNotification("Lỗi kết nối mạng, vui lòng thử lại sau", true);
+      }
+    };
+
+    if (coverImageFile) {
+      // Chuyển đổi file thành base64
+      const reader = new FileReader();
+      reader.readAsDataURL(coverImageFile);
+      
+      reader.onload = async () => {
+        const newCoverImageBase64 = reader.result;
+
+        // Kiểm tra kích thước ảnh (ví dụ: giới hạn 1MB)
+        if (newCoverImageBase64.length > 1048576) {
+          showNotification("Ảnh bìa quá lớn. Vui lòng chọn ảnh nhỏ hơn 1MB.", true);
+          return;
+        }
+
+        await updateBlogLogic(newCoverImageBase64);
       };
 
-      console.log("Updating blog data:", {...blogData, id: blogId, contentLength: content.length});
-      
-      const response = await updateBlog(
-        blogId,
-        blogData,
-        adminUserId
-      );
-
-      if (response.status) {
-        showNotification("Cập nhật bài viết thành công");
-        closeUpdateForm();
-        fetchBlogs();
-      } else {
-        // Log lỗi cụ thể từ response để debug
-        console.error("API Error:", response);
-        showNotification(
-          response.message || "Lỗi khi cập nhật bài viết",
-          true
-        );
-      }
-    } catch (err) {
-      console.error("Error updating blog:", err);
-      showNotification("Lỗi kết nối mạng, vui lòng thử lại sau", true);
+      reader.onerror = () => {
+        showNotification("Lỗi khi đọc file ảnh", true);
+      };
+    } else {
+      // Không có ảnh mới, dùng ảnh cũ
+      await updateBlogLogic(coverImageBase64);
     }
   };
 
@@ -385,11 +441,11 @@ const Blog = () => {
           <div className="form-group">
             <label htmlFor="coverImage">Ảnh bìa (URL):</label>
             <input
-              type="text"
+              type="file"
               id="coverImage"
               name="coverImage"
               required
-              placeholder="http://..."
+              accept="image/*"
             />
           </div>
 
@@ -416,65 +472,73 @@ const Blog = () => {
           <h2>
             <i className="fas fa-list"></i> Danh sách bài viết
           </h2>
+          <div className="view-toggle">
+            <button 
+              className={`btn-icon ${viewMode === 'list' ? 'active' : ''}`} 
+              onClick={() => setViewMode('list')}
+              title="Xem dạng danh sách"
+            >
+              <i className="fas fa-list"></i>
+            </button>
+            <button 
+              className={`btn-icon ${viewMode === 'grid' ? 'active' : ''}`} 
+              onClick={() => setViewMode('grid')}
+              title="Xem dạng lưới"
+            >
+              <i className="fas fa-th"></i>
+            </button>
+          </div>
         </div>
-        <div className="table-responsive">
-          <table id="blog-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Tiêu đề</th>
-                <th>Danh mục</th>
-                <th>Trạng thái</th>
-                <th>Cập nhật lần cuối</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+
+        {loading ? (
+          <div className="loading-container">
+            <i className="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
+          </div>
+        ) : error ? (
+          <div className="error-container">
+            <i className="fas fa-triangle-exclamation"></i> {error}
+          </div>
+        ) : blogs.length === 0 ? (
+          <div className="empty-container">
+            <i className="fas fa-info-circle"></i> Chưa có bài viết nào
+          </div>
+        ) : viewMode === 'list' ? (
+          <div className="table-responsive">
+            <table id="blog-table">
+              <thead>
                 <tr>
-                  <td
-                    colSpan="6"
-                    style={{ textAlign: "center", padding: "20px" }}
-                  >
-                    <i className="fas fa-spinner fa-spin"></i> Đang tải dữ
-                    liệu...
-                  </td>
+                  <th className="th-thumbnail">Ảnh bìa</th>
+                  <th className="th-title">Tiêu đề</th>
+                  <th className="th-category">Danh mục</th>
+                  <th className="th-status">Trạng thái</th>
+                  <th className="th-date">Cập nhật lần cuối</th>
+                  <th className="th-actions">Hành động</th>
                 </tr>
-              ) : error ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    style={{
-                      textAlign: "center",
-                      padding: "20px",
-                      color: "var(--danger-color)",
-                    }}
-                  >
-                    <i className="fas fa-triangle-exclamation"></i> {error}
-                  </td>
-                </tr>
-              ) : blogs.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="6"
-                    style={{ textAlign: "center", padding: "20px" }}
-                  >
-                    <i className="fas fa-info-circle"></i> Chưa có bài viết nào
-                  </td>
-                </tr>
-              ) : (
-                blogs.map((blog) => (
+              </thead>
+              <tbody>
+                {blogs.map((blog) => (
                   <tr key={blog._id}>
-                    <td title={blog._id}>{blog._id.substring(0, 6)}...</td>
-                    <td className="truncate" title={blog.title}>
+                    <td className="thumbnail-cell">
+                      <div className="blog-thumbnail">
+                        <img 
+                          src={blog.coverImage || "https://via.placeholder.com/100x60?text=No+Image"} 
+                          alt={blog.title}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://via.placeholder.com/100x60?text=Error";
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td className="title-cell truncate" title={blog.title}>
                       {blog.title}
                     </td>
-                    <td>
+                    <td className="category-cell">
                       <span className="category-badge">
                         {getCategoryName(blog.category)}
                       </span>
                     </td>
-                    <td>
+                    <td className="status-cell">
                       <span
                         className={`status-badge ${
                           blog.isPublished ? "badge-success" : "badge-warning"
@@ -491,12 +555,12 @@ const Blog = () => {
                         )}
                       </span>
                     </td>
-                    <td>
+                    <td className="date-cell">
                       <span className="date-info">
                         <i className="fas fa-calendar-alt"></i> {formatDate(blog.updatedAt)}
                       </span>
                     </td>
-                    <td className="action-buttons">
+                    <td className="action-cell">
                       <button
                         className="btn-secondary"
                         title="Sửa bài viết"
@@ -506,11 +570,64 @@ const Blog = () => {
                       </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="blog-grid">
+            {blogs.map((blog) => (
+              <div className="blog-card" key={blog._id}>
+                <div className="blog-card-image">
+                  <img 
+                    src={blog.coverImage || "https://via.placeholder.com/300x180?text=No+Image"} 
+                    alt={blog.title}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://via.placeholder.com/300x180?text=Error";
+                    }}
+                  />
+                </div>
+                <div className="blog-card-content">
+                  <h3 className="truncate" title={blog.title}>{blog.title}</h3>
+                  <div className="blog-card-meta">
+                    <span className="category-badge">
+                      {getCategoryName(blog.category)}
+                    </span>
+                    <span
+                      className={`status-badge ${
+                        blog.isPublished ? "badge-success" : "badge-warning"
+                      }`}
+                    >
+                      {blog.isPublished ? (
+                        <>
+                          <i className="fas fa-check-circle"></i> Công khai
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-clock"></i> Chưa công khai
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  <p className="blog-card-summary truncate-2">{blog.summary}</p>
+                  <div className="blog-card-footer">
+                    <span className="date-info">
+                      <i className="fas fa-calendar-alt"></i> {formatDate(blog.updatedAt)}
+                    </span>
+                    <button
+                      className="btn-secondary"
+                      title="Sửa bài viết"
+                      onClick={() => openUpdateForm(blog)}
+                    >
+                      <i className="fas fa-edit"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Update Form Modal */}
@@ -594,15 +711,25 @@ const Blog = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="update-coverImage">Ảnh bìa (URL):</label>
+                <label htmlFor="update-coverImage">Ảnh bìa:</label>
+                <div className="current-image-preview">
+                  <img 
+                    src={currentBlog.coverImage || "https://via.placeholder.com/300x180?text=No+Image"} 
+                    alt="Preview"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://via.placeholder.com/300x180?text=Error";
+                    }}
+                  />
+                  <p>Ảnh hiện tại</p>
+                </div>
                 <input
-                  type="text"
+                  type="file"
                   id="update-coverImage"
                   name="update-coverImage"
-                  required
-                  placeholder="http://..."
-                  defaultValue={currentBlog.coverImage}
+                  accept="image/*"
                 />
+                <p className="help-text">Để trống nếu muốn giữ ảnh hiện tại</p>
               </div>
 
               <div className="form-group">
