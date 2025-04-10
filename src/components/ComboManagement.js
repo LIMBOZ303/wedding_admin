@@ -208,9 +208,6 @@ const ComboManagement = () => {
             const updatedData = {
                 name: editedPlan.name,
                 SanhId: editedPlan.SanhId,
-                plandateevent: editedPlan.plandateevent,
-                plansoluongkhach: editedPlan.plansoluongkhach,
-                status: editedPlan.status,
                 caterings: editedPlan.cateringId,
                 decorates: editedPlan.decorateId,
                 presents: editedPlan.presentId,
@@ -450,7 +447,6 @@ const ComboManagement = () => {
             {loading && <div className="loading"><FontAwesomeIcon icon={faSpinner} spin /> Đang xử lý...</div>}
 
             {isEditing ? (
-                /* Phần chỉnh sửa giữ nguyên */
                 <>
                     <div className="form-group">
                         <label htmlFor="edit-combo-name">Tên Combo <span className="required">*</span></label>
@@ -463,44 +459,6 @@ const ComboManagement = () => {
                             placeholder="Nhập tên combo..."
                             className="edit-input"
                         />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Ngày Sự Kiện</label>
-                        <input
-                            type="text"
-                            value={editedPlan.plandateevent || ''}
-                            onChange={(e) => setEditedPlan(prev => ({ ...prev, plandateevent: e.target.value }))}
-                            disabled={loading}
-                            placeholder="Ngày sự kiện (dd/mm/yyyy)"
-                            className="edit-input"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Số Lượng Khách</label>
-                        <input
-                            type="number"
-                            value={editedPlan.plansoluongkhach || ''}
-                            onChange={(e) => setEditedPlan(prev => ({ ...prev, plansoluongkhach: Number(e.target.value) }))}
-                            disabled={loading}
-                            placeholder="Số lượng khách"
-                            className="edit-input"
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label>Trạng Thái</label>
-                        <select
-                            value={editedPlan.status}
-                            onChange={(e) => setEditedPlan(prev => ({ ...prev, status: e.target.value }))}
-                            disabled={loading}
-                            className="edit-input"
-                        >
-                            <option value="Chưa kích hoạt">Chưa kích hoạt</option>
-                            <option value="Đã kích hoạt">Đã kích hoạt</option>
-                            <option value="Hủy">Hủy</option>
-                        </select>
                     </div>
 
                     {renderList('sanh', options.sanh, editedPlan.SanhId, true)}
@@ -517,7 +475,7 @@ const ComboManagement = () => {
                 </>
             ) : (
                 <>
-                    {/* Phần thông tin cơ bản của combo */}
+                    {/* Phần hiển thị chi tiết giữ nguyên */}
                     <div className="plan-detail-section">
                         <div className="plan-details">
                             <h3 className="plan-name">{selectedPlan.name}</h3>
@@ -530,7 +488,6 @@ const ComboManagement = () => {
                         </div>
                     </div>
 
-                    {/* Phần chi tiết sảnh riêng biệt */}
                     <div className="sanh-detail-section">
                         <h3>Chi Tiết Sảnh</h3>
                         <div className="sanh-content">
@@ -549,7 +506,6 @@ const ComboManagement = () => {
                         </div>
                     </div>
 
-                    {/* Dịch Vụ Ẩm Thực */}
                     <div className="form-group">
                         <h3>Dịch Vụ Ẩm Thực</h3>
                         {selectedPlan.caterings.length > 0 ? (
@@ -577,7 +533,6 @@ const ComboManagement = () => {
                         )}
                     </div>
 
-                    {/* Dịch Vụ Trang Trí */}
                     <div className="form-group">
                         <h3>Dịch Vụ Trang Trí</h3>
                         {selectedPlan.decorates.length > 0 ? (
@@ -605,7 +560,6 @@ const ComboManagement = () => {
                         )}
                     </div>
 
-                    {/* Dịch Vụ Quà Tặng */}
                     <div className="form-group">
                         <h3>Dịch Vụ Quà Tặng</h3>
                         {selectedPlan.presents.length > 0 ? (
