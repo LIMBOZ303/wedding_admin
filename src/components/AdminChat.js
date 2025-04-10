@@ -18,12 +18,8 @@ import {
     faExpand
 } from '@fortawesome/free-solid-svg-icons';
 
-const UserNameDisplay = ({ userName, highlight = false, badge = false, fallback = 'Khách hàng' }) => {
+const UserNameDisplay = ({ userName, highlight = false, fallback = 'Khách hàng' }) => {
     const displayName = userName || fallback;
-
-    if (badge) {
-        return <span className="user-name-badge">{displayName}</span>;
-    }
 
     return (
         <span className={highlight ? "user-name-highlight" : "sender-name"}>
@@ -753,10 +749,6 @@ const AdminChat = () => {
                                                 userName={currentUserInfo?.name || findUserName(currentUserId)}
                                                 highlight={true}
                                             />
-                                            <UserNameDisplay
-                                                userName={currentUserInfo?.name || findUserName(currentUserId)}
-                                                badge={true}
-                                            />
                                         </h5>
                                         {currentUserInfo?.email && (
                                             <div className="user-email">
@@ -764,9 +756,6 @@ const AdminChat = () => {
                                                 <span>{currentUserInfo.email}</span>
                                             </div>
                                         )}
-                                        <div className="user-id-display header">
-                                            ID: {currentUserId}
-                                        </div>
                                     </div>
                                 </div>
                                 <div className="chat-actions">
