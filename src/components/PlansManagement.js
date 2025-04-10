@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faList, faCheck, faSearch, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faTimes} from '@fortawesome/free-solid-svg-icons';
 import { fetchPlanswithUser } from '../api/plan_api';
 import Swal from 'sweetalert2';
 import "../public/styles/PlanManagement.css";
@@ -90,7 +90,7 @@ const PlansManagement = () => {
                             <div key={plan._id} className="plan-item" onClick={() => openDetailModal(plan)}>
                                 <div className="plan-image-container">
                                     <img
-                                        src={plan.SanhId?.imageUrl || 'https://via.placeholder.com/120'}
+                                        src={plan.SanhId.imageUrl || 'https://via.placeholder.com/120'}
                                         alt={plan.name}
                                         className="plan-image"
                                     />

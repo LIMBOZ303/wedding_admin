@@ -394,14 +394,12 @@
 .search-container {
     display: flex;
     align-items: center;
-    padding: 15px;
+   
     background: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
 }
 
-.search-icon {
-    position: absolute;
-    left: 100px;
+.search-icon {   
     color: #95a5a6;
     font-size: 16px;
 }
