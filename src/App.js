@@ -19,6 +19,7 @@ import './public/styles/Slidebar.css';
 import './public/styles/Home.css';
 import './App.css';
 import ComboManagement from './components/ComboManagement';
+import './public/styles/Global.css';
 
 const App = () => {
     const location = useLocation();

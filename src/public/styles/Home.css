@@ -1,13 +1,10 @@
 /* Dashboard Container */
 .dashboard-container {
   padding: var(--spacing-lg);
-  margin-left: var(--sidebar-width);
-  transition: margin-left var(--transition-normal);
-  margin: 0;
-}
-
-.sidebar.closed + .main-content .dashboard-container {
-  margin-left: var(--sidebar-collapsed-width);
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 /* Dashboard Header */
@@ -16,32 +13,35 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .dashboard-header h1 {
-  font-size: var(--font-size-3xl);
+  font-size: clamp(1.5rem, 4vw, 2rem);
   color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
+  margin: 0;
 }
 
 .subtitle {
   color: var(--text-secondary);
-  font-size: var(--font-size-md);
-  margin-bottom: 0;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  margin: 0.5rem 0 0 0;
 }
 
 .date-display {
-  font-size: var(--font-size-md);
+  font-size: clamp(0.875rem, 2vw, 1rem);
   color: var(--text-secondary);
   background-color: var(--background-tertiary);
-  padding: var(--spacing-sm) var(--spacing-md);
+  padding: 0.5rem 1rem;
   border-radius: var(--border-radius-md);
+  white-space: nowrap;
 }
 
 /* Stats Cards */
 .stats-cards {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
 }
@@ -62,29 +62,36 @@
 .stats-card-content {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 .stats-card-info {
   flex: 1;
+  min-width: 0; /* Prevent text overflow */
 }
 
 .stats-card h3 {
-  font-size: var(--font-size-md);
+  font-size: clamp(0.875rem, 2vw, 1rem);
   color: var(--text-secondary);
-  margin-bottom: var(--spacing-xs);
-  font-weight: 500;
+  margin: 0 0 0.5rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stats-value {
-  font-size: var(--font-size-2xl);
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: var(--spacing-xs);
+  margin: 0 0 0.5rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stats-change {
-  font-size: var(--font-size-sm);
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
   display: block;
 }
 
@@ -109,21 +116,17 @@
 /* Charts Grid */
 .charts-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
 .chart-card {
-  background-color: var(--background-primary);
+  background: var(--background-primary);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
-  transition: box-shadow var(--transition-fast);
-}
-
-.chart-card:hover {
-  box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
 
 .chart-header {
@@ -131,84 +134,70 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .chart-header h3 {
-  font-size: var(--font-size-lg);
-  color: var(--text-primary);
-  margin-bottom: 0;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 0.5rem;
 }
 
 .chart-container {
-  height: 300px;
   position: relative;
+  height: 300px;
+  width: 100%;
 }
 
-/* Year Selector for Order Chart */
-.order-chart .chart-header {
-  background-color: #f8f9fa;
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
-  border-bottom: 1px solid var(--border-color);
+/* Selectors */
+.year-selector,
+.week-range-selector {
+  min-width: 120px;
 }
 
-.year-selector {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.year-selector select {
-  padding: var(--spacing-sm) var(--spacing-md);
+select {
+  padding: 0.5rem;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-md);
-  background-color: #fff;
+  background-color: var(--background-primary);
   color: var(--text-primary);
-  font-size: var(--font-size-md);
+  font-size: 0.875rem;
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  width: 100%;
 }
 
-.year-selector select:hover,
-.year-selector select:focus {
-  border-color: var(--primary-color);
-  outline: none;
-}
-
-/* Spinner Loading Effect */
+/* Loading Spinner */
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid var(--text-secondary);
-  border-top: 4px solid var(--primary-color);
+  border: 3px solid var(--background-tertiary);
+  border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin: 0 auto;
+  margin: 2rem auto;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 
-/* Responsive Styles */
-@media screen and (max-width: 1200px) {
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .dashboard-container {
+    padding: var(--spacing-md);
   }
-
+  
   .charts-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media screen and (max-width: 768px) {
+@media (max-width: 768px) {
   .dashboard-container {
-    margin-left: 0;
-    padding: var(--spacing-md);
+    padding: var(--spacing-sm);
   }
 
   .dashboard-header {
@@ -216,25 +205,84 @@
     align-items: flex-start;
   }
 
-  .date-display {
-    margin-top: var(--spacing-md);
-  }
-
   .stats-cards {
     grid-template-columns: 1fr;
   }
 
-  .order-chart .chart-header {
+  .chart-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--spacing-md);
   }
 
-  .year-selector {
+  .year-selector,
+  .week-range-selector {
     width: 100%;
   }
 
-  .year-selector select {
-    width: 100%;
+  .chart-container {
+    height: 250px;
+  }
+}
+
+/* Dark mode adjustments */
+.dark-mode .stats-card {
+  background-color: var(--dark-background-secondary);
+}
+
+.dark-mode .chart-card {
+  background-color: var(--dark-background-secondary);
+}
+
+.dark-mode select {
+  background-color: var(--dark-background-tertiary);
+  color: var(--dark-text-primary);
+  border-color: var(--dark-border-color);
+}
+
+/* Latest Order section */
+.latest-orders {
+  background: var(--background-primary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+  overflow-x: auto;
+}
+
+.latest-orders table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; /* Ensure table doesn't get too squeezed */
+}
+
+.latest-orders th,
+.latest-orders td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.latest-orders th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--background-tertiary);
+}
+
+/* Quarter Revenue Chart */
+.quarter-revenue-chart {
+  margin-top: var(--spacing-xl);
+}
+
+/* Ensure content stays within viewport */
+.main-content {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Handle navigation overlay */
+@media (max-width: 768px) {
+  .nav-menu.show + .main-content {
+    opacity: 0.5;
+    pointer-events: none;
   }
 }
