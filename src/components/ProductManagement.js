@@ -612,16 +612,32 @@ const ProductManagement = () => {
     }
   };
 
+  // Thêm hàm xử lý format input giá tiền
+  const handlePriceInput = (value, setter) => {
+    // Xóa tất cả dấu chấm và ký tự không phải số
+    const numericValue = value.replace(/[^0-9]/g, '');
+    
+    // Format số với dấu chấm
+    const formattedValue = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    
+    // Cập nhật state
+    setter(formattedValue);
+  };
+
   // Cập nhật sản phẩm
   const handleUpdate = async () => {
     if (!selectedItem) return;
     try {
       let updateFunc, updateData;
+      
+      // Xử lý giá: loại bỏ dấu chấm trước khi gửi lên server
+      const priceNumber = parseFloat(editPrice.replace(/\./g, ''));
+
       if (selectedItem.type === "DichVu") {
         updateFunc = updateFood;
         updateData = {
           name: editName,
-          price: editPrice,
+          price: priceNumber, // Sử dụng giá đã được xử lý
           cate_cateringId: editCate,
           description: editDescription,
           imageUrl: editImageUrl
@@ -630,7 +646,7 @@ const ProductManagement = () => {
         updateFunc = updateGift;
         updateData = {
           name: editName,
-          price: editPrice,
+          price: priceNumber, // Sử dụng giá đã được xử lý
           Cate_presentId: editCate,
           Description: editDescription,
           Status: editStatus,
@@ -650,7 +666,7 @@ const ProductManagement = () => {
         updateFunc = updateDecorate;
         updateData = {
           name: editName,
-          price: editPrice,
+          price: priceNumber, // Sử dụng giá đã được xử lý
           Cate_decorateId: editCate,
           Description: editDescription,
           Status: editStatus,
@@ -669,7 +685,7 @@ const ProductManagement = () => {
         updateFunc = updateLobby;
         updateData = {
           name: editName,
-          price: editPrice,
+          price: priceNumber, // Sử dụng giá đã được xử lý
           SoLuongKhach: editDescription,
           imageUrl: editImageUrl
         };
@@ -791,39 +807,21 @@ const ProductManagement = () => {
 
       let addFunc, newData;
 
+      // Xử lý giá: loại bỏ dấu chấm trước khi gửi lên server
+      const priceNumber = parseFloat(newPrice.replace(/\./g, ''));
+
       if (addFormType === "food") {
         addFunc = addFood;
-
         newData = {
-          name: newName.trim()
+          name: newName.trim(),
+          price: priceNumber, // Sử dụng giá đã được xử lý
+          description: newDescription?.trim(),
+          imageUrl: newImageUrl?.trim(),
         };
 
-        // Handle price
-        if (newPrice && newPrice.trim() !== "") {
-          const priceNumber = parseFloat(newPrice);
-          if (!isNaN(priceNumber)) {
-            newData.price = priceNumber;
-          } else {
-            Swal.fire("Lỗi!", "Giá phải là một số hợp lệ.", "warning");
-            setLoading(false);
-            return;
-          }
-        }
-
-        if (newDescription && newDescription.trim() !== "") {
-          newData.description = newDescription.trim();
-        }
-
-        if (newImageUrl && newImageUrl.trim() !== "") {
-          newData.imageUrl = newImageUrl.trim();
-        }
-
-        // Handle cate_cateringId
         if (newCate && newCate.trim() !== "") {
           if (/^[0-9a-fA-F]{24}$/.test(newCate.trim())) {
             newData.cate_cateringId = newCate.trim();
-          } else {
-            console.warn("Invalid cate_cateringId format, omitting field");
           }
         }
       } else if (addFormType === "gift") {
@@ -1110,6 +1108,11 @@ const ProductManagement = () => {
     }
   };
 
+  // Thêm hàm format giá tiền
+  const formatCurrency = (amount) => {
+    return amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
   // Render nội dung theo tab
   const renderContent = () => {
     if (
@@ -1172,10 +1175,10 @@ const ProductManagement = () => {
                           <div className="no-image">No Image</div>
                         )}
                       </td>
-                      <td>{item.name}</td>
-                      <td>{item.price?.toLocaleString() || 0} VND</td>
-                      <td className="description-cell">{item.description || 'Không có mô tả'}</td>
-                      <td>
+                      <td data-full-text={item.name}>{item.name}</td>
+                      <td data-full-text={`${formatCurrency(item.price)} VND`}>{formatCurrency(item.price)} VND</td>
+                      <td data-full-text={item.description || "Không có mô tả"}>{item.description || "Không có mô tả"}</td>
+                      <td className="action-column">
                         <button
                           className="button-detail"
                           onClick={() => handleShowDetail(item._id)}
@@ -1237,8 +1240,11 @@ const ProductManagement = () => {
                       <input
                         type="text"
                         value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
                       />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
                     </div>
                     <div>
                       <label><strong>Loại dịch vụ:</strong></label>
@@ -1307,8 +1313,11 @@ const ProductManagement = () => {
                       <input
                         type="text"
                         value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
                       />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
                     </div>
                     <div>
                       <label><strong>Loại quà tặng:</strong></label>
@@ -1385,8 +1394,11 @@ const ProductManagement = () => {
                       <input
                         type="text"
                         value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
                       />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
                     </div>
                     <div>
                       <label><strong>Loại trang trí:</strong></label>
@@ -1463,8 +1475,11 @@ const ProductManagement = () => {
                       <input
                         type="text"
                         value={editPrice}
-                        onChange={(e) => setEditPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
                       />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
                     </div>
                     <div>
                       <label><strong>Số lượng khách:</strong></label>
@@ -1521,18 +1536,6 @@ const ProductManagement = () => {
             </div>
           )}
 
-          {/* Nút "Thêm Mới" */}
-          <button className="button-add" onClick={handleOpenAddModal}>
-            {activeTab === "DichVu"
-              ? "Thêm Món Ăn Mới"
-              : activeTab === "QuaTang"
-                ? "Thêm Quà Tặng Mới"
-                : activeTab === "TrangTri"
-                  ? "Thêm Trang Trí Mới"
-                  : "Thêm Phòng/Sảnh Mới"
-            }
-          </button>
-
           {/* Modal Thêm Mới */}
           {showAddModal && (
             <div className="detail-card">
@@ -1582,9 +1585,9 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setNewPrice)}
                         placeholder="Nhập giá"
                       />
                     </div>
@@ -1657,9 +1660,9 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setNewPrice)}
                         placeholder="Nhập giá"
                       />
                     </div>
@@ -1741,9 +1744,9 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setNewPrice)}
                         placeholder="Nhập giá"
                       />
                     </div>
@@ -1825,9 +1828,9 @@ const ProductManagement = () => {
                     <div>
                       <label><strong>Giá:</strong></label>
                       <input
-                        type="number"
+                        type="text"
                         value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
+                        onChange={(e) => handlePriceInput(e.target.value, setNewPrice)}
                         placeholder="Nhập giá"
                       />
                     </div>

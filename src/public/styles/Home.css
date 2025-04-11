@@ -246,13 +246,55 @@ select {
   box-shadow: var(--shadow-sm);
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
-  overflow-x: auto;
+}
+
+.table-responsive {
+  max-height: 400px;
+  overflow-y: auto;
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+/* Webkit scrollbar styling */
+.table-responsive::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 3px;
+  border: transparent;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(155, 155, 155, 0.7);
 }
 
 .latest-orders table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px; /* Ensure table doesn't get too squeezed */
+  table-layout: fixed;
+}
+
+.latest-orders thead {
+  position: sticky;
+  top: 0;
+  background-color: var(--background-primary);
+  z-index: 1;
+}
+
+.latest-orders th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--background-tertiary);
+  border-bottom: 2px solid var(--border-color);
 }
 
 .latest-orders th,
@@ -260,12 +302,118 @@ select {
   padding: 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.latest-orders th {
-  font-weight: 600;
-  color: var(--text-secondary);
-  background-color: var(--background-tertiary);
+/* Column widths */
+.latest-orders th:nth-child(1), /* STT */
+.latest-orders td:nth-child(1) {
+  width: 5%;
+  min-width: 50px;
+}
+
+.latest-orders th:nth-child(2), /* Khách hàng */
+.latest-orders td:nth-child(2) {
+  width: 15%;
+  min-width: 120px;
+}
+
+.latest-orders th:nth-child(3), /* Gói */
+.latest-orders td:nth-child(3) {
+  width: 25%;
+  min-width: 200px;
+}
+
+.latest-orders th:nth-child(4), /* Giá trị */
+.latest-orders td:nth-child(4) {
+  width: 15%;
+  min-width: 120px;
+}
+
+.latest-orders th:nth-child(5), /* Ngày tạo */
+.latest-orders td:nth-child(5) {
+  width: 15%;
+  min-width: 120px;
+}
+
+.latest-orders th:nth-child(6), /* Trạng thái */
+.latest-orders td:nth-child(6) {
+  width: 15%;
+  min-width: 120px;
+}
+
+/* Status styles */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.status-active {
+  background-color: var(--success-light);
+  color: var(--success-color);
+}
+
+.status-pending {
+  background-color: var(--warning-light);
+  color: var(--warning-color);
+}
+
+.status-cancelled {
+  background-color: var(--error-light);
+  color: var(--error-color);
+}
+
+/* Hover effect */
+.latest-orders tr:hover {
+  background-color: var(--background-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .latest-orders {
+    margin: 0 -1rem;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .latest-orders {
+    padding: var(--spacing-sm);
+  }
+
+  .latest-orders th,
+  .latest-orders td {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Tooltip for truncated content */
+.latest-orders td {
+  position: relative;
+}
+
+.latest-orders td:hover::after {
+  content: attr(data-full-text);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  background: var(--background-primary);
+  padding: 0.5rem;
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-md);
+  z-index: 1000;
+  white-space: normal;
+  max-width: 300px;
+  word-wrap: break-word;
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-primary);
 }
 
 /* Quarter Revenue Chart */
