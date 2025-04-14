@@ -8,7 +8,8 @@ import {
     faSync,
     faCheckCircle,
     faExclamationTriangle,
-    faSearch
+    faSearch,
+    faTimes
 } from '@fortawesome/free-solid-svg-icons';
 
 function Transactions() {
@@ -19,6 +20,7 @@ function Transactions() {
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
     const [planNames, setPlanNames] = useState({});
     const [loadingPlanNames, setLoadingPlanNames] = useState({});
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
 
     const userId = localStorage.getItem('userId');
     const userRole = localStorage.getItem('userRole');
@@ -182,6 +184,36 @@ function Transactions() {
         }
     };
 
+    // Format date function
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    // Format currency function
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
+    };
+
+    // Handle row click
+    const handleRowClick = (transaction) => {
+        setSelectedTransaction(transaction);
+    };
+
+    // Close modal
+    const closeModal = () => {
+        setSelectedTransaction(null);
+    };
+
     return (
         <div className="transactions-container">
             <div className="transactions-header">
@@ -222,8 +254,8 @@ function Transactions() {
                     <table className="transactions-table">
                         <thead>
                             <tr>
-                                <th onClick={() => requestSort('_id')}>
-                                    Mã giao dịch {getSortIcon('_id')}
+                                <th onClick={() => requestSort('index')}>
+                                    STT {getSortIcon('index')}
                                 </th>
                                 <th onClick={() => requestSort('userName')}>
                                     Người dùng {getSortIcon('userName')}
@@ -241,27 +273,44 @@ function Transactions() {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedTransactions.map((tx) => (
-                                <tr key={tx._id}>
-                                    <td className="transaction-id">{tx._id}</td>
-                                    <td>{tx.userId?.name || 'N/A'}</td>
-                                    <td>{tx.userId?.email || 'N/A'}</td>
-                                    <td>
+                            {sortedTransactions.map((tx, index) => (
+                                <tr key={tx._id} onClick={() => handleRowClick(tx)}>
+                                    <td className="index-column">
+                                        {index + 1}
+                                    </td>
+                                    <td data-full-text={tx.userId?.name || 'N/A'}>
+                                        {tx.userId?.name || 'N/A'}
+                                    </td>
+                                    <td data-full-text={tx.userId?.email || 'N/A'}>
+                                        {tx.userId?.email || 'N/A'}
+                                    </td>
+                                    <td data-full-text={loadingPlanNames[tx.planId] ? 'Đang tải...' : 
+                                                    planNames[tx.planId] === null ? 'Không có tên kế hoạch' :
+                                                    planNames[tx.planId] || 'Không có tên kế hoạch'}>
                                         {loadingPlanNames[tx.planId] ? 'Đang tải...' : 
-                                         planNames[tx.planId] === null ? 'Không có tên kế hoạch' :
-                                         planNames[tx.planId] || 'Không có tên kế hoạch'}
+                                        planNames[tx.planId] === null ? 'Không có tên kế hoạch' :
+                                        planNames[tx.planId] || 'Không có tên kế hoạch'}
                                     </td>
                                     <td>{getStatusBadge(tx.status)}</td>
                                     <td>
-                                        {tx.status === 'active' ? (
-                                            <button className="button-confirmed" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }}>
-                                                <FontAwesomeIcon icon={faCheckCircle} /> Đã kích hoạt
+                                        {tx.status === 'active' || tx.status === 'Đã đặt cọc' ? (
+                                            <button 
+                                                className="button-disabled" 
+                                                disabled 
+                                                title={tx.status === 'Đã đặt cọc' ? 'Giao dịch đã được đặt cọc' : 'Giao dịch đã được xác nhận'}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận
                                             </button>
                                         ) : (
                                             <button
                                                 className="button-confirm"
-                                                onClick={() => confirmTransaction(tx._id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    confirmTransaction(tx._id);
+                                                }}
                                                 disabled={loadingConfirm[tx._id]}
+                                                title="Nhấn để xác nhận giao dịch"
                                             >
                                                 {loadingConfirm[tx._id] ? (
                                                     <div className="spinner small"></div>
@@ -279,6 +328,74 @@ function Transactions() {
                     </table>
                 )}
             </div>
+
+            {/* Transaction Detail Modal */}
+            {selectedTransaction && (
+                <div className="transaction-modal-overlay" onClick={closeModal}>
+                    <div className="transaction-modal" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Chi tiết Giao dịch</h3>
+                            <button className="modal-close" onClick={closeModal}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+                        <div className="transaction-details">
+                            <div className="detail-group transaction-id-group">
+                                <span className="detail-label">Mã giao dịch</span>
+                                <span className="detail-value transaction-id">{selectedTransaction._id}</span>
+                            </div>
+                            <div className="detail-group">
+                                <span className="detail-label">Người đặt cọc</span>
+                                <span className="detail-value">{selectedTransaction.userId?.name || 'N/A'}</span>
+                            </div>
+                            <div className="detail-group">
+                                <span className="detail-label">Email</span>
+                                <span className="detail-value">{selectedTransaction.userId?.email || 'N/A'}</span>
+                            </div>
+                            <div className="detail-group">
+                                <span className="detail-label">Tên kế hoạch</span>
+                                <span className="detail-value">
+                                    {loadingPlanNames[selectedTransaction.planId] ? 'Đang tải...' : 
+                                    planNames[selectedTransaction.planId] === null ? 'Không có tên kế hoạch' :
+                                    planNames[selectedTransaction.planId] || 'Không có tên kế hoạch'}
+                                </span>
+                            </div>
+                            <div className="detail-group">
+                                <span className="detail-label">Trạng thái</span>
+                                <span className="detail-value status">
+                                    {getStatusBadge(selectedTransaction.status)}
+                                </span>
+                            </div>
+                            <div className="detail-group">
+                                <span className="detail-label">Ngày tạo giao dịch</span>
+                                <span className="detail-value date">
+                                    {formatDate(selectedTransaction.createdAt)}
+                                </span>
+                            </div>
+                            {selectedTransaction.status === 'pending' && userRole === 'admin' && (
+                                <div className="detail-group">
+                                    <button
+                                        className="button-confirm"
+                                        onClick={() => {
+                                            confirmTransaction(selectedTransaction._id);
+                                            closeModal();
+                                        }}
+                                        disabled={loadingConfirm[selectedTransaction._id]}
+                                    >
+                                        {loadingConfirm[selectedTransaction._id] ? (
+                                            <div className="spinner small"></div>
+                                        ) : (
+                                            <>
+                                                <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
