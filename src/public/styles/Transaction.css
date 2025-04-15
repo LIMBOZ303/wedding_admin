@@ -1,3 +1,43 @@
+.button-disabled {
+    background-color: #cccccc; /* Màu xám */
+    color: #666666; /* Màu chữ xám đậm */
+    border: none;
+    padding: 8px 16px;
+    cursor: not-allowed; /* Con trỏ chuột hiển thị không thể nhấn */
+    opacity: 0.6; /* Làm mờ nút */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 4px;
+  }
+  
+  .button-confirm {
+    background-color: #4CAF50; /* Màu xanh lá cho nút xác nhận */
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 4px;
+  }
+  
+  .button-confirm:hover {
+    background-color: #45a049; /* Màu xanh đậm hơn khi hover */
+  }
+  
+  /* Style cho badge trạng thái "Đã đặt cọc" */
+  .status-badge.status-deposited {
+    background-color: #ff9800; /* Màu cam để phân biệt trạng thái Đã đặt cọc */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+  }
 .transactions-container {
     padding: 20px;
     background-color: #f8f9fa;
