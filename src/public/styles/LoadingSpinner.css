@@ -1,25 +1,195 @@
+/* Base styles */
 .spinner-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 20px 0;
-  }
-  
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 6px solid #ddd;
-    border-top: 6px solid #2196f3; 
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+}
+
+/* Main loading spinner */
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-  }
-  
-  @keyframes spin {
+    position: relative;
+}
+
+.loading-spinner::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border: 3px solid transparent;
+    border-top: 3px solid #e74c3c;
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+}
+
+.loading-spinner::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    right: -6px;
+    bottom: -6px;
+    border: 3px solid transparent;
+    border-top: 3px solid #2ecc71;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
+}
+
+/* Small spinner variant */
+.loading-spinner.small {
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+}
+
+.loading-spinner.small::before {
+    border-width: 2px;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+}
+
+.loading-spinner.small::after {
+    border-width: 2px;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+}
+
+/* Large spinner variant */
+.loading-spinner.large {
+    width: 70px;
+    height: 70px;
+    border-width: 4px;
+}
+
+.loading-spinner.large::before {
+    border-width: 4px;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+}
+
+.loading-spinner.large::after {
+    border-width: 4px;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+}
+
+/* Button loading spinner */
+.button-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ffffff;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+/* Table loading spinner */
+.table-spinner {
+    width: 25px;
+    height: 25px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+/* Card loading spinner */
+.card-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Loading text */
+.loading-text {
+    margin-left: 12px;
+    color: #666;
+    font-size: 14px;
+    animation: fadeInOut 1.5s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes spin {
     0% {
-      transform: rotate(0deg);
+        transform: rotate(0deg);
     }
     100% {
-      transform: rotate(360deg);
+        transform: rotate(360deg);
     }
-  }
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.5;
+    }
+}
+
+/* Container animations */
+.spinner-container.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Dark theme variants */
+.dark-theme .loading-spinner {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .loading-spinner::before {
+    border-top-color: #ff6b6b;
+}
+
+.dark-theme .loading-spinner::after {
+    border-top-color: #4ecdc4;
+}
+
+.dark-theme .loading-text {
+    color: #fff;
+}
   
