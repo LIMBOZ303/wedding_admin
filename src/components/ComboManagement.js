@@ -364,8 +364,7 @@ const ComboManagement = () => {
                                     <h3>{plan.name}</h3>
                                     <p><strong>Sảnh:</strong> {plan.SanhId?.name || 'N/A'}</p>
                                     <p><strong>Tổng giá:</strong> {plan.totalPrice.toLocaleString()} VNĐ</p>
-                                    <p><strong>Ngày sự kiện:</strong> {plan.plandateevent || 'Chưa xác định'}</p>
-                                    <p><strong>Trạng thái:</strong> {plan.status}</p>
+                                    
                                 </div>
                             </div>
                         ))}
@@ -481,9 +480,6 @@ const ComboManagement = () => {
                             <h3 className="plan-name">{selectedPlan.name}</h3>
                             <div className="plan-info">
                                 <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlan.totalPrice.toLocaleString()} VNĐ</span></p>
-                                <p><span className="label">Ngày sự kiện:</span> <span className="value">{selectedPlan.plandateevent ? new Date(selectedPlan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span></p>
-                                <p><span className="label">Số lượng khách:</span> <span className="value">{selectedPlan.plansoluongkhach || 'Chưa xác định'}</span></p>
-                                <p><span className="label">Trạng thái:</span> <span className={`value status ${selectedPlan.status === 'Chưa kích hoạt' ? 'inactive' : selectedPlan.status === 'Đã kích hoạt' ? 'active' : 'canceled'}`}>{selectedPlan.status}</span></p>
                             </div>
                         </div>
                     </div>
