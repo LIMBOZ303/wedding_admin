@@ -8,17 +8,13 @@ export const fetchTransaction = async (userId, role) => {
       headers: {
         'user-id': userId,
         'user-role': role,
+        
       },
     });
-    const data = response.data;
-    if (!data || typeof data !== 'object') {
+    if (!response.data || typeof response.data !== 'object') {
       throw new Error('Dữ liệu API không hợp lệ');
     }
-    // Chuẩn hóa phản hồi
-    return {
-      success: true,
-      data: Array.isArray(data) ? data : data.transactions || data.data || [],
-    };
+    return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy giao dịch:', error.message);
     throw error;
