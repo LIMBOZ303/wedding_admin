@@ -317,6 +317,12 @@ function Transactions() {
             <FontAwesomeIcon icon={faCheckCircle} /> Đã đặt cọc
           </span>
         );
+      case 'Đã hủy':
+        return (
+          <span className="status-badge status-canceled">
+            <FontAwesomeIcon icon={faTimes} /> Đã hủy
+          </span>
+        );
       default:
         return <span className="status-badge">{status || 'N/A'}</span>;
     }
@@ -432,11 +438,15 @@ function Transactions() {
                     </td>
                     <td>{getStatusBadge(tx.status)}</td>
                     <td>
-                      {tx.status === 'Đã đặt cọc' ? (
+                      {tx.status === 'Đã đặt cọc' || tx.status === 'Đã hủy' ? (
                         <button
                           className="button-disabled"
                           disabled
-                          title="Giao dịch đã được đặt cọc"
+                          title={
+                            tx.status === 'Đã đặt cọc'
+                              ? 'Giao dịch đã được đặt cọc'
+                              : 'Giao dịch đã bị hủy'
+                          }
                           onClick={(e) => e.stopPropagation()}
                         >
                           <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận
@@ -506,20 +516,22 @@ function Transactions() {
                 <span className="detail-label">Ngày tạo giao dịch</span>
                 <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
               </div>
-              {selectedTransaction.status !== 'Đã đặt cọc' && userRole === 'admin' && (
-                <div className="detail-group">
-                  <button
-                    className="button-confirm"
-                    onClick={() => {
-                      confirmTransaction(selectedTransaction._id);
-                      closeModal();
-                    }}
-                    disabled={loadingConfirm[selectedTransaction._id]}
-                  >
-                    <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
-                  </button>
-                </div>
-              )}
+              {selectedTransaction.status !== 'Đã đặt cọc' &&
+                selectedTransaction.status !== 'Đã hủy' &&
+                userRole === 'admin' && (
+                  <div className="detail-group">
+                    <button
+                      className="button-confirm"
+                      onClick={() => {
+                        confirmTransaction(selectedTransaction._id);
+                        closeModal();
+                      }}
+                      disabled={loadingConfirm[selectedTransaction._id]}
+                    >
+                      <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
         </div>

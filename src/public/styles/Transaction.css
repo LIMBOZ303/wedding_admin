@@ -1,3 +1,33 @@
+.status-badge.status-canceled {
+    background-color: #f8d7da; /* Màu nền đỏ nhạt */
+    color: #721c24; /* Màu chữ đỏ đậm */
+    border: 1px solid #f5c6cb; /* Viền đỏ nhạt */
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  /* Đảm bảo các trạng thái khác có màu phù hợp */
+  .status-badge.status-active {
+    background-color: #d4edda; /* Xanh nhạt */
+    color: #155724; /* Xanh đậm */
+    border: 1px solid #c3e6cb;
+  }
+  
+  .status-badge.status-pending {
+    background-color: #fff3cd; /* Vàng nhạt */
+    color: #856404; /* Vàng đậm */
+    border: 1px solid #ffeeba;
+  }
+  
+  .status-badge.status-deposited {
+    background-color: #cce5ff; /* Xanh dương nhạt */
+    color: #004085; /* Xanh dương đậm */
+    border: 1px solid #b8daff;
+  }
 .button-disabled {
     background-color: #cccccc; /* Màu xám */
     color: #666666; /* Màu chữ xám đậm */
