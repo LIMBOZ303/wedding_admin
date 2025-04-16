@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faSave, faTimes, faList, faCheck, faSearch, faSpinner, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faSave, faTimes, faList, faCheck, faSearch, faEdit, faTrash ,faSpinner} from '@fortawesome/free-solid-svg-icons';
 import { createCombo } from '../api/combo_api';
 import { fetchCatering } from '../api/catering_api';
 import { fetchDecorate } from '../api/decorate_api';
 import { fetchGifts } from '../api/gift_api';
 import { fetchLobbies } from '../api/order_api';
 import { fetchPlansNoUser, updatePlan, deletePlan } from '../api/plan_api';
+import Swal from 'sweetalert2'; // Import SweetAlert2
 import '../public/styles/ComboManagement.css';
 
 const ComboManagement = () => {
@@ -66,6 +67,16 @@ const ComboManagement = () => {
 
     const fetchData = async () => {
         setLoading(true);
+        Swal.fire({
+            title: 'Đang tải danh sách combo...',
+            position: 'center',
+            width: '500px',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
         try {
             const [lobbyRes, cateringRes, decorateRes, presentRes, plansNoUserRes] = await Promise.all([
                 fetchLobbies(),
@@ -83,9 +94,18 @@ const ComboManagement = () => {
             setPlansNoUser(plansNoUserRes || []);
         } catch (err) {
             setError('Không thể tải dữ liệu');
-            console.error(err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi!',
+                text: 'Không thể tải danh sách combo',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false,
+            });
         } finally {
             setLoading(false);
+            Swal.close();
         }
     };
 
@@ -127,10 +147,29 @@ const ComboManagement = () => {
             return;
         }
         setLoading(true);
-        setError(null);
+        Swal.fire({
+            title: 'Đang lưu combo...',
+            position: 'center',
+            width: '500px',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
         try {
             await createCombo(currentCombo);
             setSuccess(true);
+            Swal.close();
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Combo đã được thêm thành công',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false,
+            });
             setTimeout(() => {
                 setSuccess(false);
                 closeModal();
@@ -138,9 +177,122 @@ const ComboManagement = () => {
             }, 2000);
         } catch (err) {
             setError('Có lỗi khi thêm combo');
-            console.error(err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi!',
+                text: 'Không thể thêm combo',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false,
+            });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editedPlan.name || !editedPlan.SanhId) {
+            setError('Vui lòng nhập Tên Combo và chọn Sảnh!');
+            return;
+        }
+        setLoading(true);
+        Swal.fire({
+            title: 'Đang cập nhật combo...',
+            position: 'center',
+            width: '500px',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+        });
+        try {
+            const updatedData = {
+                name: editedPlan.name,
+                SanhId: editedPlan.SanhId,
+                caterings: editedPlan.cateringId,
+                decorates: editedPlan.decorateId,
+                presents: editedPlan.presentId,
+            };
+            await updatePlan(selectedPlan._id, updatedData);
+            setSuccess(true);
+            Swal.close();
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: 'Combo đã được cập nhật thành công',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false,
+            });
+            setTimeout(() => {
+                setSuccess(false);
+                closeDetailModal();
+                fetchData();
+            }, 2000);
+        } catch (err) {
+            setError('Có lỗi khi cập nhật combo');
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi!',
+                text: 'Không thể cập nhật combo',
+                toast: true,
+                position: 'top-end',
+                timer: 3000,
+                showConfirmButton: false,
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeletePlan = async () => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa combo này?')) {
+            setLoading(true);
+            Swal.fire({
+                title: 'Đang xóa combo...',
+                position: 'center',
+                width: '500px',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                },
+            });
+            try {
+                await deletePlan(selectedPlan._id);
+                setSuccess(true);
+                Swal.close();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: 'Combo đã được xóa thành công',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000,
+                    showConfirmButton: false,
+                });
+                setTimeout(() => {
+                    setSuccess(false);
+                    closeDetailModal();
+                    fetchData();
+                }, 2000);
+            } catch (err) {
+                setError('Có lỗi khi xóa combo');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi!',
+                    text: 'Không thể xóa combo',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000,
+                    showConfirmButton: false,
+                });
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -195,57 +347,6 @@ const ComboManagement = () => {
 
     const handleEditPlan = () => {
         setIsEditing(true);
-    };
-
-    const handleSaveEdit = async () => {
-        if (!editedPlan.name || !editedPlan.SanhId) {
-            setError('Vui lòng nhập Tên Combo và chọn Sảnh!');
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        try {
-            const updatedData = {
-                name: editedPlan.name,
-                SanhId: editedPlan.SanhId,
-                caterings: editedPlan.cateringId,
-                decorates: editedPlan.decorateId,
-                presents: editedPlan.presentId,
-            };
-            await updatePlan(selectedPlan._id, updatedData);
-            setSuccess(true);
-            setTimeout(() => {
-                setSuccess(false);
-                closeDetailModal();
-                fetchData();
-            }, 2000);
-        } catch (err) {
-            setError('Có lỗi khi cập nhật plan');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleDeletePlan = async () => {
-        if (window.confirm('Bạn có chắc chắn muốn xóa plan này?')) {
-            setLoading(true);
-            setError(null);
-            try {
-                await deletePlan(selectedPlan._id);
-                setSuccess(true);
-                setTimeout(() => {
-                    setSuccess(false);
-                    closeDetailModal();
-                    fetchData();
-                }, 2000);
-            } catch (err) {
-                setError('Có lỗi khi xóa plan');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        }
     };
 
     const renderList = (type, items, selectedIds, isEditMode = false) => {
@@ -335,6 +436,10 @@ const ComboManagement = () => {
         );
     };
 
+    // Không hiển thị gì khi đang loading, giống PlansManagement
+    if (loading) return null;
+    if (error) return <div className="combo-management"><p className="error-text">{error}</p></div>;
+
     return (
         <div className="combo-management">
             <div className="header">
@@ -344,12 +449,9 @@ const ComboManagement = () => {
                 </button>
             </div>
 
-            {/* Danh sách Plans không có User */}
             <div className="plans-no-user-section">
                 <h2>Combo</h2>
-                {loading ? (
-                    <div className="loading"><FontAwesomeIcon icon={faSpinner} spin /> Đang tải...</div>
-                ) : plansNoUser.length > 0 ? (
+                {plansNoUser.length > 0 ? (
                     <div className="plans-list">
                         {plansNoUser.map(plan => (
                             <div key={plan._id} className="plan-item" onClick={() => openDetailModal(plan)}>
@@ -364,17 +466,15 @@ const ComboManagement = () => {
                                     <h3>{plan.name}</h3>
                                     <p><strong>Sảnh:</strong> {plan.SanhId?.name || 'N/A'}</p>
                                     <p><strong>Tổng giá:</strong> {plan.totalPrice.toLocaleString()} VNĐ</p>
-                                    
                                 </div>
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <p>Không có plan nào không liên kết với người dùng.</p>
+                    <p>Không có combo nào không liên kết với người dùng.</p>
                 )}
             </div>
 
-            {/* Modal Thêm Combo */}
             {showModal && (
                 <div className="modal-overlay" onClick={e => {
                     if (e.target.className === 'modal-overlay') closeModal();
@@ -389,7 +489,6 @@ const ComboManagement = () => {
                         
                         {error && <div className="error-message"><FontAwesomeIcon icon={faTimes} /> {error}</div>}
                         {success && <div className="success-message"><FontAwesomeIcon icon={faCheck} /> Thêm combo thành công!</div>}
-                        {loading && <div className="loading"><FontAwesomeIcon icon={faSpinner} spin /> Đang tải...</div>}
 
                         <div className="form-group">
                             <label htmlFor="combo-name">Tên Combo <span className="required">*</span></label>
@@ -428,191 +527,188 @@ const ComboManagement = () => {
                 </div>
             )}
 
-            {/* Modal Chi Tiết Plan */}
             {showDetailModal && selectedPlan && (
-    <div className="modal-overlay" onClick={e => {
-        if (e.target.className === 'modal-overlay') closeDetailModal();
-    }}>
-        <div className="modal-content">
-            <div className="modal-header">
-                <h2>{isEditing ? 'Chỉnh Sửa Combo' : 'Chi Tiết Combo'}: {selectedPlan.name}</h2>
-                <button className="close-btn" onClick={closeDetailModal}>
-                    <FontAwesomeIcon icon={faTimes} />
-                </button>
-            </div>
-
-            {error && <div className="error-message"><FontAwesomeIcon icon={faTimes} /> {error}</div>}
-            {success && <div className="success-message"><FontAwesomeIcon icon={faCheck} /> {isEditing ? 'Cập nhật' : 'Xóa'} thành công!</div>}
-            {loading && <div className="loading"><FontAwesomeIcon icon={faSpinner} spin /> Đang xử lý...</div>}
-
-            {isEditing ? (
-                <>
-                    <div className="form-group">
-                        <label htmlFor="edit-combo-name">Tên Combo <span className="required">*</span></label>
-                        <input
-                            id="edit-combo-name"
-                            type="text"
-                            value={editedPlan.name}
-                            onChange={(e) => setEditedPlan(prev => ({ ...prev, name: e.target.value }))}
-                            disabled={loading}
-                            placeholder="Nhập tên combo..."
-                            className="edit-input"
-                        />
-                    </div>
-
-                    {renderList('sanh', options.sanh, editedPlan.SanhId, true)}
-                    {renderList('catering', options.catering, editedPlan.cateringId, true)}
-                    {renderList('decorate', options.decorate, editedPlan.decorateId, true)}
-                    {renderList('present', options.present, editedPlan.presentId, true)}
-
-                    <div className="combo-summary">
-                        <div className="summary-header">
-                            <h3>Tổng cộng</h3>
-                            <div className="total-price">{calculateTotalPrice(editedPlan).toLocaleString()} VNĐ</div>
+                <div className="modal-overlay" onClick={e => {
+                    if (e.target.className === 'modal-overlay') closeDetailModal();
+                }}>
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h2>{isEditing ? 'Chỉnh Sửa Combo' : 'Chi Tiết Combo'}: {selectedPlan.name}</h2>
+                            <button className="close-btn" onClick={closeDetailModal}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
                         </div>
-                    </div>
-                </>
-            ) : (
-                <>
-                    {/* Phần hiển thị chi tiết giữ nguyên */}
-                    <div className="plan-detail-section">
-                        <div className="plan-details">
-                            <h3 className="plan-name">{selectedPlan.name}</h3>
-                            <div className="plan-info">
-                                <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlan.totalPrice.toLocaleString()} VNĐ</span></p>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div className="sanh-detail-section">
-                        <h3>Chi Tiết Sảnh</h3>
-                        <div className="sanh-content">
-                            <div className="sanh-image-container">
-                                <img
-                                    src={selectedPlan.SanhId?.imageUrl || 'https://via.placeholder.com/150'}
-                                    alt={selectedPlan.SanhId?.name || 'Sảnh'}
-                                    className="sanh-image"
-                                />
-                            </div>
-                            <div className="sanh-details">
-                                <p><span className="label">Tên sảnh:</span> <span className="value">{selectedPlan.SanhId?.name || 'N/A'}</span></p>
-                                <p><span className="label">Giá:</span> <span className="value price">{selectedPlan.SanhId?.price.toLocaleString() || 'N/A'} VNĐ</span></p>
-                                <p><span className="label">Số lượng khách tối đa:</span> <span className="value">{selectedPlan.SanhId?.SoLuongKhach || 'N/A'}</span></p>
-                            </div>
-                        </div>
-                    </div>
+                        {error && <div className="error-message"><FontAwesomeIcon icon={faTimes} /> {error}</div>}
+                        {success && <div className="success-message"><FontAwesomeIcon icon={faCheck} /> {isEditing ? 'Cập nhật' : 'Xóa'} thành công!</div>}
 
-                    <div className="form-group">
-                        <h3>Dịch Vụ Ẩm Thực</h3>
-                        {selectedPlan.caterings.length > 0 ? (
-                            <div className="item-list">
-                                {selectedPlan.caterings.map(item => (
-                                    <div key={item._id} className="list-item">
-                                        <div className="item-image-container">
-                                            <img
-                                                src={item.imageUrl || 'https://via.placeholder.com/100'}
-                                                alt={item.name}
-                                                className="item-image"
-                                            />
-                                        </div>
-                                        <div className="item-details">
-                                            <h4>{item.name}</h4>
-                                            <div className="item-info">
-                                                <span className="price">{item.price.toLocaleString()} VNĐ</span>
-                                            </div>
+                        {isEditing ? (
+                            <>
+                                <div className="form-group">
+                                    <label htmlFor="edit-combo-name">Tên Combo <span className="required">*</span></label>
+                                    <input
+                                        id="edit-combo-name"
+                                        type="text"
+                                        value={editedPlan.name}
+                                        onChange={(e) => setEditedPlan(prev => ({ ...prev, name: e.target.value }))}
+                                        disabled={loading}
+                                        placeholder="Nhập tên combo..."
+                                        className="edit-input"
+                                    />
+                                </div>
+
+                                {renderList('sanh', options.sanh, editedPlan.SanhId, true)}
+                                {renderList('catering', options.catering, editedPlan.cateringId, true)}
+                                {renderList('decorate', options.decorate, editedPlan.decorateId, true)}
+                                {renderList('present', options.present, editedPlan.presentId, true)}
+
+                                <div className="combo-summary">
+                                    <div className="summary-header">
+                                        <h3>Tổng cộng</h3>
+                                        <div className="total-price">{calculateTotalPrice(editedPlan).toLocaleString()} VNĐ</div>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="plan-detail-section">
+                                    <div className="plan-details">
+                                        <h3 className="plan-name">{selectedPlan.name}</h3>
+                                        <div className="plan-info">
+                                            <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlan.totalPrice.toLocaleString()} VNĐ</span></p>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p>Không có dịch vụ ẩm thực nào.</p>
-                        )}
-                    </div>
+                                </div>
 
-                    <div className="form-group">
-                        <h3>Dịch Vụ Trang Trí</h3>
-                        {selectedPlan.decorates.length > 0 ? (
-                            <div className="item-list">
-                                {selectedPlan.decorates.map(item => (
-                                    <div key={item._id} className="list-item">
-                                        <div className="item-image-container">
+                                <div className="sanh-detail-section">
+                                    <h3>Chi Tiết Sảnh</h3>
+                                    <div className="sanh-content">
+                                        <div className="sanh-image-container">
                                             <img
-                                                src={item.imageUrl || 'https://via.placeholder.com/100'}
-                                                alt={item.name}
-                                                className="item-image"
+                                                src={selectedPlan.SanhId?.imageUrl || 'https://via.placeholder.com/150'}
+                                                alt={selectedPlan.SanhId?.name || 'Sảnh'}
+                                                className="sanh-image"
                                             />
                                         </div>
-                                        <div className="item-details">
-                                            <h4>{item.name}</h4>
-                                            <div className="item-info">
-                                                <span className="price">{item.price.toLocaleString()} VNĐ</span>
-                                            </div>
+                                        <div className="sanh-details">
+                                            <p><span className="label">Tên sảnh:</span> <span className="value">{selectedPlan.SanhId?.name || 'N/A'}</span></p>
+                                            <p><span className="label">Giá:</span> <span className="value price">{selectedPlan.SanhId?.price.toLocaleString() || 'N/A'} VNĐ</span></p>
+                                            <p><span className="label">Số lượng khách tối đa:</span> <span className="value">{selectedPlan.SanhId?.SoLuongKhach || 'N/A'}</span></p>
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p>Không có dịch vụ trang trí nào.</p>
-                        )}
-                    </div>
+                                </div>
 
-                    <div className="form-group">
-                        <h3>Dịch Vụ Quà Tặng</h3>
-                        {selectedPlan.presents.length > 0 ? (
-                            <div className="item-list">
-                                {selectedPlan.presents.map(item => (
-                                    <div key={item._id} className="list-item">
-                                        <div className="item-image-container">
-                                            <img
-                                                src={item.imageUrl || 'https://via.placeholder.com/100'}
-                                                alt={item.name}
-                                                className="item-image"
-                                            />
+                                <div className="form-group">
+                                    <h3>Dịch Vụ Ẩm Thực</h3>
+                                    {selectedPlan.caterings.length > 0 ? (
+                                        <div className="item-list">
+                                            {selectedPlan.caterings.map(item => (
+                                                <div key={item._id} className="list-item">
+                                                    <div className="item-image-container">
+                                                        <img
+                                                            src={item.imageUrl || 'https://via.placeholder.com/100'}
+                                                            alt={item.name}
+                                                            className="item-image"
+                                                        />
+                                                    </div>
+                                                    <div className="item-details">
+                                                        <h4>{item.name}</h4>
+                                                        <div className="item-info">
+                                                            <span className="price">{item.price.toLocaleString()} VNĐ</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <div className="item-details">
-                                            <h4>{item.name}</h4>
-                                            <div className="item-info">
-                                                <span className="price">{item.price.toLocaleString()} VNĐ</span>
-                                            </div>
+                                    ) : (
+                                        <p>Không có dịch vụ ẩm thực nào.</p>
+                                    )}
+                                </div>
+
+                                <div className="form-group">
+                                    <h3>Dịch Vụ Trang Trí</h3>
+                                    {selectedPlan.decorates.length > 0 ? (
+                                        <div className="item-list">
+                                            {selectedPlan.decorates.map(item => (
+                                                <div key={item._id} className="list-item">
+                                                    <div className="item-image-container">
+                                                        <img
+                                                            src={item.imageUrl || 'https://via.placeholder.com/100'}
+                                                            alt={item.name}
+                                                            className="item-image"
+                                                        />
+                                                    </div>
+                                                    <div className="item-details">
+                                                        <h4>{item.name}</h4>
+                                                        <div className="item-info">
+                                                            <span className="price">{item.price.toLocaleString()} VNĐ</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p>Không có dịch vụ quà tặng nào.</p>
+                                    ) : (
+                                        <p>Không có dịch vụ trang trí nào.</p>
+                                    )}
+                                </div>
+
+                                <div className="form-group">
+                                    <h3>Dịch Vụ Quà Tặng</h3>
+                                    {selectedPlan.presents.length > 0 ? (
+                                        <div className="item-list">
+                                            {selectedPlan.presents.map(item => (
+                                                <div key={item._id} className="list-item">
+                                                    <div className="item-image-container">
+                                                        <img
+                                                            src={item.imageUrl || 'https://via.placeholder.com/100'}
+                                                            alt={item.name}
+                                                            className="item-image"
+                                                        />
+                                                    </div>
+                                                    <div className="item-details">
+                                                        <h4>{item.name}</h4>
+                                                        <div className="item-info">
+                                                            <span className="price">{item.price.toLocaleString()} VNĐ</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p>Không có dịch vụ quà tặng nào.</p>
+                                    )}
+                                </div>
+                            </>
                         )}
+
+                        <div className="modal-actions">
+                            {!isEditing ? (
+                                <>
+                                    <button className="edit-btn" onClick={handleEditPlan} disabled={loading}>
+                                        <FontAwesomeIcon icon={faEdit} /> Sửa
+                                    </button>
+                                    <button className="delete-btn" onClick={handleDeletePlan} disabled={loading}>
+                                        <FontAwesomeIcon icon={faTrash} /> Xóa
+                                    </button>
+                                    <button className="cancel-btn" onClick={closeDetailModal} disabled={loading}>
+                                        <FontAwesomeIcon icon={faTimes} /> Đóng
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button className="save-btn" onClick={handleSaveEdit} disabled={loading}>
+                                        <FontAwesomeIcon icon={loading ? faSpinner : faSave} spin={loading} /> 
+                                        {loading ? 'Đang lưu...' : 'Lưu'}
+                                    </button>
+                                    <button className="cancel-btn" onClick={closeDetailModal} disabled={loading}>
+                                        <FontAwesomeIcon icon={faTimes} /> Hủy
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </>
+                </div>
             )}
-
-            <div className="modal-actions">
-                {!isEditing ? (
-                    <>
-                        <button className="edit-btn" onClick={handleEditPlan} disabled={loading}>
-                            <FontAwesomeIcon icon={faEdit} /> Sửa
-                        </button>
-                        <button className="delete-btn" onClick={handleDeletePlan} disabled={loading}>
-                            <FontAwesomeIcon icon={faTrash} /> Xóa
-                        </button>
-                        <button className="cancel-btn" onClick={closeDetailModal} disabled={loading}>
-                            <FontAwesomeIcon icon={faTimes} /> Đóng
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <button className="save-btn" onClick={handleSaveEdit} disabled={loading}>
-                            <FontAwesomeIcon icon={loading ? faSpinner : faSave} spin={loading} /> 
-                            {loading ? 'Đang lưu...' : 'Lưu'}
-                        </button>
-                        <button className="cancel-btn" onClick={closeDetailModal} disabled={loading}>
-                            <FontAwesomeIcon icon={faTimes} /> Hủy
-                        </button>
-                    </>
-                )}
-            </div>
-        </div>
-    </div>
-)}
         </div>
     );
 };
