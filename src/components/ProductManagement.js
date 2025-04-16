@@ -630,14 +630,19 @@ const ProductManagement = () => {
     try {
       let updateFunc, updateData;
       
-      // Xử lý giá: loại bỏ dấu chấm trước khi gửi lên server
-      const priceNumber = parseFloat(editPrice.replace(/\./g, ''));
+      // Xử lý giá: chuyển đổi giá thành số
+      let priceNumber;
+      if (typeof editPrice === 'string') {
+        priceNumber = parseFloat(editPrice.replace(/\./g, ''));
+      } else {
+        priceNumber = Number(editPrice);
+      }
 
       if (selectedItem.type === "DichVu") {
         updateFunc = updateFood;
         updateData = {
           name: editName,
-          price: priceNumber, // Sử dụng giá đã được xử lý
+          price: priceNumber,
           cate_cateringId: editCate,
           description: editDescription,
           imageUrl: editImageUrl
@@ -646,91 +651,65 @@ const ProductManagement = () => {
         updateFunc = updateGift;
         updateData = {
           name: editName,
-          price: priceNumber, // Sử dụng giá đã được xử lý
+          price: priceNumber,
           Cate_presentId: editCate,
           Description: editDescription,
           Status: editStatus,
           imageUrl: editImageUrl
         };
-
-        // Ensure price is a number
-        if (updateData.price) {
-          updateData.price = Number(updateData.price);
-        }
-
-        if (updateData.Cate_presentId && !/^[0-9a-fA-F]{24}$/.test(updateData.Cate_presentId)) {
-          Swal.fire("Lỗi!", "Mã loại quà tặng không đúng định dạng.", "warning");
-          return;
-        }
       } else if (selectedItem.type === "TrangTri") {
         updateFunc = updateDecorate;
         updateData = {
           name: editName,
-          price: priceNumber, // Sử dụng giá đã được xử lý
+          price: priceNumber,
           Cate_decorateId: editCate,
           Description: editDescription,
           Status: editStatus,
           imageUrl: editImageUrl
         };
-
-        if (updateData.price) {
-          updateData.price = Number(updateData.price);
-        }
-
-        if (updateData.Cate_decorateId && !/^[0-9a-fA-F]{24}$/.test(updateData.Cate_decorateId)) {
-          Swal.fire("Lỗi!", "Mã loại trang trí không đúng định dạng.", "warning");
-          return;
-        }
       } else if (selectedItem.type === "Order") {
         updateFunc = updateLobby;
         updateData = {
           name: editName,
-          price: priceNumber, // Sử dụng giá đã được xử lý
-          SoLuongKhach: editDescription,
+          price: priceNumber,
+          SoLuongKhach: parseInt(editDescription),
           imageUrl: editImageUrl
         };
-
-        // Ensure price is a number
-        if (updateData.price) {
-          updateData.price = Number(updateData.price);
-        }
-
-        // Ensure SoLuongKhach is a number
-        if (updateData.SoLuongKhach) {
-          updateData.SoLuongKhach = Number(updateData.SoLuongKhach);
-        }
       } else {
         updateFunc = updateCatering;
         updateData = { name: editName };
       }
+
+      console.log(`Updating ${selectedItem.type} with data:`, updateData);
       const res = await updateFunc(selectedItem._id, updateData);
+      console.log('Update response:', res);
+
       if (res.status) {
+        // Refresh data based on type
         if (selectedItem.type === "DichVu") {
-          setFoodList(prev =>
-            prev.map(item => (item._id === res.data._id ? res.data : item))
-          );
+          await getFoodData();
         } else if (selectedItem.type === "QuaTang") {
-          setGiftList(prev =>
-            prev.map(item => (item._id === res.data._id ? res.data : item))
-          );
+          await getGiftData();
         } else if (selectedItem.type === "TrangTri") {
-          setDecorateList(prev =>
-            prev.map(item => (item._id === res.data._id ? res.data : item))
-          );
+          await getDecorateData();
         } else if (selectedItem.type === "Order") {
-          setLobbyList(prev =>
-            prev.map(item => (item._id === res.data._id ? res.data : item))
-          );
+          await getLobbyData();
         } else {
-          setCateringList(prev =>
-            prev.map(item => (item._id === res.data._id ? res.data : item))
-          );
+          await getCateringData();
         }
+
         setSelectedItem(null);
         Swal.fire("Thành công!", "Cập nhật thành công.", "success");
+      } else {
+        throw new Error(res.message || "Cập nhật thất bại");
       }
     } catch (error) {
-      Swal.fire("Lỗi!", "Cập nhật thất bại.", "error");
+      console.error("Error in handleUpdate:", error);
+      Swal.fire(
+        "Lỗi!",
+        `Cập nhật thất bại: ${error.message || "Lỗi không xác định"}`,
+        "error"
+      );
     }
   };
 
@@ -1915,25 +1894,25 @@ const ProductManagement = () => {
             className={activeTab === "DichVu" ? "active" : ""}
             onClick={() => setActiveTab("DichVu")}
           >
-            Món Ăn
+            <i className="fas fa-utensils"></i> Món Ăn
           </li>
           <li
             className={activeTab === "QuaTang" ? "active" : ""}
             onClick={() => setActiveTab("QuaTang")}
           >
-            Quà Tặng
+            <i className="fas fa-gift"></i> Quà Tặng
           </li>
           <li
             className={activeTab === "TrangTri" ? "active" : ""}
             onClick={() => setActiveTab("TrangTri")}
           >
-            Trang Trí
+            <i className="fas fa-paint-brush"></i> Trang Trí
           </li>
           <li
             className={activeTab === "Order" ? "active" : ""}
             onClick={() => setActiveTab("Order")}
           >
-            Sảnh
+            <i className="fas fa-building"></i> Sảnh
           </li>
         </ul>
       </nav>
@@ -1942,5 +1921,320 @@ const ProductManagement = () => {
     </div>
   );
 };
+
+// Thêm CSS mới
+const styles = `
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.nav-tabs {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.nav-tabs ul {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-tabs li {
+  padding: 15px 25px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #666;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-tabs li:hover {
+  color: #1890ff;
+  background: #f0f7ff;
+}
+
+.nav-tabs li.active {
+  color: #1890ff;
+  border-bottom: 2px solid #1890ff;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.action-buttons input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.button-add {
+  background: #1890ff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.3s;
+}
+
+.button-add:hover {
+  background: #40a9ff;
+}
+
+.product-table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.product-table th {
+  background: #fafafa;
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 1px solid #eee;
+}
+
+.product-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+
+.product-image-cell {
+  width: 80px;
+}
+
+.product-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.action-column {
+  width: 100px;
+}
+
+.button-detail {
+  background: #1890ff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.3s;
+}
+
+.button-detail:hover {
+  background: #40a9ff;
+}
+
+.detail-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.detail-card-content {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.detail-card-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+}
+
+.detail-card h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.detail-card label {
+  display: block;
+  margin-bottom: 5px;
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-card input,
+.detail-card select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.detail-card-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.button-update {
+  background: #52c41a;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.button-update:hover {
+  background: #73d13d;
+}
+
+.button-delete {
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.button-delete:hover {
+  background: #ff7875;
+}
+
+.image-upload-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.image-upload-label {
+  background: #f0f0f0;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.image-upload-label:hover {
+  background: #e0e0e0;
+}
+
+.file-name {
+  font-size: 13px;
+  color: #666;
+}
+
+.image-preview {
+  margin-top: 10px;
+}
+
+.preview-image {
+  max-width: 200px;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 50px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.current-price {
+  font-size: 13px;
+  color: #666;
+  margin-left: 10px;
+}
+
+.detail-image-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.detail-image {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+`;
+
+// Thêm styles vào document
+const styleSheet = document.createElement("style");
+styleSheet.textContent = styles;
+document.head.appendChild(styleSheet);
 
 export default ProductManagement;
