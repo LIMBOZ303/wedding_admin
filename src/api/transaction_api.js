@@ -2,14 +2,23 @@ import axios from 'axios';
 
 const API_URL = 'https://apidatn.onrender.com/transaction';
 const USER_API_URL = 'https://apidatn.onrender.com/users';
-export const fetchTransaction = async (userId, userRole) => {
-  const response = await axios.get(`${USER_API_URL}/get/transactions`, {
-    headers: {
-      'user-id': userId,
-      'user-role': userRole,
-    },
-  });
-  return response.data;
+export const fetchTransaction = async (userId, role) => {
+  try {
+    const response = await axios.get(`${USER_API_URL}/get/transactions`, {
+      headers: {
+        'user-id': userId,
+        'user-role': role,
+        
+      },
+    });
+    if (!response.data || typeof response.data !== 'object') {
+      throw new Error('Dữ liệu API không hợp lệ');
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy giao dịch:', error.message);
+    throw error;
+  }
 };
 // thống kê 
 const fetchTransactionStats = async () => {

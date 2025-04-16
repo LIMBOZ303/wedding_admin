@@ -1,10 +1,77 @@
+.status-badge.status-canceled {
+    background-color: #f8d7da; /* Màu nền đỏ nhạt */
+    color: #721c24; /* Màu chữ đỏ đậm */
+    border: 1px solid #f5c6cb; /* Viền đỏ nhạt */
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  /* Đảm bảo các trạng thái khác có màu phù hợp */
+  .status-badge.status-active {
+    background-color: #d4edda; /* Xanh nhạt */
+    color: #155724; /* Xanh đậm */
+    border: 1px solid #c3e6cb;
+  }
+  
+  .status-badge.status-pending {
+    background-color: #fff3cd; /* Vàng nhạt */
+    color: #856404; /* Vàng đậm */
+    border: 1px solid #ffeeba;
+  }
+  
+  .status-badge.status-deposited {
+    background-color: #cce5ff; /* Xanh dương nhạt */
+    color: #004085; /* Xanh dương đậm */
+    border: 1px solid #b8daff;
+  }
+.button-disabled {
+    background-color: #cccccc; /* Màu xám */
+    color: #666666; /* Màu chữ xám đậm */
+    border: none;
+    padding: 8px 16px;
+    cursor: not-allowed; /* Con trỏ chuột hiển thị không thể nhấn */
+    opacity: 0.6; /* Làm mờ nút */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 4px;
+  }
+  
+  .button-confirm {
+    background-color: #4CAF50; /* Màu xanh lá cho nút xác nhận */
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 4px;
+  }
+  
+  .button-confirm:hover {
+    background-color: #45a049; /* Màu xanh đậm hơn khi hover */
+  }
+  
+  /* Style cho badge trạng thái "Đã đặt cọc" */
+  .status-badge.status-deposited {
+    background-color: #ff9800; /* Màu cam để phân biệt trạng thái Đã đặt cọc */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+  }
 .transactions-container {
-    padding: 24px;
+    padding: 20px;
     background-color: #f8f9fa;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    max-width: 1300px;
-    margin: 0 auto;
+    min-height: 100vh;
 }
 
 .transactions-header {
@@ -12,182 +79,98 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    padding: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .transactions-header h2 {
     margin: 0;
-    color: #343a40;
-    font-size: 1.75rem;
+    color: #2c3e50;
+    font-size: 24px;
 }
 
-.refresh-button {
-    background-color: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 16px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.refresh-button:hover {
-    background-color: #5a6268;
-}
-
-.refresh-button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-.filters-container {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-.search-container, .filter-container {
+.header-actions {
     display: flex;
     align-items: center;
-    background-color: white;
-    padding: 8px 12px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.search-icon, .filter-icon {
-    color: #6c757d;
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background-color: #f1f3f5;
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 300px;
+    transition: all 0.3s ease;
+}
+
+.search-container:focus-within {
+    background-color: #fff;
+    box-shadow: 0 0 0 2px #4dabf7;
+}
+
+.search-icon {
+    color: #868e96;
     margin-right: 8px;
 }
 
-.search-input, .filter-select {
+.search-input {
     border: none;
+    background: transparent;
     outline: none;
-    padding: 4px;
-    flex-grow: 1;
-}
-
-.table-responsive {
-    overflow-x: auto;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    border-radius: 8px;
-    background-color: white;
-}
-
-.transactions-table {
     width: 100%;
-    border-collapse: collapse;
-}
-
-.transactions-table th, .transactions-table td {
-    padding: 12px 16px;
-    text-align: left;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.transactions-table th {
-    background-color: #f1f3f5;
-    color: #495057;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.transactions-table th:hover {
-    background-color: #e9ecef;
-}
-
-.transactions-table tr:last-child td {
-    border-bottom: none;
-}
-
-.transactions-table tr:hover {
-    background-color: #f8f9fa;
-}
-
-.transaction-id {
-    font-family: monospace;
-    font-size: 0.9em;
+    font-size: 14px;
     color: #495057;
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: 500;
+.search-input::placeholder {
+    color: #868e96;
 }
 
-.status-active {
-    background-color: #d4edda;
-    color: #155724;
-}
-
-.status-pending {
-    background-color: #fff3cd;
-    color: #856404;
-}
-
-.button-confirm, .button-confirmed {
+.clear-search {
+    background: none;
     border: none;
-    border-radius: 4px;
-    padding: 8px 12px;
-    font-weight: 500;
+    color: #868e96;
     cursor: pointer;
-    transition: background-color 0.2s;
+    padding: 4px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    transition: color 0.2s;
 }
 
-.button-confirm {
-    background-color: #007bff;
-    color: white;
+.clear-search:hover {
+    color: #495057;
 }
 
-.button-confirm:hover {
-    background-color: #0069d9;
-}
-
-.button-confirmed {
-    background-color: #28a745;
-    color: white;
-    opacity: 0.8;
-    cursor: default;
-}
-
-.button-confirm:disabled {
-    background-color: #007bff;
-    opacity: 0.6;
-    cursor: not-allowed;
+.transactions-content {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    min-height: 400px;
 }
 
 .loading-container {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    min-height: 300px;
+    justify-content: center;
+    padding: 40px;
+    color: #868e96;
 }
 
-.spinner {
+.loading-container .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid rgba(0, 0, 0, 0.1);
-    border-top: 4px solid #007bff;
+    border: 3px solid #f1f3f5;
+    border-top-color: #4dabf7;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-}
-
-.spinner.small {
-    width: 20px;
-    height: 20px;
-    border-width: 3px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    margin-bottom: 16px;
 }
 
 .no-data {
@@ -195,37 +178,345 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 48px 24px;
-    color: #6c757d;
+    padding: 40px;
+    color: #868e96;
+}
+
+.no-data svg {
+    margin-bottom: 16px;
+    color: #868e96;
+}
+
+.clear-search-button {
+    margin-top: 16px;
+    padding: 8px 16px;
+    background-color: #e7f5ff;
+    color: #4dabf7;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-search-button:hover {
+    background-color: #d0ebff;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    min-width: 800px;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.transactions-table th {
+    background-color: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    color: #495057;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.transactions-table th.sortable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.transactions-table th.sortable:hover {
+    background-color: #e9ecef;
+}
+
+.transactions-table th:nth-child(1),
+.transactions-table td:nth-child(1) {
+    width: 60px;
+}
+
+.transactions-table th:nth-child(2),
+.transactions-table td:nth-child(2) {
+    width: 15%;
+}
+
+.transactions-table th:nth-child(3),
+.transactions-table td:nth-child(3) {
+    width: 25%;
+}
+
+.transactions-table th:nth-child(4),
+.transactions-table td:nth-child(4) {
+    width: 30%;
+}
+
+.transactions-table th:nth-child(5),
+.transactions-table td:nth-child(5) {
+    width: 15%;
+}
+
+.transactions-table th:nth-child(6),
+.transactions-table td:nth-child(6) {
+    width: 15%;
     text-align: center;
 }
 
-.no-data p {
-    margin-top: 12px;
-    font-size: 1.1em;
+.transactions-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 0;
+}
+
+.transactions-table tr {
+    transition: background-color 0.2s;
+}
+
+.transactions-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.transactions-table tr.pending-row {
+    background-color: #fff3bf;
+}
+
+.transactions-table tr.pending-row:hover {
+    background-color: #ffeeba;
+}
+
+.index-column {
+    width: 50px;
+    text-align: center;
+    color: #868e96;
+}
+
+.loading-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loading-name .loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f1f3f5;
+    border-top-color: #4dabf7;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.button-confirm {
+    background-color: #40c057;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.button-confirm:hover {
+    background-color: #37b24d;
+}
+
+.button-confirm:disabled {
+    background-color: #868e96;
+    cursor: not-allowed;
+}
+
+.button-disabled {
+    background-color: #e9ecef;
+    color: #868e96;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: not-allowed;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.transaction-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.transaction-modal {
+    background-color: white;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #868e96;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.modal-close:hover {
+    color: #495057;
+}
+
+.transaction-details {
+    padding: 20px;
+}
+
+.detail-group {
+    margin-bottom: 16px;
+}
+
+.detail-label {
+    display: block;
+    color: #868e96;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.detail-value {
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.transaction-id-group .detail-value {
+    font-family: monospace;
+    background-color: #f1f3f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.status-badge.status-active {
+    background-color: #d3f9d8;
+    color: #2b8a3e;
+}
+
+.status-badge.status-pending {
+    background-color: #fff3bf;
+    color: #e67700;
+}
+
+.transactions-table td[data-full-text] {
+    position: relative;
+}
+
+.transactions-table td[data-full-text]:hover::after {
+    content: attr(data-full-text);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: #333;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    z-index: 1000;
+    white-space: normal;
+    max-width: 300px;
+    word-wrap: break-word;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 14px;
+}
+
+@media (max-width: 1024px) {
+    .transactions-table th:nth-child(2),
+    .transactions-table td:nth-child(2) {
+        width: 20%;
+    }
+
+    .transactions-table th:nth-child(3),
+    .transactions-table td:nth-child(3) {
+        width: 20%;
+    }
+
+    .transactions-table th:nth-child(4),
+    .transactions-table td:nth-child(4) {
+        width: 25%;
+    }
 }
 
 @media (max-width: 768px) {
-    .transactions-container {
-        padding: 16px;
-    }
-    
     .transactions-header {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
+        gap: 16px;
     }
-    
-    .filters-container {
-        flex-direction: column;
+
+    .header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .search-container {
         width: 100%;
     }
-    
-    .search-container, .filter-container {
-        width: 100%;
+
+    .table-responsive {
+        min-width: 600px;
     }
     
-    .transactions-table th, .transactions-table td {
-        padding: 8px 12px;
+    .transactions-table {
+        font-size: 14px;
+    }
+
+    .transactions-table th,
+    .transactions-table td {
+        padding: 8px;
+    }
+
+    .button-confirm,
+    .button-disabled {
+        min-width: 100px;
+        padding: 6px 12px;
     }
 }
