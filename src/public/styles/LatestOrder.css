@@ -1,0 +1,81 @@
+.latest-orders {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 24px;
+  }
+  
+  .card-header {
+    margin-bottom: 16px;
+  }
+  
+  .card-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .table-responsive {
+    overflow-x: auto;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th,
+  td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+  
+  th {
+    font-weight: 600;
+    color: #666;
+    font-size: 14px;
+  }
+  
+  td {
+    color: #333;
+    font-size: 14px;
+  }
+  
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+  }
+  
+  .loading-container,
+  .error-container,
+  .empty-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .loading-container p,
+  .error-container p,
+  .empty-container p {
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .error-container p {
+    color: #f44336;
+  }
+  
+  .loading-container svg {
+    color: #4caf50;
+  }
