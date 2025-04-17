@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import '../public/styles/Transaction.css';
+import '../public/styles/LoadingSpinner.css';
 import { fetchTransaction } from '../api/transaction_api';
 import { fetchPlanById } from '../api/plan_api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -373,9 +374,9 @@ function Transactions() {
 
       <div className="transactions-content">
         {loadingTransactions ? (
-          <div className="loading-container">
-            <div className="spinner"></div>
-            <p>Đang tải dữ liệu...</p>
+          <div className="spinner-container fullscreen">
+            <div className="loading-spinner large"></div>
+            <div className="loading-text">Đang tải dữ liệu...</div>
           </div>
         ) : transactions.length === 0 ? (
           <div className="no-data">
@@ -425,7 +426,10 @@ function Transactions() {
                     <td data-full-text={tx.userId?.email || 'N/A'}>{tx.userId?.email || 'N/A'}</td>
                     <td data-full-text={planNames[tx.planId] || 'Không có tên kế hoạch'}>
                       {loadingPlanNames[tx.planId] ? (
-                        <span>Đang tải...</span>
+                        <div className="loading-state">
+                          <div className="loading-spinner small"></div>
+                          <span>Đang tải...</span>
+                        </div>
                       ) : (
                         planNames[tx.planId] || 'Không có tên kế hoạch'
                       )}
@@ -451,7 +455,16 @@ function Transactions() {
                           disabled={loadingConfirm[tx._id]}
                           title="Nhấn để xác nhận giao dịch"
                         >
-                          <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận
+                          {loadingConfirm[tx._id] ? (
+                            <div className="loading-state">
+                              <div className="loading-spinner button"></div>
+                              <span>Đang xác nhận...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận
+                            </>
+                          )}
                         </button>
                       )}
                     </td>
@@ -489,7 +502,7 @@ function Transactions() {
                 <span className="detail-label">Tên kế hoạch</span>
                 <span className="detail-value">
                   {loadingPlanNames[selectedTransaction.planId] ? (
-                    <div className="loading-name">
+                    <div className="loading-state">
                       <div className="loading-spinner small"></div>
                       <span>Đang tải...</span>
                     </div>
@@ -516,7 +529,16 @@ function Transactions() {
                     }}
                     disabled={loadingConfirm[selectedTransaction._id]}
                   >
-                    <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                    {loadingConfirm[selectedTransaction._id] ? (
+                      <div className="loading-state">
+                        <div className="loading-spinner button"></div>
+                        <span>Đang xác nhận...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                      </>
+                    )}
                   </button>
                 </div>
               )}

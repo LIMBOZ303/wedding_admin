@@ -3,12 +3,10 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
-    height: 100%;
-    min-height: 200px;
+    min-height: 100px;
+    position: relative;
 }
 
-/* Main loading spinner */
 .loading-spinner {
     width: 50px;
     height: 50px;
@@ -19,110 +17,71 @@
     position: relative;
 }
 
-.loading-spinner::before {
+.loading-spinner::before,
+.loading-spinner::after {
     content: '';
     position: absolute;
-    top: -3px;
-    left: -3px;
-    right: -3px;
-    bottom: -3px;
-    border: 3px solid transparent;
-    border-top: 3px solid #e74c3c;
     border-radius: 50%;
+    border: 3px solid transparent;
+}
+
+.loading-spinner::before {
+    width: 100%;
+    height: 100%;
+    border-top: 3px solid #e74c3c;
     animation: spin 1.5s linear infinite;
 }
 
 .loading-spinner::after {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: -6px;
-    right: -6px;
-    bottom: -6px;
-    border: 3px solid transparent;
+    width: 80%;
+    height: 80%;
+    top: 10%;
+    left: 10%;
     border-top: 3px solid #2ecc71;
-    border-radius: 50%;
     animation: spin 2s linear infinite;
 }
 
-/* Small spinner variant */
+/* Size variants */
 .loading-spinner.small {
     width: 30px;
     height: 30px;
     border-width: 2px;
 }
 
-.loading-spinner.small::before {
-    border-width: 2px;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-}
-
+.loading-spinner.small::before,
 .loading-spinner.small::after {
     border-width: 2px;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
 }
 
-/* Large spinner variant */
 .loading-spinner.large {
     width: 70px;
     height: 70px;
     border-width: 4px;
 }
 
-.loading-spinner.large::before {
-    border-width: 4px;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-}
-
+.loading-spinner.large::before,
 .loading-spinner.large::after {
     border-width: 4px;
-    top: -8px;
-    left: -8px;
-    right: -8px;
-    bottom: -8px;
 }
 
-/* Button loading spinner */
-.button-spinner {
+/* Variants for different use cases */
+.loading-spinner.button {
     width: 20px;
     height: 20px;
-    border: 2px solid #ffffff;
-    border-top: 2px solid transparent;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    display: inline-block;
-    margin-right: 8px;
-    vertical-align: middle;
+    border-width: 2px;
+    margin: 0 8px;
 }
 
-/* Table loading spinner */
-.table-spinner {
+.loading-spinner.table {
     width: 25px;
     height: 25px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
+    border-width: 2px;
 }
 
-/* Card loading spinner */
-.card-spinner {
+.loading-spinner.card {
     width: 40px;
     height: 40px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    border-width: 3px;
     position: absolute;
     top: 50%;
     left: 50%;
@@ -134,62 +93,96 @@
     margin-left: 12px;
     color: #666;
     font-size: 14px;
-    animation: fadeInOut 1.5s ease-in-out infinite;
+    animation: fade 1.5s ease-in-out infinite;
+}
+
+/* Dark theme */
+.dark-theme .loading-spinner {
+    border-color: #444;
+    border-top-color: #3498db;
+}
+
+.dark-theme .loading-spinner::before {
+    border-top-color: #e74c3c;
+}
+
+.dark-theme .loading-spinner::after {
+    border-top-color: #2ecc71;
+}
+
+.dark-theme .loading-text {
+    color: #ccc;
 }
 
 /* Animations */
 @keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
-@keyframes fadeInOut {
-    0% {
-        opacity: 0.5;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.5;
-    }
+@keyframes fade {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
 }
 
-/* Container animations */
+/* Pulse effect */
 .spinner-container.pulse {
     animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-    0% {
-        opacity: 1;
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Container variants */
+.spinner-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 1000;
+}
+
+.spinner-container.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.5);
+    z-index: 100;
+}
+
+/* Loading states */
+.loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.loading-state .loading-spinner {
+    margin-right: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
     }
-    50% {
-        opacity: 0.7;
+    
+    .loading-spinner.large {
+        width: 60px;
+        height: 60px;
     }
-    100% {
-        opacity: 1;
+    
+    .loading-spinner.small {
+        width: 25px;
+        height: 25px;
     }
-}
-
-/* Dark theme variants */
-.dark-theme .loading-spinner {
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-.dark-theme .loading-spinner::before {
-    border-top-color: #ff6b6b;
-}
-
-.dark-theme .loading-spinner::after {
-    border-top-color: #4ecdc4;
-}
-
-.dark-theme .loading-text {
-    color: #fff;
 }
   
