@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import '../public/styles/Transaction.css';
-import '../public/styles/LoadingSpinner.css';
 import { fetchTransaction } from '../api/transaction_api';
 import { fetchPlanById } from '../api/plan_api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -318,6 +317,12 @@ function Transactions() {
             <FontAwesomeIcon icon={faCheckCircle} /> Đã đặt cọc
           </span>
         );
+      case 'Đã hủy':
+        return (
+          <span className="status-badge status-canceled">
+            <FontAwesomeIcon icon={faTimes} /> Đã hủy
+          </span>
+        );
       default:
         return <span className="status-badge">{status || 'N/A'}</span>;
     }
@@ -374,9 +379,9 @@ function Transactions() {
 
       <div className="transactions-content">
         {loadingTransactions ? (
-          <div className="spinner-container fullscreen">
-            <div className="loading-spinner large"></div>
-            <div className="loading-text">Đang tải dữ liệu...</div>
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Đang tải dữ liệu...</p>
           </div>
         ) : transactions.length === 0 ? (
           <div className="no-data">
@@ -426,21 +431,22 @@ function Transactions() {
                     <td data-full-text={tx.userId?.email || 'N/A'}>{tx.userId?.email || 'N/A'}</td>
                     <td data-full-text={planNames[tx.planId] || 'Không có tên kế hoạch'}>
                       {loadingPlanNames[tx.planId] ? (
-                        <div className="loading-state">
-                          <div className="loading-spinner small"></div>
-                          <span>Đang tải...</span>
-                        </div>
+                        <span>Đang tải...</span>
                       ) : (
                         planNames[tx.planId] || 'Không có tên kế hoạch'
                       )}
                     </td>
                     <td>{getStatusBadge(tx.status)}</td>
                     <td>
-                      {tx.status === 'Đã đặt cọc' ? (
+                      {tx.status === 'Đã đặt cọc' || tx.status === 'Đã hủy' ? (
                         <button
                           className="button-disabled"
                           disabled
-                          title="Giao dịch đã được đặt cọc"
+                          title={
+                            tx.status === 'Đã đặt cọc'
+                              ? 'Giao dịch đã được đặt cọc'
+                              : 'Giao dịch đã bị hủy'
+                          }
                           onClick={(e) => e.stopPropagation()}
                         >
                           <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận
@@ -455,16 +461,7 @@ function Transactions() {
                           disabled={loadingConfirm[tx._id]}
                           title="Nhấn để xác nhận giao dịch"
                         >
-                          {loadingConfirm[tx._id] ? (
-                            <div className="loading-state">
-                              <div className="loading-spinner button"></div>
-                              <span>Đang xác nhận...</span>
-                            </div>
-                          ) : (
-                            <>
-                              <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận
-                            </>
-                          )}
+                          <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận
                         </button>
                       )}
                     </td>
@@ -502,7 +499,7 @@ function Transactions() {
                 <span className="detail-label">Tên kế hoạch</span>
                 <span className="detail-value">
                   {loadingPlanNames[selectedTransaction.planId] ? (
-                    <div className="loading-state">
+                    <div className="loading-name">
                       <div className="loading-spinner small"></div>
                       <span>Đang tải...</span>
                     </div>
@@ -519,29 +516,22 @@ function Transactions() {
                 <span className="detail-label">Ngày tạo giao dịch</span>
                 <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
               </div>
-              {selectedTransaction.status !== 'Đã đặt cọc' && userRole === 'admin' && (
-                <div className="detail-group">
-                  <button
-                    className="button-confirm"
-                    onClick={() => {
-                      confirmTransaction(selectedTransaction._id);
-                      closeModal();
-                    }}
-                    disabled={loadingConfirm[selectedTransaction._id]}
-                  >
-                    {loadingConfirm[selectedTransaction._id] ? (
-                      <div className="loading-state">
-                        <div className="loading-spinner button"></div>
-                        <span>Đang xác nhận...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+              {selectedTransaction.status !== 'Đã đặt cọc' &&
+                selectedTransaction.status !== 'Đã hủy' &&
+                userRole === 'admin' && (
+                  <div className="detail-group">
+                    <button
+                      className="button-confirm"
+                      onClick={() => {
+                        confirmTransaction(selectedTransaction._id);
+                        closeModal();
+                      }}
+                      disabled={loadingConfirm[selectedTransaction._id]}
+                    >
+                      <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
         </div>
