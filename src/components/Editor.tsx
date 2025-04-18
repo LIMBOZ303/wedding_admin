@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { CKEditor, useCKEditorCloud } from '@ckeditor/ckeditor5-react';
 import '../public/styles/Editor.css';
 
-const LICENSE_KEY = 'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NzQzMTAzOTksImp0aSI6IjU5ZTUzNGE0LTVkMjMtNDNhOS1hNTQ1LTg4NTkxZWU0OTBhYiIsImxpY2Vuc2VkSG9zdHMiOlsiMTI3LjAuMC4xIiwibG9jYWxob3N0IiwiMTkyLjE2OC4qLioiLCIxMC4qLiouKiIsIjE3Mi4qLiouKiIsIioudGVzdCIsIioubG9jYWxob3N0IiwiKi5sb2NhbCJdLCJ1c2FnZUVuZHBvaW50IjoiaHR0cHM6Ly9wcm94eS1ldmVudC5ja2VkaXRvci5jb20iLCJkaXN0cmlidXRpb25DaGFubmVsIjpbImNsb3VkIiwiZHJ1cGFsIl0sImxpY2Vuc2VUeXBlIjoiZGV2ZWxvcG1lbnQiLCJmZWF0dXJlcyI6WyJEUlVQIl0sInZjIjoiNjhkMWU1MDQifQ.-2GDbyy9PNkliG09eHYUjb4l45H85PvZiqNOJUYu7WNy48SGCgjf0swoGhwfUXmZVX9vnyOEuBTwiN8F-piMNA';
+const LICENSE_KEY = 'eyJhbGciOiJFUzI1NiJ9.eyJleHAiOjE3NzQzMTAzOTksImp0aSI6IjU5ZTUzNGE0LTVkMjMtNDNhOS1hNTQ1LTg4NTkxZWU0OTBhYiIsImxpY2Vuc2VkSG9zdHMiOlsiMTI3LjAuMC4xIiwibG9jYWxob3N0IiwiMTkyLjE2OC4qLioiLCIxMC4qLiouKiIsIioudGVzdCIsIioubG9jYWxob3N0IiwiKi5sb2NhbCJdLCJ1c2FnZUVuZHBvaW50IjoiaHR0cHM6Ly9wcm94eS1ldmVudC5ja2VkaXRvci5jb20iLCJkaXN0cmlidXRpb25DaGFubmVsIjpbImNsb3VkIiwiZHJ1cGFsIl0sImxpY2Vuc2VUeXBlIjoiZGV2ZWxvcG1lbnQiLCJmZWF0dXJlcyI6WyJEUlVQIl0sInZjIjoiNjhkMWU1MDQifQ.-2GDbyy9PNkliG09eHYUjb4l45H85PvZiqNOJUYu7WNy48SGCgjf0swoGhwfUXmZVX9vnyOEuBTwiN8F-piMNA';
 
 const CLOUD_SERVICES_TOKEN_URL = 'https://fcpres4l8r92.cke-cs.com/token/dev/4dbcfd5a3d9d3d7e4b46ee24db890870325195ca00d1148ef7cfc8691971?limit=10';
 
@@ -19,7 +19,25 @@ export default function Editor({ value, onChange }: EditorProps) {
 
   useEffect(() => {
     setIsLayoutReady(true);
-    return () => setIsLayoutReady(false);
+    
+    // Create a ResizeObserver with a debounced callback
+    let timeoutId: NodeJS.Timeout;
+    const resizeObserver = new ResizeObserver(() => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        // Empty callback to prevent the warning
+      }, 100);
+    });
+    
+    if (editorContainerRef.current) {
+      resizeObserver.observe(editorContainerRef.current);
+    }
+
+    return () => {
+      setIsLayoutReady(false);
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+    };
   }, []);
 
   const { ClassicEditor, editorConfig } = useMemo(() => {
@@ -193,13 +211,40 @@ export default function Editor({ value, onChange }: EditorProps) {
           ]
         },
         image: {
+          upload: {
+            types: ['jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'svg+xml'],
+            maxWidth: 1200,
+            maxHeight: 1200
+          },
+          styles: {
+            options: [
+              'inline',
+              'block',
+              'side',
+              'alignLeft',
+              'alignCenter',
+              'alignRight'
+            ]
+          },
+          resizeOptions: [
+            {
+              name: 'resizeImage:original',
+              value: null,
+              icon: 'original'
+            },
+            {
+              name: 'resizeImage:custom',
+              value: 'custom',
+              icon: 'custom'
+            }
+          ],
           toolbar: [
+            'imageStyle:inline',
+            'imageStyle:block',
+            'imageStyle:side',
+            '|',
             'toggleImageCaption',
             'imageTextAlternative',
-            '|',
-            'imageStyle:inline',
-            'imageStyle:wrapText',
-            'imageStyle:breakText',
             '|',
             'resizeImage',
             '|',

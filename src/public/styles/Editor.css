@@ -3,25 +3,38 @@
   border: 1px solid #ccc;
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
+  will-change: transform;
+  contain: content;
 }
 
 /* CKEditor Styles */
 .ck-editor__editable {
   min-height: 250px;
   max-height: 600px;
+  overflow-y: auto;
+  will-change: transform;
+  contain: content;
 }
 
 .ck.ck-editor {
   width: 100% !important;
+  contain: content;
 }
 
 .ck.ck-editor__editable {
   padding: 0 10px;
   border-radius: 0 0 4px 4px !important;
+  contain: content;
 }
 
 .ck.ck-toolbar {
   border-radius: 4px 4px 0 0 !important;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: white;
+  contain: content;
 }
 
 /* File upload button styles */
@@ -36,6 +49,7 @@
   clear: both;
   text-align: center;
   margin: 1em 0;
+  contain: content;
 }
 
 .ck-content .image > img {
@@ -43,16 +57,19 @@
   margin: 0 auto;
   max-width: 100%;
   height: auto;
+  contain: content;
 }
 
 .ck-content .image-style-align-left {
   float: left;
   margin-right: 1.5em;
+  contain: content;
 }
 
 .ck-content .image-style-align-right {
   float: right;
   margin-left: 1.5em;
+  contain: content;
 }
 
 /* Responsive styling */
@@ -60,21 +77,28 @@
   .ck.ck-editor__editable {
     min-height: 200px;
   }
+  
+  .ck.ck-toolbar {
+    position: relative;
+  }
 }
 
 /* Custom styling for the content */
 .ck-content h1, .ck-content h2, .ck-content h3, .ck-content h4, .ck-content h5 {
   margin-top: 1em;
   margin-bottom: 0.5em;
+  contain: content;
 }
 
 .ck-content p {
   margin-bottom: 1em;
+  contain: content;
 }
 
 .ck-content ul, .ck-content ol {
   margin-left: 2em;
   margin-bottom: 1em;
+  contain: content;
 }
 
 .ck-content blockquote {
@@ -82,20 +106,49 @@
   margin-left: 2em;
   border-left: 3px solid #ccc;
   padding-left: 1em;
+  contain: content;
 }
 
 .ck-content img {
   max-width: 100%;
   height: auto;
+  contain: content;
 }
 
 .ck-content table {
   border-collapse: collapse;
   width: 100%;
   margin-bottom: 1em;
+  contain: content;
 }
 
 .ck-content table td, .ck-content table th {
   border: 1px solid #ccc;
   padding: 0.5em;
+}
+
+/* Add smooth transitions */
+.ck.ck-editor__editable,
+.ck.ck-toolbar,
+.ck-content .image,
+.ck-content img {
+  transition: all 0.3s ease;
+}
+
+/* Add scrollbar styling */
+.ck-editor__editable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ck-editor__editable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.ck-editor__editable::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.ck-editor__editable::-webkit-scrollbar-thumb:hover {
+  background: #555;
 } 

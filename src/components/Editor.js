@@ -14,7 +14,25 @@ export default function Editor({ value, onChange }) {
 
   useEffect(() => {
     setIsLayoutReady(true);
-    return () => setIsLayoutReady(false);
+    
+    // Create a ResizeObserver with a debounced callback
+    let timeoutId;
+    const resizeObserver = new ResizeObserver(() => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        // Empty callback to prevent the warning
+      }, 100);
+    });
+    
+    if (editorContainerRef.current) {
+      resizeObserver.observe(editorContainerRef.current);
+    }
+
+    return () => {
+      setIsLayoutReady(false);
+      clearTimeout(timeoutId);
+      resizeObserver.disconnect();
+    };
   }, []);
 
   const { ClassicEditor, editorConfig } = useMemo(() => {
