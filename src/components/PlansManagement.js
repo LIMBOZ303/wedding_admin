@@ -4,6 +4,7 @@ import { faTimes} from '@fortawesome/free-solid-svg-icons';
 import { fetchPlanswithUser } from '../api/plan_api';
 import Swal from 'sweetalert2';
 import "../public/styles/PlanManagement.css";
+import LoadingSpinner from './LoadingSpinner';
 
 const PlansManagement = () => {
     const [plans, setPlans] = useState([]);
@@ -13,16 +14,6 @@ const PlansManagement = () => {
     const [selectedPlan, setSelectedPlan] = useState(null);
 
     const fetchData = async () => {
-        Swal.fire({
-            title: 'Đang tải danh sách kế hoạch...',
-            position: 'center',
-            width: '500px',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            },
-        });
         try {
             const [plansRes] = await Promise.all([fetchPlanswithUser()]);
             setPlans(plansRes || []);
@@ -39,7 +30,6 @@ const PlansManagement = () => {
             });
         } finally {
             setLoading(false);
-            Swal.close();
         }
     };
 
@@ -73,7 +63,7 @@ const PlansManagement = () => {
         return presents.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
     };
 
-    if (loading) return null;
+    if (loading) return <LoadingSpinner size="large" text="Đang tải danh sách kế hoạch..." />;
     if (error) return <div className="plans-management"><p className="error-text">{error}</p></div>;
 
     return (
