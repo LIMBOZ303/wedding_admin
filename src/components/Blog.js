@@ -7,6 +7,9 @@ import {
 } from "../api/blog_api";
 import "../public/styles/Blog.css";
 import Editor from "./Editor";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEdit, faTrash, faPlus, faSearch, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import LoadingSpinner from './LoadingSpinner';
 
 // Admin user id (ensure this exists and has admin role in your database)
 const adminUserId = "67debaa7772f617ebcb70d2f";
@@ -491,9 +494,7 @@ const Blog = () => {
         </div>
 
         {loading ? (
-          <div className="loading-container">
-            <i className="fas fa-spinner fa-spin"></i> Đang tải dữ liệu...
-          </div>
+          <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
         ) : error ? (
           <div className="error-container">
             <i className="fas fa-triangle-exclamation"></i> {error}

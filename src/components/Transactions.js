@@ -10,6 +10,7 @@ import {
   faSearch,
   faTimes,
 } from '@fortawesome/free-solid-svg-icons';
+import LoadingSpinner from './LoadingSpinner';
 
 function Transactions() {
   const [transactions, setTransactions] = useState([]);
@@ -379,10 +380,7 @@ function Transactions() {
 
       <div className="transactions-content">
         {loadingTransactions ? (
-          <div className="loading-container">
-            <div className="spinner"></div>
-            <p>Đang tải dữ liệu...</p>
-          </div>
+          <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
         ) : transactions.length === 0 ? (
           <div className="no-data">
             <FontAwesomeIcon icon={faExclamationTriangle} size="2x" />

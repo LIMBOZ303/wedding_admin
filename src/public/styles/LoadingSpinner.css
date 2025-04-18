@@ -10,10 +10,6 @@
 .loading-spinner {
     width: 50px;
     height: 50px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
     position: relative;
 }
 
@@ -21,23 +17,23 @@
 .loading-spinner::after {
     content: '';
     position: absolute;
-    border-radius: 50%;
-    border: 3px solid transparent;
-}
-
-.loading-spinner::before {
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    border-top: 3px solid #e74c3c;
-    animation: spin 1.5s linear infinite;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #3498db;
+    animation: spin 1s linear infinite;
 }
 
 .loading-spinner::after {
-    width: 80%;
-    height: 80%;
-    top: 10%;
-    left: 10%;
-    border-top: 3px solid #2ecc71;
+    border-top-color: #e74c3c;
+    animation: spin 1.5s linear infinite;
+}
+
+.loading-spinner::before {
+    border-top-color: #2ecc71;
     animation: spin 2s linear infinite;
 }
 
@@ -45,47 +41,11 @@
 .loading-spinner.small {
     width: 30px;
     height: 30px;
-    border-width: 2px;
-}
-
-.loading-spinner.small::before,
-.loading-spinner.small::after {
-    border-width: 2px;
 }
 
 .loading-spinner.large {
     width: 70px;
     height: 70px;
-    border-width: 4px;
-}
-
-.loading-spinner.large::before,
-.loading-spinner.large::after {
-    border-width: 4px;
-}
-
-/* Variants for different use cases */
-.loading-spinner.button {
-    width: 20px;
-    height: 20px;
-    border-width: 2px;
-    margin: 0 8px;
-}
-
-.loading-spinner.table {
-    width: 25px;
-    height: 25px;
-    border-width: 2px;
-}
-
-.loading-spinner.card {
-    width: 40px;
-    height: 40px;
-    border-width: 3px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
 }
 
 /* Loading text */
@@ -97,17 +57,9 @@
 }
 
 /* Dark theme */
-.dark-theme .loading-spinner {
-    border-color: #444;
-    border-top-color: #3498db;
-}
-
-.dark-theme .loading-spinner::before {
-    border-top-color: #e74c3c;
-}
-
+.dark-theme .loading-spinner::before,
 .dark-theme .loading-spinner::after {
-    border-top-color: #2ecc71;
+    border-top-color: #3498db;
 }
 
 .dark-theme .loading-text {
@@ -123,16 +75,6 @@
 @keyframes fade {
     0%, 100% { opacity: 0.5; }
     50% { opacity: 1; }
-}
-
-/* Pulse effect */
-.spinner-container.pulse {
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); }
 }
 
 /* Container variants */

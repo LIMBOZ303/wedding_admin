@@ -33,6 +33,7 @@ import {
   fetchRevenueByMonth,
   fetchRevenueByWeek
 } from '../api/transaction_api';
+import LoadingSpinner from './LoadingSpinner';
 
 ChartJS.register(
   CategoryScale,
@@ -729,9 +730,6 @@ const Dashboard = () => {
                 <p className="stats-value">
                   {typeof card.value === 'object' ? card.value : card.value}
                 </p>
-                <span className={`stats-change ${card.changeType}`}>
-                  {card.change} so với tháng trước
-                </span>
               </div>
               <div className="stats-card-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
                 <FontAwesomeIcon icon={card.icon} />
@@ -751,7 +749,7 @@ const Dashboard = () => {
           </div>
           <div className="chart-container">
             {loadingMonthlyRevenue ? (
-              <div className="spinner"></div>
+              <LoadingSpinner size="medium" />
             ) : (
               <Line data={revenueData} options={revenueOptions} />
             )}
@@ -776,7 +774,7 @@ const Dashboard = () => {
           </div>
           <div className="chart-container">
             {loadingMonthlyOrderStats ? (
-              <div className="spinner"></div>
+              <LoadingSpinner size="medium" />
             ) : (
               <Bar data={orderData} options={orderOptions} />
             )}
@@ -804,7 +802,7 @@ const Dashboard = () => {
         </div>
         <div className="chart-container">
           {loadingWeekRevenue ? (
-            <div className="spinner"></div>
+            <LoadingSpinner size="medium" />
           ) : (
             <Line data={weekData} options={weekOptions} />
           )}
@@ -909,18 +907,7 @@ const Dashboard = () => {
           background: '#fff'
         }}>
           {loadingQuarterRevenue ? (
-            <div style={{
-              width: '40px',
-              height: '40px',
-              border: '3px solid rgba(0, 0, 0, 0.1)',
-              borderRadius: '50%',
-              borderTopColor: '#4CAF50',
-              animation: 'spin 1s linear infinite',
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)'
-            }}></div>
+            <LoadingSpinner size="medium" />
           ) : (
             <Bar data={quarterData} options={quarterOptions} />
           )}

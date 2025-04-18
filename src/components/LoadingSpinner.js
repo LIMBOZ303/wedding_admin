@@ -28,7 +28,7 @@ const LoadingSpinner = ({ size = 'medium', variant = 'default', text, className 
 
     return (
         <div className={`spinner-container ${containerClassName} ${variant === 'default' ? 'pulse' : ''}`}>
-            <div className={`${getSpinnerVariant()} ${className}`} />
+            <div className={`${getSpinnerClass()} ${className}`} />
             {text && <span className="loading-text">{text}</span>}
         </div>
     );

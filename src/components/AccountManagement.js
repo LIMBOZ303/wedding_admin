@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { fetchAccounts, getUserStatus } from '../api/users_api';
 import '../public/styles/AccountManagement.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faExclamationCircle, faUsers, faCircle, faClock, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faExclamationCircle, faUsers, faCircle, faClock, faSync } from '@fortawesome/free-solid-svg-icons';
+import LoadingSpinner from './LoadingSpinner';
 
 const AccountManagement = () => {
     const [accounts, setAccounts] = useState([]);
@@ -91,38 +92,38 @@ const AccountManagement = () => {
 
     return (
         <div className="account-management-container">
-            <div className="header-container">
-                <h2>Quản Lý Tài Khoản</h2>
-                <button
-                    className="refresh-button"
-                    onClick={loadAccounts}
-                    title="Tải lại giao diện"
-                    disabled={loading}
-                >
-                    <i className="fa fa-refresh"></i>
-                </button>
+            <div className="header-wrapper">
+                <div className="header-container">
+                    <div className="header-title">
+                        <h2>Quản Lý Tài Khoản</h2>
+                        <button
+                            className="refresh-button"
+                            onClick={loadAccounts}
+                            title="Làm mới dữ liệu"
+                            disabled={loading}
+                        >
+                            <FontAwesomeIcon icon={faSync} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="search-container">
+                    <div className="search-box">
+                        <input
+                            type="text"
+                            placeholder="Tìm kiếm theo tên hoặc email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <FontAwesomeIcon icon={faSearch} className="search-icon" />
+                    </div>
+                </div>
             </div>
+
             <h3>Danh Sách Tài Khoản Người Dùng</h3>
 
-            <div className="search-container">
-                <div className="search-box">
-                    <FontAwesomeIcon icon={faSearch} />
-                    <input
-                        type="text"
-                        placeholder="Tìm kiếm theo tên hoặc email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-            </div>
-
             {loading ? (
-                <div className="loading-state">
-                    <div className="loading-spinner">
-                        <FontAwesomeIcon icon={faSpinner} spin />
-                    </div>
-                    <p>Đang tải dữ liệu...</p>
-                </div>
+                <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
             ) : filteredAccounts.length > 0 ? (
                 <table className="account-table">
                     <thead>
