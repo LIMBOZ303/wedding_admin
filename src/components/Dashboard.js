@@ -235,19 +235,6 @@ const Dashboard = () => {
     // Hiển thị loading spinner trong 2 giây
     const timer = setTimeout(() => {
       setIsLoading(false);
-      // Hiển thị thông báo đăng nhập thành công
-      Swal.fire({
-        title: 'Đăng nhập thành công!',
-        text: 'Chào mừng bạn đến với trang quản trị.',
-        icon: 'success',
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        background: '#fff',
-        width: 300
-      });
     }, 2000);
 
     return () => clearTimeout(timer);
