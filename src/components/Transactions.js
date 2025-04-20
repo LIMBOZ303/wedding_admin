@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import axios from 'axios';
 import '../public/styles/Transaction.css';
 import { fetchTransaction } from '../api/transaction_api';
-import { fetchPlanById } from '../api/plan_api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCheckCircle,
@@ -18,14 +17,13 @@ function Transactions() {
   const [loadingConfirm, setLoadingConfirm] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-  const [planNames, setPlanNames] = useState({});
-  const [loadingPlanNames, setLoadingPlanNames] = useState({});
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [error, setError] = useState(null);
 
-  const planRequestsInProgress = useRef(new Set());
   const lastFetchTime = useRef(Date.now());
   const isMounted = useRef(true);
+  const lastVisibilityChange = useRef(Date.now());
+  const minimumRefreshInterval = 600000; // 10 phút (600,000 ms)
 
   const userId = localStorage.getItem('userId');
   const userRole = localStorage.getItem('userRole');
@@ -36,68 +34,10 @@ function Transactions() {
     };
   }, []);
 
-  // Hàm lấy thông tin tên kế hoạch với timeout
-  const fetchPlanName = useCallback(async (planId) => {
-    if (loadingPlanNames[planId] || planNames[planId] || planRequestsInProgress.current.has(planId)) return;
-
-    planRequestsInProgress.current.add(planId);
-    try {
-      setLoadingPlanNames((prev) => ({ ...prev, [planId]: true }));
-      const response = await Promise.race([
-        fetchPlanById(planId),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout fetching plan')), 5000)),
-      ]);
-      console.log(`Plan ${planId} response:`, response);
-      if (isMounted.current && response.status) {
-        setPlanNames((prev) => ({
-          ...prev,
-          [planId]: response.data.name || 'Không có tên kế hoạch',
-        }));
-      }
-    } catch (error) {
-      console.error(`Lỗi khi lấy thông tin kế hoạch ${planId}:`, error.message);
-      if (isMounted.current) {
-        setPlanNames((prev) => ({ ...prev, [planId]: null }));
-      }
-    } finally {
-      planRequestsInProgress.current.delete(planId);
-      if (isMounted.current) {
-        setLoadingPlanNames((prev) => ({ ...prev, [planId]: false }));
-      }
-    }
-  }, []);
-
-  // Batch fetch plan names
-  const batchFetchPlanNames = useCallback(
-    async (transactions) => {
-      const uniquePlanIds = new Set();
-      transactions.forEach((tx) => {
-        if (tx.planId && !planNames[tx.planId] && !loadingPlanNames[tx.planId]) {
-          uniquePlanIds.add(tx.planId);
-        }
-      });
-
-      const batchSize = 5;
-      const planIdArray = Array.from(uniquePlanIds);
-      try {
-        for (let i = 0; i < planIdArray.length; i += batchSize) {
-          const batch = planIdArray.slice(i, i + batchSize);
-          await Promise.all(batch.map((planId) => fetchPlanName(planId)));
-        }
-      } catch (error) {
-        console.error('Lỗi khi lấy tên kế hoạch:', error.message);
-        setError('Không thể lấy tên kế hoạch: ' + error.message);
-      }
-      console.log('planNames sau khi fetch:', planNames);
-    },
-    [fetchPlanName, planNames, loadingPlanNames]
-  );
-
   const getTransactions = useCallback(
     async (force = false) => {
       const now = Date.now();
       if (!force && now - lastFetchTime.current < 5000) {
-        console.log('Bỏ qua fetch do chưa đủ thời gian debounce');
         return;
       }
 
@@ -110,13 +50,8 @@ function Transactions() {
           throw new Error('Vui lòng đăng nhập với tài khoản admin');
         }
 
-        console.log('Bắt đầu gọi API fetchTransaction...');
-        const data = await Promise.race([
-          fetchTransaction(userId, userRole),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout fetching transactions')), 10000)),
-        ]);
-        console.log('Phản hồi API:', data);
-
+        const data = await fetchTransaction(userId, userRole);
+        
         if (data.status) {
           if (!Array.isArray(data.data)) {
             throw new Error('Dữ liệu giao dịch không hợp lệ');
@@ -132,9 +67,7 @@ function Transactions() {
             return new Date(b.createdAt) - new Date(a.createdAt);
           });
 
-          console.log('Dữ liệu sau khi sắp xếp:', sortedData);
           setTransactions(sortedData);
-          console.log('Đã gọi setTransactions với dữ liệu:', sortedData);
         } else {
           throw new Error(data.message || 'Không lấy được danh sách giao dịch');
         }
@@ -143,51 +76,42 @@ function Transactions() {
         console.error('Lỗi khi lấy danh sách giao dịch:', err.message);
       } finally {
         setLoadingTransactions(false);
-        console.log('loadingTransactions:', loadingTransactions);
-        console.log('transactions sau khi set:', transactions);
       }
     },
     [userId, userRole]
   );
 
-  // Gọi batchFetchPlanNames sau khi transactions được cập nhật
-  useEffect(() => {
-    if (transactions.length > 0) {
-      console.log('Gọi batchFetchPlanNames vì transactions đã cập nhật:', transactions);
-      batchFetchPlanNames(transactions);
-    }
-  }, [transactions, batchFetchPlanNames]);
-
   // Initial fetch
   useEffect(() => {
-    console.log('Gọi getTransactions lần đầu...');
     getTransactions(true);
   }, [getTransactions]);
 
-  // Auto refresh with increasing interval
+  // Auto refresh và xử lý visibility
   useEffect(() => {
-    let interval = 30000;
-    const maxInterval = 300000;
-
-    const intervalId = setInterval(() => {
-      if (document.hidden) {
-        interval = Math.min(interval * 1.5, maxInterval);
-      } else {
-        interval = 30000;
-      }
-      console.log('Gọi getTransactions theo interval...');
-      getTransactions();
-    }, interval);
+    let intervalId;
 
     const handleVisibilityChange = () => {
+      const now = Date.now();
       if (!document.hidden) {
-        console.log('Tab được hiển thị, gọi getTransactions...');
-        getTransactions(true);
+        // Chỉ refresh nếu đã qua 10 phút
+        if (now - lastVisibilityChange.current >= minimumRefreshInterval) {
+          lastVisibilityChange.current = now;
+          getTransactions(true);
+        }
       }
     };
 
+    // Set up interval refresh
+    intervalId = setInterval(() => {
+      if (!document.hidden) {
+        getTransactions();
+      }
+    }, 600000); // Refresh mỗi 10 phút khi tab đang active
+
+    // Thêm event listener cho visibility change
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
+    // Cleanup
     return () => {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -232,21 +156,18 @@ function Transactions() {
   );
 
   const filteredTransactions = React.useMemo(() => {
-    console.log('Filtering with searchTerm:', searchTerm);
     return transactions.filter((tx) => {
       if (!searchTerm) return true;
 
       const searchString = searchTerm.toLowerCase();
-      const matches =
+      return (
         (tx._id && String(tx._id).toLowerCase().includes(searchString)) ||
         (tx.userId?.name && tx.userId.name.toLowerCase().includes(searchString)) ||
         (tx.userId?.email && tx.userId.email.toLowerCase().includes(searchString)) ||
-        (planNames[tx.planId] && planNames[tx.planId].toLowerCase().includes(searchString));
-
-      console.log(`Transaction ${tx._id} matches:`, matches);
-      return matches;
+        (tx.planName && tx.planName.toLowerCase().includes(searchString))
+      );
     });
-  }, [transactions, searchTerm, planNames]);
+  }, [transactions, searchTerm]);
 
   const requestSort = (key) => {
     let direction = 'ascending';
@@ -270,8 +191,8 @@ function Transactions() {
           aValue = a.userId?.email || '';
           bValue = b.userId?.email || '';
         } else if (sortConfig.key === 'planName') {
-          aValue = planNames[a.planId] || '';
-          bValue = planNames[b.planId] || '';
+          aValue = a.planName || '';
+          bValue = b.planName || '';
         } else {
           aValue = a[sortConfig.key] || '';
           bValue = b[sortConfig.key] || '';
@@ -289,7 +210,7 @@ function Transactions() {
 
     console.log('sortedTransactions:', sortableItems);
     return sortableItems;
-  }, [filteredTransactions, sortConfig, planNames]);
+  }, [filteredTransactions, sortConfig]);
 
   const getSortIcon = (columnName) => {
     if (sortConfig.key !== columnName) {
@@ -427,12 +348,8 @@ function Transactions() {
                     <td className="index-column">{index + 1}</td>
                     <td data-full-text={tx.userId?.name || 'N/A'}>{tx.userId?.name || 'N/A'}</td>
                     <td data-full-text={tx.userId?.email || 'N/A'}>{tx.userId?.email || 'N/A'}</td>
-                    <td data-full-text={planNames[tx.planId] || 'Không có tên kế hoạch'}>
-                      {loadingPlanNames[tx.planId] ? (
-                        <span>Đang tải...</span>
-                      ) : (
-                        planNames[tx.planId] || 'Không có tên kế hoạch'
-                      )}
+                    <td data-full-text={tx.planName || 'Không có tên kế hoạch'}>
+                      {tx.planName || 'Không có tên kế hoạch'}
                     </td>
                     <td>{getStatusBadge(tx.status)}</td>
                     <td>
@@ -496,14 +413,7 @@ function Transactions() {
               <div className="detail-group">
                 <span className="detail-label">Tên kế hoạch</span>
                 <span className="detail-value">
-                  {loadingPlanNames[selectedTransaction.planId] ? (
-                    <div className="loading-name">
-                      <div className="loading-spinner small"></div>
-                      <span>Đang tải...</span>
-                    </div>
-                  ) : (
-                    planNames[selectedTransaction.planId] || 'Không có tên kế hoạch'
-                  )}
+                  {selectedTransaction.planName || 'Không có tên kế hoạch'}
                 </span>
               </div>
               <div className="detail-group">

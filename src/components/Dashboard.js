@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useNavigate } from 'react-router-dom';
 import {
   faUsers,
   faShoppingCart,
@@ -34,6 +35,7 @@ import {
   fetchRevenueByWeek
 } from '../api/transaction_api';
 import LoadingSpinner from './LoadingSpinner';
+import Swal from 'sweetalert2';
 
 ChartJS.register(
   CategoryScale,
@@ -49,37 +51,7 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [transactionStats, setTransactionStats] = useState(null);
-  const [revenueStats, setRevenueStats] = useState(null);
-  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
-  const [statsByStatus, setStatsByStatus] = useState(null);
-  const [statsByUser, setStatsByUser] = useState(null);
-  const [revenueByYear, setRevenueByYear] = useState(null);
-  const [quarterRevenue, setQuarterRevenue] = useState([]);
-  const [weekRevenue, setWeekRevenue] = useState([]);
-  const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
-  const [monthlyOrderStats, setMonthlyOrderStats] = useState([]);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [selectedWeekRange, setSelectedWeekRange] = useState('1-12');
-  const [selectedQuarter, setSelectedQuarter] = useState(1);
-
-  // Trạng thái loading
-  const [loadingTransactionStats, setLoadingTransactionStats] = useState(true);
-  const [loadingRevenueStats, setLoadingRevenueStats] = useState(true);
-  const [loadingMonthlyRevenue, setLoadingMonthlyRevenue] = useState(true);
-  const [loadingCurrentMonthRevenue, setLoadingCurrentMonthRevenue] = useState(true);
-  const [loadingStatsByStatus, setLoadingStatsByStatus] = useState(true);
-  const [loadingStatsByUser, setLoadingStatsByUser] = useState(true);
-  const [loadingRevenueByYear, setLoadingRevenueByYear] = useState(true);
-  const [loadingQuarterRevenue, setLoadingQuarterRevenue] = useState(true);
-  const [loadingWeekRevenue, setLoadingWeekRevenue] = useState(true);
-  const [loadingMonthlyOrderStats, setLoadingMonthlyOrderStats] = useState(true);
-
-  const chosenStatus = 'active';
-  const sampleUserId = '603d2f5e2e2e2e2e2e2e2e2e';
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
+  const navigate = useNavigate();
 
   // Hàm lấy số tuần của ngày hiện tại
   const getCurrentWeek = () => {
@@ -98,6 +70,39 @@ const Dashboard = () => {
     if (currentWeek <= 39) return '27-39';
     return '40-53';
   };
+
+  // States
+  const [isLoading, setIsLoading] = useState(true);
+  const [transactionStats, setTransactionStats] = useState(null);
+  const [revenueStats, setRevenueStats] = useState(null);
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+  const [statsByStatus, setStatsByStatus] = useState(null);
+  const [statsByUser, setStatsByUser] = useState(null);
+  const [revenueByYear, setRevenueByYear] = useState(null);
+  const [quarterRevenue, setQuarterRevenue] = useState([]);
+  const [weekRevenue, setWeekRevenue] = useState([]);
+  const [currentMonthRevenue, setCurrentMonthRevenue] = useState(0);
+  const [monthlyOrderStats, setMonthlyOrderStats] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedWeekRange, setSelectedWeekRange] = useState(getCurrentWeekRange());
+  const [selectedQuarter, setSelectedQuarter] = useState(1);
+
+  // Trạng thái loading
+  const [loadingTransactionStats, setLoadingTransactionStats] = useState(true);
+  const [loadingRevenueStats, setLoadingRevenueStats] = useState(true);
+  const [loadingMonthlyRevenue, setLoadingMonthlyRevenue] = useState(true);
+  const [loadingCurrentMonthRevenue, setLoadingCurrentMonthRevenue] = useState(true);
+  const [loadingStatsByStatus, setLoadingStatsByStatus] = useState(true);
+  const [loadingStatsByUser, setLoadingStatsByUser] = useState(true);
+  const [loadingRevenueByYear, setLoadingRevenueByYear] = useState(true);
+  const [loadingQuarterRevenue, setLoadingQuarterRevenue] = useState(true);
+  const [loadingWeekRevenue, setLoadingWeekRevenue] = useState(true);
+  const [loadingMonthlyOrderStats, setLoadingMonthlyOrderStats] = useState(true);
+
+  const chosenStatus = 'active';
+  const sampleUserId = '603d2f5e2e2e2e2e2e2e2e2e';
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
 
   // Hàm lấy dữ liệu thống kê theo tháng
   const fetchMonthlyData = async () => {
@@ -158,10 +163,11 @@ const Dashboard = () => {
           if (res.success && res.data) {
             return {
               totalDeposit: res.data.totalDeposit || 0,
-              transactionCount: res.data.transactionCount || 0
+              transactionCount: res.data.transactionCount || 0,
+              weekNumber
             };
           }
-          return { totalDeposit: 0, transactionCount: 0 };
+          return { totalDeposit: 0, transactionCount: 0, weekNumber };
         })
       );
       setWeekRevenue(weekData);
@@ -229,6 +235,19 @@ const Dashboard = () => {
     // Hiển thị loading spinner trong 2 giây
     const timer = setTimeout(() => {
       setIsLoading(false);
+      // Hiển thị thông báo đăng nhập thành công
+      Swal.fire({
+        title: 'Đăng nhập thành công!',
+        text: 'Chào mừng bạn đến với trang quản trị.',
+        icon: 'success',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: '#fff',
+        width: 300
+      });
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -584,9 +603,14 @@ const Dashboard = () => {
 
   // Biểu đồ doanh thu theo tuần (Line Chart)
   const [startWeek, endWeek] = selectedWeekRange.split('-').map(Number);
+  const currentWeek = getCurrentWeek();
+  
   const weekLabels = Array.from(
     { length: endWeek - startWeek + 1 }, 
-    (_, i) => `Tuần ${startWeek + i}/${selectedYear}`
+    (_, i) => {
+      const weekNum = startWeek + i;
+      return `Tuần ${weekNum}${weekNum === currentWeek ? ' (Hiện tại)' : ''}`;
+    }
   );
   
   const weekData = {
@@ -600,9 +624,16 @@ const Dashboard = () => {
         borderColor: 'rgba(75, 192, 192, 1)',
         tension: 0.4,
         yAxisID: 'y',
-        pointRadius: 3,
+        pointRadius: (ctx) => {
+          // Làm nổi bật điểm dữ liệu của tuần hiện tại
+          const weekNum = startWeek + ctx.dataIndex;
+          return weekNum === currentWeek ? 6 : 3;
+        },
         pointHoverRadius: 6,
-        pointBackgroundColor: 'rgba(75, 192, 192, 1)',
+        pointBackgroundColor: (ctx) => {
+          const weekNum = startWeek + ctx.dataIndex;
+          return weekNum === currentWeek ? '#ff6b6b' : 'rgba(75, 192, 192, 1)';
+        },
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
       },
@@ -613,9 +644,15 @@ const Dashboard = () => {
         borderColor: 'rgba(54, 162, 235, 1)',
         tension: 0.4,
         yAxisID: 'y1',
-        pointRadius: 3,
+        pointRadius: (ctx) => {
+          const weekNum = startWeek + ctx.dataIndex;
+          return weekNum === currentWeek ? 6 : 3;
+        },
         pointHoverRadius: 6,
-        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+        pointBackgroundColor: (ctx) => {
+          const weekNum = startWeek + ctx.dataIndex;
+          return weekNum === currentWeek ? '#ff6b6b' : 'rgba(54, 162, 235, 1)';
+        },
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
       }
@@ -739,7 +776,10 @@ const Dashboard = () => {
           {/* Stats Cards */}
           <div className="stats-cards">
             {statsCards.map((card, index) => (
-              <div className="stats-card" key={index}>
+              <div 
+                className="stats-card" 
+                key={index}
+              >
                 <div className="stats-card-content">
                   <div className="stats-card-info">
                     <h3>{card.title}</h3>
@@ -802,7 +842,7 @@ const Dashboard = () => {
           <div className="chart-card week-revenue-chart">
             <div className="chart-header">
               <h3>
-                <FontAwesomeIcon icon={faChartLine} /> Doanh thu theo tuần (Tuần hiện tại: {getCurrentWeek()})
+                <FontAwesomeIcon icon={faChartLine} /> Doanh thu theo tuần
               </h3>
               <div className="week-range-selector">
                 <select
