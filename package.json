@@ -1,4 +1,5 @@
 {
+  "homepage": "https://LIMBOZ303.github.io/wedding_admin",
   "name": "wedding-admin",
   "version": "0.1.0",
   "private": true,
@@ -20,6 +21,7 @@
     "@types/ckeditor__ckeditor5-build-classic": "^29.0.1",
     "axios": "^1.8.4",
     "chart.js": "^4.4.8",
+    "gh-pages": "^6.3.0",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0",
@@ -33,7 +35,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [
