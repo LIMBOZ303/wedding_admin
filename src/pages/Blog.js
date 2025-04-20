@@ -6,9 +6,11 @@ import { notification } from 'antd';
 import { addBlog, updateBlog, getBlogById } from '../api/blog_api';
 import { AppContext } from '../AppContext';
 import Editor from '../components/Editor';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 const Blog = () => {
     const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editorState, setEditorState] = useState({
         title: '',
         content: '',
@@ -148,7 +150,7 @@ const Blog = () => {
             updatedAt: new Date().toISOString(),
         };
 
-        setLoading(true);
+        setIsSubmitting(true);
         try {
             const response = await addBlog(blogData, adminUserId);
             
@@ -175,7 +177,7 @@ const Blog = () => {
                 description: errorMessage,
             });
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
@@ -229,7 +231,7 @@ const Blog = () => {
             updatedAt: new Date().toISOString(),
         };
 
-        setLoading(true);
+        setIsSubmitting(true);
         try {
             const response = await updateBlog(blogId, blogData, adminUserId);
             
@@ -255,12 +257,14 @@ const Blog = () => {
                 description: errorMessage,
             });
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     };
 
     return (
         <div className="blog-admin-container">
+            {loading && <LoadingSpinner size="large" text="Đang tải dữ liệu..." />}
+            
             <div className="header">
                 <h1>{blogId ? 'Cập nhật bài viết' : 'Thêm bài viết mới'}</h1>
             </div>
@@ -344,19 +348,17 @@ const Blog = () => {
                     </div>
                     
                     <div className="form-actions">
-                        <button 
-                            type="button" 
-                            className="btn-cancel"
-                            onClick={() => navigate('/admin/blogs')}
-                        >
-                            Hủy
+                        <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                            {isSubmitting ? (
+                                <LoadingSpinner size="small" variant="button" text={blogId ? "Đang cập nhật..." : "Đang lưu..."} />
+                            ) : (
+                                <>
+                                    <i className="fas fa-save"></i> {blogId ? 'Cập nhật' : 'Lưu'}
+                                </>
+                            )}
                         </button>
-                        <button 
-                            type="submit" 
-                            className="btn-submit"
-                            disabled={loading}
-                        >
-                            {loading ? 'Đang xử lý...' : blogId ? 'Cập nhật' : 'Thêm bài viết'}
+                        <button type="button" className="btn-secondary" onClick={() => navigate('/admin/blogs')}>
+                            <i className="fas fa-times"></i> Hủy
                         </button>
                     </div>
                 </form>

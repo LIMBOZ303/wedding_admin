@@ -16,7 +16,7 @@ const adminUserId = "67debaa7772f617ebcb70d2f";
 
 const Blog = () => {
   const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
@@ -33,6 +33,7 @@ const Blog = () => {
   const [editorContent, setEditorContent] = useState("");
   const [updateEditorContent, setUpdateEditorContent] = useState("");
   const [viewMode, setViewMode] = useState("list"); // 'list' or 'grid'
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch blog data
   const fetchBlogs = useCallback(async () => {
@@ -65,6 +66,7 @@ const Blog = () => {
   // Handle form submission for adding a new blog
   const handleAddBlog = async (event) => {
     event.preventDefault();
+    setIsSubmitting(true);
 
     const form = event.target;
     const title = form.title.value;
@@ -162,6 +164,8 @@ const Blog = () => {
       } catch (err) {
         console.error("Error adding blog:", err);
         showNotification("Lỗi kết nối mạng, vui lòng thử lại sau", true);
+      } finally {
+        setIsSubmitting(false);
       }
     };
 
@@ -194,6 +198,7 @@ const Blog = () => {
   // Handle form submission for updating a blog
   const handleUpdateBlog = async (event) => {
     event.preventDefault();
+    setIsSubmitting(true);
 
     const form = event.target;
     const blogId = currentBlog._id;
@@ -282,6 +287,8 @@ const Blog = () => {
       } catch (err) {
         console.error("Error updating blog:", err);
         showNotification("Lỗi kết nối mạng, vui lòng thử lại sau", true);
+      } finally {
+        setIsSubmitting(false);
       }
     };
 
@@ -362,6 +369,8 @@ const Blog = () => {
 
   return (
     <div className="blog-container">
+      {loading && <LoadingSpinner size="large" text="Đang tải dữ liệu..." />}
+      
       {/* Notification */}
       {notification && (
         <div
@@ -463,8 +472,14 @@ const Blog = () => {
             />
           </div>
 
-          <button type="submit" className="btn-primary">
-            <i className="fas fa-plus btn-icon"></i>Thêm bài viết
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <LoadingSpinner size="small" variant="button" text="Đang lưu..." />
+            ) : (
+              <>
+                <i className="fas fa-plus btn-icon"></i>Thêm bài viết
+              </>
+            )}
           </button>
         </form>
       </div>
@@ -633,25 +648,11 @@ const Blog = () => {
 
       {/* Update Form Modal */}
       {showUpdateForm && (
-        <div
-          id="update-form-container"
-          style={{ display: "block" }}
-          onClick={(e) => {
-            if (e.target.id === "update-form-container") {
-              closeUpdateForm();
-            }
-          }}
-        >
+        <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>
-                <i className="fas fa-edit"></i> Cập nhật bài viết
-              </h2>
-              <button
-                type="button"
-                className="btn-outlined"
-                onClick={closeUpdateForm}
-              >
+              <h2>Cập nhật bài viết</h2>
+              <button className="close-btn" onClick={closeUpdateForm}>
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -757,16 +758,18 @@ const Blog = () => {
                 </select>
               </div>
 
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn-outlined"
-                  onClick={closeUpdateForm}
-                >
-                  Hủy
+              <div className="modal-actions">
+                <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <LoadingSpinner size="small" variant="button" text="Đang cập nhật..." />
+                  ) : (
+                    <>
+                      <i className="fas fa-save"></i> Lưu thay đổi
+                    </>
+                  )}
                 </button>
-                <button type="submit" className="btn-primary">
-                  <i className="fas fa-save btn-icon"></i>Cập nhật bài viết
+                <button type="button" className="btn-secondary" onClick={closeUpdateForm}>
+                  <i className="fas fa-times"></i> Hủy
                 </button>
               </div>
             </form>

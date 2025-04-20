@@ -1,5 +1,4 @@
 import React, { useState, useContext } from 'react';
-import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import '../public/styles/Login_style.css';
 import { login } from '../api/users_api';
@@ -19,16 +18,6 @@ const Login = () => {
     setLoading(true);
     setError('');
 
-    Swal.fire({
-      title: 'Đang xử lý...',
-      text: 'Vui lòng đợi một chút.',
-      icon: 'info',
-      allowOutsideClick: false,
-      didOpen: () => {
-        Swal.showLoading();
-      },
-    });
-
     try {
       const response = await login(email, password);
 
@@ -36,29 +25,12 @@ const Login = () => {
         setUser(response.user);
         localStorage.setItem('userId', response.user._id);
         localStorage.setItem('userRole', response.user.role);
-
-        Swal.close();
-        Swal.fire({
-          title: 'Đăng nhập thành công!',
-          text: 'Chào mừng bạn đến với trang Admin.',
-          icon: 'success',
-          timer: 1500,
-          timerProgressBar: true,
-          willClose: () => {
-            navigate('/home');
-          },
-        });
+        navigate('/home');
       } else {
         throw new Error(response?.message || 'Thông tin đăng nhập không đúng.');
       }
     } catch (err) {
       console.error('Lỗi đăng nhập:', err);
-      Swal.close();
-      Swal.fire({
-        title: 'Lỗi!',
-        text: err.response?.data?.message || err.message || 'Thông tin đăng nhập không đúng. Vui lòng kiểm tra lại.',
-        icon: 'error',
-      });
       setError('Đăng nhập không thành công, vui lòng kiểm tra lại thông tin.');
     }
 
@@ -99,7 +71,7 @@ const Login = () => {
         </div>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={loading} className="submit-button">
-          {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
+          <span>{loading ? 'Đang xử lý...' : 'Đăng Nhập'}</span>
         </button>
       </form>
     </div>

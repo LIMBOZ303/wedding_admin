@@ -49,6 +49,7 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
+  const [isLoading, setIsLoading] = useState(true);
   const [transactionStats, setTransactionStats] = useState(null);
   const [revenueStats, setRevenueStats] = useState(null);
   const [monthlyRevenue, setMonthlyRevenue] = useState([]);
@@ -223,6 +224,15 @@ const Dashboard = () => {
     const change = ((current - previous) / previous) * 100;
     return change > 0 ? `+${change.toFixed(0)}` : change.toFixed(0);
   };
+
+  useEffect(() => {
+    // Hiển thị loading spinner trong 2 giây
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -704,215 +714,223 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      {/* Header */}
-      <div className="dashboard-header">
-        <div>
-          <h1>Tổng quan</h1>
-          <p className="subtitle">Chào mừng bạn đến với bảng điều khiển quản trị dịch vụ cưới.</p>
+      {isLoading ? (
+        <div className="loading-overlay">
+          <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
         </div>
-        <div className="date-display">
-          {new Date().toLocaleDateString('vi-VN', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          })}
-        </div>
-      </div>
+      ) : (
+        <>
+          {/* Header */}
+          <div className="dashboard-header">
+            <div>
+              <h1>Tổng quan</h1>
+              <p className="subtitle">Chào mừng bạn đến với bảng điều khiển quản trị dịch vụ cưới.</p>
+            </div>
+            <div className="date-display">
+              {new Date().toLocaleDateString('vi-VN', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </div>
+          </div>
 
-      {/* Stats Cards */}
-      <div className="stats-cards">
-        {statsCards.map((card, index) => (
-          <div className="stats-card" key={index}>
-            <div className="stats-card-content">
-              <div className="stats-card-info">
-                <h3>{card.title}</h3>
-                <p className="stats-value">
-                  {typeof card.value === 'object' ? card.value : card.value}
-                </p>
+          {/* Stats Cards */}
+          <div className="stats-cards">
+            {statsCards.map((card, index) => (
+              <div className="stats-card" key={index}>
+                <div className="stats-card-content">
+                  <div className="stats-card-info">
+                    <h3>{card.title}</h3>
+                    <p className="stats-value">
+                      {typeof card.value === 'object' ? card.value : card.value}
+                    </p>
+                  </div>
+                  <div className="stats-card-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
+                    <FontAwesomeIcon icon={card.icon} />
+                  </div>
+                </div>
               </div>
-              <div className="stats-card-icon" style={{ backgroundColor: card.bgColor, color: card.color }}>
-                <FontAwesomeIcon icon={card.icon} />
+            ))}
+          </div>
+
+          {/* Charts Grid */}
+          <div className="charts-grid">
+            <div className="chart-card revenue-chart">
+              <div className="chart-header">
+                <h3>
+                  <FontAwesomeIcon icon={faChartLine} /> Doanh thu theo tháng
+                </h3>
+              </div>
+              <div className="chart-container">
+                {loadingMonthlyRevenue ? (
+                  <LoadingSpinner size="medium" />
+                ) : (
+                  <Line data={revenueData} options={revenueOptions} />
+                )}
+              </div>
+            </div>
+
+            <div className="chart-card order-chart">
+              <div className="chart-header">
+                <h3>
+                  <FontAwesomeIcon icon={faShoppingCart} /> Đơn hàng theo tháng
+                </h3>
+                <div className="year-selector">
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  >
+                    {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="chart-container">
+                {loadingMonthlyOrderStats ? (
+                  <LoadingSpinner size="medium" />
+                ) : (
+                  <Bar data={orderData} options={orderOptions} />
+                )}
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Charts Grid */}
-      <div className="charts-grid">
-        <div className="chart-card revenue-chart">
-          <div className="chart-header">
-            <h3>
-              <FontAwesomeIcon icon={faChartLine} /> Doanh thu theo tháng
-            </h3>
-          </div>
-          <div className="chart-container">
-            {loadingMonthlyRevenue ? (
-              <LoadingSpinner size="medium" />
-            ) : (
-              <Line data={revenueData} options={revenueOptions} />
-            )}
-          </div>
-        </div>
-
-        <div className="chart-card order-chart">
-          <div className="chart-header">
-            <h3>
-              <FontAwesomeIcon icon={faShoppingCart} /> Đơn hàng theo tháng
-            </h3>
-            <div className="year-selector">
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-              >
-                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+          {/* Week Revenue Chart */}
+          <div className="chart-card week-revenue-chart">
+            <div className="chart-header">
+              <h3>
+                <FontAwesomeIcon icon={faChartLine} /> Doanh thu theo tuần (Tuần hiện tại: {getCurrentWeek()})
+              </h3>
+              <div className="week-range-selector">
+                <select
+                  value={selectedWeekRange}
+                  onChange={(e) => setSelectedWeekRange(e.target.value)}
+                >
+                  <option value="1-12">Tuần 1-12</option>
+                  <option value="13-26">Tuần 13-26</option>
+                  <option value="27-39">Tuần 27-39</option>
+                  <option value="40-53">Tuần 40-53</option>
+                </select>
+              </div>
+            </div>
+            <div className="chart-container">
+              {loadingWeekRevenue ? (
+                <LoadingSpinner size="medium" />
+              ) : (
+                <Line data={weekData} options={weekOptions} />
+              )}
             </div>
           </div>
-          <div className="chart-container">
-            {loadingMonthlyOrderStats ? (
-              <LoadingSpinner size="medium" />
-            ) : (
-              <Bar data={orderData} options={orderOptions} />
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Week Revenue Chart */}
-      <div className="chart-card week-revenue-chart">
-        <div className="chart-header">
-          <h3>
-            <FontAwesomeIcon icon={faChartLine} /> Doanh thu theo tuần (Tuần hiện tại: {getCurrentWeek()})
-          </h3>
-          <div className="week-range-selector">
-            <select
-              value={selectedWeekRange}
-              onChange={(e) => setSelectedWeekRange(e.target.value)}
-            >
-              <option value="1-12">Tuần 1-12</option>
-              <option value="13-26">Tuần 13-26</option>
-              <option value="27-39">Tuần 27-39</option>
-              <option value="40-53">Tuần 40-53</option>
-            </select>
-          </div>
-        </div>
-        <div className="chart-container">
-          {loadingWeekRevenue ? (
-            <LoadingSpinner size="medium" />
-          ) : (
-            <Line data={weekData} options={weekOptions} />
-          )}
-        </div>
-      </div>
+          <LatestOrder />
 
-      <LatestOrder />
-
-      {/* Quarter Revenue Chart */}
-      <div style={{
-        background: '#fff',
-        borderRadius: '12px',
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
-        marginBottom: '24px',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
-        }}>
-          <h3 style={{
-            fontSize: '18px',
-            fontWeight: 600,
-            color: '#333',
-            margin: 0,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>Doanh thu theo quý</h3>
+          {/* Quarter Revenue Chart */}
           <div style={{
-            display: 'flex',
-            gap: '16px',
-            alignItems: 'center'
+            background: '#fff',
+            borderRadius: '12px',
+            boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+            marginBottom: '24px',
+            overflow: 'hidden'
           }}>
             <div style={{
               display: 'flex',
+              justifyContent: 'space-between',
               alignItems: 'center',
-              gap: '8px'
+              padding: '16px 20px',
+              borderBottom: '1px solid rgba(0, 0, 0, 0.05)'
             }}>
-              <label style={{
-                fontSize: '14px',
-                color: '#666',
-                fontWeight: 500
-              }}>Năm:</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '6px',
-                  backgroundColor: '#fff',
-                  fontSize: '14px',
-                  color: '#333',
-                  cursor: 'pointer',
-                  minWidth: '100px'
-                }}
-              >
-                {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+              <h3 style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#333',
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>Doanh thu theo quý</h3>
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                alignItems: 'center'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <label style={{
+                    fontSize: '14px',
+                    color: '#666',
+                    fontWeight: 500
+                  }}>Năm:</label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '6px',
+                      backgroundColor: '#fff',
+                      fontSize: '14px',
+                      color: '#333',
+                      cursor: 'pointer',
+                      minWidth: '100px'
+                    }}
+                  >
+                    {Array.from({ length: 5 }, (_, i) => currentYear - i).map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <label style={{
+                    fontSize: '14px',
+                    color: '#666',
+                    fontWeight: 500
+                  }}>Quý:</label>
+                  <select
+                    value={selectedQuarter}
+                    onChange={(e) => setSelectedQuarter(Number(e.target.value))}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid rgba(0, 0, 0, 0.1)',
+                      borderRadius: '6px',
+                      backgroundColor: '#fff',
+                      fontSize: '14px',
+                      color: '#333',
+                      cursor: 'pointer',
+                      minWidth: '100px'
+                    }}
+                  >
+                    {Array.from({ length: 4 }, (_, i) => i + 1).map(quarter => (
+                      <option key={quarter} value={quarter}>Quý {quarter}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
             <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
+              padding: '20px',
+              height: '300px',
+              position: 'relative',
+              background: '#fff'
             }}>
-              <label style={{
-                fontSize: '14px',
-                color: '#666',
-                fontWeight: 500
-              }}>Quý:</label>
-              <select
-                value={selectedQuarter}
-                onChange={(e) => setSelectedQuarter(Number(e.target.value))}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid rgba(0, 0, 0, 0.1)',
-                  borderRadius: '6px',
-                  backgroundColor: '#fff',
-                  fontSize: '14px',
-                  color: '#333',
-                  cursor: 'pointer',
-                  minWidth: '100px'
-                }}
-              >
-                {Array.from({ length: 4 }, (_, i) => i + 1).map(quarter => (
-                  <option key={quarter} value={quarter}>Quý {quarter}</option>
-                ))}
-              </select>
+              {loadingQuarterRevenue ? (
+                <LoadingSpinner size="medium" />
+              ) : (
+                <Bar data={quarterData} options={quarterOptions} />
+              )}
             </div>
           </div>
-        </div>
-        <div style={{
-          padding: '20px',
-          height: '300px',
-          position: 'relative',
-          background: '#fff'
-        }}>
-          {loadingQuarterRevenue ? (
-            <LoadingSpinner size="medium" />
-          ) : (
-            <Bar data={quarterData} options={quarterOptions} />
-          )}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };

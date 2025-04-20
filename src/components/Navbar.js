@@ -5,7 +5,6 @@ import {
   faSearch, 
   faBell, 
   faUser, 
-  faSignOutAlt,
   faCog,
   faComments
 } from '@fortawesome/free-solid-svg-icons';
@@ -22,10 +21,6 @@ const Navbar = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-  };
-
-  const handleLogout = () => {
-    navigate('/');
   };
 
   const toggleUserMenu = () => {

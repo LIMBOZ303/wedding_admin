@@ -7,7 +7,7 @@ import { fetchDecorate } from '../api/decorate_api';
 import { fetchGifts } from '../api/gift_api';
 import { fetchLobbies } from '../api/order_api';
 import { fetchPlansNoUser, updatePlan, deletePlan } from '../api/plan_api';
-import Swal from 'sweetalert2'; // Import SweetAlert2
+import LoadingSpinner from './LoadingSpinner';
 import '../public/styles/ComboManagement.css';
 
 const ComboManagement = () => {
@@ -67,16 +67,6 @@ const ComboManagement = () => {
 
     const fetchData = async () => {
         setLoading(true);
-        Swal.fire({
-            title: 'Đang tải danh sách combo...',
-            position: 'center',
-            width: '500px',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            },
-        });
         try {
             const [lobbyRes, cateringRes, decorateRes, presentRes, plansNoUserRes] = await Promise.all([
                 fetchLobbies(),
@@ -94,18 +84,8 @@ const ComboManagement = () => {
             setPlansNoUser(plansNoUserRes || []);
         } catch (err) {
             setError('Không thể tải dữ liệu');
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi!',
-                text: 'Không thể tải danh sách combo',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                showConfirmButton: false,
-            });
         } finally {
             setLoading(false);
-            Swal.close();
         }
     };
 
@@ -147,29 +127,9 @@ const ComboManagement = () => {
             return;
         }
         setLoading(true);
-        Swal.fire({
-            title: 'Đang lưu combo...',
-            position: 'center',
-            width: '500px',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            },
-        });
         try {
             await createCombo(currentCombo);
             setSuccess(true);
-            Swal.close();
-            Swal.fire({
-                icon: 'success',
-                title: 'Thành công!',
-                text: 'Combo đã được thêm thành công',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                showConfirmButton: false,
-            });
             setTimeout(() => {
                 setSuccess(false);
                 closeModal();
@@ -177,15 +137,6 @@ const ComboManagement = () => {
             }, 2000);
         } catch (err) {
             setError('Có lỗi khi thêm combo');
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi!',
-                text: 'Không thể thêm combo',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                showConfirmButton: false,
-            });
         } finally {
             setLoading(false);
         }
@@ -197,16 +148,6 @@ const ComboManagement = () => {
             return;
         }
         setLoading(true);
-        Swal.fire({
-            title: 'Đang cập nhật combo...',
-            position: 'center',
-            width: '500px',
-            allowOutsideClick: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            },
-        });
         try {
             const updatedData = {
                 name: editedPlan.name,
@@ -217,16 +158,6 @@ const ComboManagement = () => {
             };
             await updatePlan(selectedPlan._id, updatedData);
             setSuccess(true);
-            Swal.close();
-            Swal.fire({
-                icon: 'success',
-                title: 'Thành công!',
-                text: 'Combo đã được cập nhật thành công',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                showConfirmButton: false,
-            });
             setTimeout(() => {
                 setSuccess(false);
                 closeDetailModal();
@@ -234,15 +165,6 @@ const ComboManagement = () => {
             }, 2000);
         } catch (err) {
             setError('Có lỗi khi cập nhật combo');
-            Swal.fire({
-                icon: 'error',
-                title: 'Lỗi!',
-                text: 'Không thể cập nhật combo',
-                toast: true,
-                position: 'top-end',
-                timer: 3000,
-                showConfirmButton: false,
-            });
         } finally {
             setLoading(false);
         }
@@ -251,29 +173,9 @@ const ComboManagement = () => {
     const handleDeletePlan = async () => {
         if (window.confirm('Bạn có chắc chắn muốn xóa combo này?')) {
             setLoading(true);
-            Swal.fire({
-                title: 'Đang xóa combo...',
-                position: 'center',
-                width: '500px',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                },
-            });
             try {
                 await deletePlan(selectedPlan._id);
                 setSuccess(true);
-                Swal.close();
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Thành công!',
-                    text: 'Combo đã được xóa thành công',
-                    toast: true,
-                    position: 'top-end',
-                    timer: 3000,
-                    showConfirmButton: false,
-                });
                 setTimeout(() => {
                     setSuccess(false);
                     closeDetailModal();
@@ -281,15 +183,6 @@ const ComboManagement = () => {
                 }, 2000);
             } catch (err) {
                 setError('Có lỗi khi xóa combo');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Lỗi!',
-                    text: 'Không thể xóa combo',
-                    toast: true,
-                    position: 'top-end',
-                    timer: 3000,
-                    showConfirmButton: false,
-                });
             } finally {
                 setLoading(false);
             }
@@ -436,8 +329,7 @@ const ComboManagement = () => {
         );
     };
 
-    // Không hiển thị gì khi đang loading, giống PlansManagement
-    if (loading) return null;
+    if (loading) return <LoadingSpinner text="Đang tải..." />;
     if (error) return <div className="combo-management"><p className="error-text">{error}</p></div>;
 
     return (

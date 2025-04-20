@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -15,6 +15,8 @@ import {
   faUserCheck
 } from '@fortawesome/free-solid-svg-icons';
 import '../public/styles/Slidebar.css';
+import { AppContext } from '../AppContext';
+import Swal from 'sweetalert2';
 
 const Sidebar = () => {
   const [open, setOpen] = useState(() => {
@@ -24,6 +26,8 @@ const Sidebar = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { setUser } = useContext(AppContext);
+
   useEffect(() => {
     localStorage.setItem('sidebarOpen', JSON.stringify(open));
   }, [open]);
@@ -44,10 +48,35 @@ const Sidebar = () => {
     setOpen(!open);
   };
 
-  const handleNavigation = (path) => {
-    navigate(path);
-    if (window.innerWidth <= 768) {
-      setOpen(false);
+  const handleNavigation = async (path) => {
+    if (path === '/') {
+      const result = await Swal.fire({
+        title: 'Bạn có chắc chắn muốn đăng xuất?',
+        text: "Bạn sẽ cần đăng nhập lại để tiếp tục sử dụng hệ thống.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Đăng xuất',
+        cancelButtonText: 'Hủy'
+      });
+
+      if (result.isConfirmed) {
+        // Xóa thông tin người dùng khỏi localStorage
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userRole');
+        
+        // Xóa thông tin người dùng khỏi context
+        setUser(null);
+        
+        // Chuyển hướng về trang đăng nhập
+        navigate('/');
+      }
+    } else {
+      navigate(path);
+      if (window.innerWidth <= 768) {
+        setOpen(false);
+      }
     }
   };
 
