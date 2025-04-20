@@ -35,7 +35,6 @@ import {
   fetchRevenueByWeek
 } from '../api/transaction_api';
 import LoadingSpinner from './LoadingSpinner';
-import Swal from 'sweetalert2';
 
 ChartJS.register(
   CategoryScale,
