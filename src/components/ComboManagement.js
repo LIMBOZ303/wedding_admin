@@ -8,6 +8,7 @@ import { fetchGifts } from '../api/gift_api';
 import { fetchLobbies } from '../api/order_api';
 import { fetchPlansNoUser, updatePlan, deletePlan } from '../api/plan_api';
 import LoadingSpinner from './LoadingSpinner';
+import Swal from 'sweetalert2';
 import '../public/styles/ComboManagement.css';
 
 const ComboManagement = () => {
@@ -123,20 +124,32 @@ const ComboManagement = () => {
 
     const handleSaveCombo = async () => {
         if (!currentCombo.name || !currentCombo.SanhId) {
-            setError('Vui lòng nhập Tên Combo và chọn Sảnh!');
+            Swal.fire({
+                title: 'Lỗi!',
+                text: 'Vui lòng nhập Tên Combo và chọn Sảnh!',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
             return;
         }
         setLoading(true);
         try {
             await createCombo(currentCombo);
-            setSuccess(true);
-            setTimeout(() => {
-                setSuccess(false);
-                closeModal();
-                fetchData();
-            }, 2000);
+            Swal.fire({
+                title: 'Thành công!',
+                text: 'Thêm combo thành công!',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+            closeModal();
+            fetchData();
         } catch (err) {
-            setError('Có lỗi khi thêm combo');
+            Swal.fire({
+                title: 'Lỗi!',
+                text: 'Có lỗi khi thêm combo',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
         } finally {
             setLoading(false);
         }
