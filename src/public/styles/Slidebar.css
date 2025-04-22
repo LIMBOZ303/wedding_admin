@@ -2,17 +2,16 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 300px;
+    width: var(--sidebar-width);
     height: 100%;
     background-color: #ffffff;
-    padding-top: 0; /* Đã xóa padding-top để tránh khoảng trống không cần thiết */
-    color: #333; /* Thay đổi màu chữ phù hợp với nền trắng */
+    padding-top: 0;
+    color: #333;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     display: flex;
     flex-direction: column;
     transition: width var(--transition-normal), transform var(--transition-normal);
-    width: var(--sidebar-width);
     overflow-x: hidden;
 }
 
@@ -34,7 +33,7 @@
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    overflow: hidden; /* Tránh logo bị tràn */
+    overflow: hidden;
 }
 
 .logo {
@@ -43,8 +42,8 @@
     font-weight: 700;
     margin: 0;
     white-space: nowrap;
-    overflow: hidden; /* Tránh chữ bị tràn */
-    text-overflow: ellipsis; /* Hiển thị dấu ... khi bị cắt */
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .collapse-btn,
@@ -60,7 +59,7 @@
     align-items: center;
     justify-content: center;
     transition: background-color var(--transition-fast), color var(--transition-fast);
-    flex-shrink: 0; /* Ngăn nút bị co lại khi không đủ không gian */
+    flex-shrink: 0;
 }
 
 .collapse-btn:hover,
@@ -79,11 +78,10 @@
     flex: 1;
     overflow-y: auto;
     padding: var(--spacing-md) 0;
-    scrollbar-width: thin; /* Thu nhỏ thanh cuộn */
+    scrollbar-width: thin;
     -ms-overflow-style: none;
 }
 
-/* Tùy chỉnh thanh cuộn cho hiệu ứng tốt hơn */
 .sidebar-content::-webkit-scrollbar {
     width: 4px;
 }
@@ -96,7 +94,7 @@
 .menu-list {
     list-style: none;
     padding: 0;
-    margin: 0; /* Loại bỏ margin mặc định */
+    margin: 0;
 }
 
 .menu-item {
@@ -111,7 +109,7 @@
     transition: color var(--transition-fast), background-color var(--transition-fast);
     border-left: 3px solid transparent;
     text-decoration: none;
-    overflow: hidden; /* Ngăn chữ bị tràn */
+    overflow: hidden;
 }
 
 .sidebar.closed .menu-item a {
@@ -138,7 +136,7 @@
     font-size: var(--font-size-lg);
     width: 24px;
     margin-right: var(--spacing-md);
-    flex-shrink: 0; /* Ngăn icon bị co lại */
+    flex-shrink: 0;
 }
 
 .sidebar.closed .menu-icon {
@@ -148,8 +146,8 @@
 .menu-text {
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Hiển thị dấu ... khi bị cắt */
-    max-width: calc(100% - 40px); /* Chừa không gian cho icon */
+    text-overflow: ellipsis;
+    max-width: calc(100% - 40px);
 }
 
 /* Sidebar Footer */
@@ -205,10 +203,36 @@
     width: calc(100% - var(--sidebar-collapsed-width));
 }
 
-/* Responsive Styles - Tối ưu hóa */
+/* Overlay for Mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+}
+
+/* Mobile Menu Button */
+.mobile-menu-btn {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-md);
+    padding: 8px 12px;
+    z-index: 1100;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* Responsive Styles */
 @media screen and (max-width: 768px) {
     .sidebar {
-        transform: translateX(calc(-1 * var(--sidebar-width)));
+        transform: translateX(-100%);
+        transition: transform var(--transition-normal);
     }
 
     .sidebar.open {
@@ -216,17 +240,25 @@
     }
 
     .sidebar.closed {
-        transform: translateX(calc(-1 * var(--sidebar-collapsed-width)));
+        transform: translateX(-100%);
     }
-    
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
     .main-content {
-        margin-left: 0;
-        width: 100%;
+        margin-left: 0 !important;
+        width: 100% !important;
         padding: 15px;
+    }
+
+    .mobile-menu-btn {
+        display: block;
     }
 }
 
-/* Đảm bảo CSS biến hoạt động đúng dù không có định nghĩa CSS vars */
+/* Global variables */
 :root {
     --sidebar-width: 300px;
     --sidebar-collapsed-width: 60px;
@@ -244,9 +276,13 @@
     --header-height: 60px;
     --font-size-lg: 18px;
     --font-size-xl: 20px;
-    
+
     --dark-background-secondary: #1e1e2e;
     --dark-primary-color: #5e9eff;
     --dark-primary-light: rgba(94, 158, 255, 0.1);
     --dark-border-color: #3a3a3a;
+}
+
+.no-scroll {
+    overflow: hidden;
 }

@@ -39,9 +39,17 @@ const Sidebar = () => {
       }
     };
     handleResize();
-
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, [open]);
+
+  useEffect(() => {
+    const body = document.body;
+    if (open && window.innerWidth <= 768) {
+      body.classList.add('no-scroll');
+    } else {
+      body.classList.remove('no-scroll');
+    }
   }, [open]);
 
   const toggleSidebar = () => {
@@ -62,14 +70,9 @@ const Sidebar = () => {
       });
 
       if (result.isConfirmed) {
-        // Xóa thông tin người dùng khỏi localStorage
         localStorage.removeItem('userId');
         localStorage.removeItem('userRole');
-        
-        // Xóa thông tin người dùng khỏi context
         setUser(null);
-        
-        // Chuyển hướng về trang đăng nhập
         navigate('/');
       }
     } else {
@@ -86,7 +89,7 @@ const Sidebar = () => {
     { path: '/accounts', icon: faUsers, text: 'Quản Lý Tài Khoản' },
     { path: '/user-status', icon: faUserCheck, text: 'Đang Online' },
     { path: '/plans', icon: faBoxArchive, text: 'Quản Lý Kế Hoạch' },
-    { path: '/combo', icon: faBoxArchive, text: 'Quản lý Combo'},
+    { path: '/combo', icon: faBoxArchive, text: 'Quản lý Combo' },
     { path: '/blog', icon: faBlog, text: 'Blog' },
     { path: '/transaction', icon: faExchangeAlt, text: 'Giao Dịch' },
     { path: '/admin-chat', icon: faComments, text: 'Chat Với Khách Hàng' },
@@ -94,56 +97,63 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className={`sidebar ${open ? 'open' : 'closed'}`}>
-      <div className="sidebar-header">
-        {open ? (
-          <div className="logo-container">
-            <h2 className="logo">Wedding Admin</h2>
-            <button
-              className="collapse-btn"
-              onClick={toggleSidebar}
-              aria-label="Thu gọn sidebar"
-            >
-              <FontAwesomeIcon icon={faChevronLeft} />
+    <>
+      {/* Nút mở sidebar trên mobile */}
+      {!open && window.innerWidth <= 768 && (
+        <button className="mobile-menu-btn" onClick={toggleSidebar}>
+          <FontAwesomeIcon icon={faBars} />
+        </button>
+      )}
+
+      {/* Sidebar */}
+      <div className={`sidebar ${open ? 'open' : 'closed'}`}>
+        <div className="sidebar-header">
+          {open ? (
+            <div className="logo-container">
+              <h2 className="logo">Wedding Admin</h2>
+              <button className="collapse-btn" onClick={toggleSidebar}>
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </button>
+            </div>
+          ) : (
+            <button className="expand-btn" onClick={toggleSidebar}>
+              <FontAwesomeIcon icon={faBars} />
             </button>
-          </div>
-        ) : (
-          <button
-            className="expand-btn"
-            onClick={toggleSidebar}
-            aria-label="Mở rộng sidebar"
-          >
-            <FontAwesomeIcon icon={faBars} />
-          </button>
-        )}
+          )}
+        </div>
+
+        <div className="sidebar-content">
+          <ul className="menu-list">
+            {menuItems.map((item, index) => (
+              <li
+                key={index}
+                className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
+              >
+                <a
+                  href="#!"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation(item.path);
+                  }}
+                  title={!open ? item.text : ''}
+                  aria-label={item.text}
+                >
+                  <span className="menu-icon">
+                    <FontAwesomeIcon icon={item.icon} />
+                  </span>
+                  {open && <span className="menu-text">{item.text}</span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
-      <div className="sidebar-content">
-        <ul className="menu-list">
-          {menuItems.map((item, index) => (
-            <li
-              key={index}
-              className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              <a
-                href="#!"
-                onClick={(e) => {
-                  e.preventDefault();
-                  handleNavigation(item.path);
-                }}
-                title={!open ? item.text : ''}
-                aria-label={item.text}
-              >
-                <span className="menu-icon">
-                  <FontAwesomeIcon icon={item.icon} />
-                </span>
-                {open && <span className="menu-text">{item.text}</span>}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+      {/* Overlay trên mobile */}
+      {open && window.innerWidth <= 768 && (
+        <div className="sidebar-overlay" onClick={toggleSidebar}></div>
+      )}
+    </>
   );
 };
 
