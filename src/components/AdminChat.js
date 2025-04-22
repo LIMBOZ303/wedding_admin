@@ -38,6 +38,7 @@ const AdminChat = () => {
     const [userLoading, setUserLoading] = useState(true);
     const [socket, setSocket] = useState(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
+    const [currentPlanId, setCurrentPlanId] = useState(null); // New state for planId
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const [localUnreadCount, setLocalUnreadCount] = useState(0);
@@ -57,6 +58,26 @@ const AdminChat = () => {
 
     const [refreshingUsers, setRefreshingUsers] = useState(false);
     const [refreshingMessages, setRefreshingMessages] = useState(false);
+
+
+
+    // Trong AdminChat.js
+    const clonePlan = async (planId) => {
+        try {
+            const response = await fetch(`https://apidatn.onrender.com/plan/clone/${planId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const result = await response.json();
+            if (result.success) {
+                return result.data.newPlanId; // Giả sử API trả về ID của kế hoạch mới
+            }
+            throw new Error('Không thể clone kế hoạch');
+        } catch (error) {
+            console.error('Lỗi clone kế hoạch:', error);
+            throw error;
+        }
+    };
 
     useEffect(() => {
         const newSocket = io('https://apidatn.onrender.com', {
@@ -97,13 +118,25 @@ const AdminChat = () => {
 
         const processedMessage = {
             ...message,
-            messageType: message.message && message.message.startsWith('data:image/') ? 'image' : 'text',
+            messageType: message.messageType || (
+                message.message && message.message.startsWith('data:image/') ? 'image' : 'text'
+            ),
             userName: userName || (message.senderType === 'user' ? message.senderId : 'Khách hàng')
         };
 
+        // Extract planId from plan messages
+        if (processedMessage.messageType === 'plan' && processedMessage.senderType === 'user') {
+            try {
+                const parsedContent = JSON.parse(processedMessage.message);
+                if (parsedContent.planId && currentUserId === userId) {
+                    setCurrentPlanId(parsedContent.planId);
+                }
+            } catch (e) {
+                console.error('Lỗi parse JSON in handleNewMessage:', e, 'Content:', processedMessage.message);
+            }
+        }
 
         const senderId = processedMessage.senderId;
-
 
         if (processedMessage.senderType !== 'admin') {
             if (currentUserId !== senderId) {
@@ -126,7 +159,6 @@ const AdminChat = () => {
                     ? processedMessage.userName
                     : updatedUsers[existingUserIndex].name;
 
-
                 updatedUsers[existingUserIndex] = {
                     ...updatedUsers[existingUserIndex],
                     name: updatedName,
@@ -143,7 +175,6 @@ const AdminChat = () => {
             const userDisplayName = (processedMessage.userName && processedMessage.userName !== senderId)
                 ? processedMessage.userName
                 : 'Khách hàng';
-
 
             setUsers(prevUsers => [
                 {
@@ -180,7 +211,6 @@ const AdminChat = () => {
             userName: userName || message.senderId
         };
 
-
         setMessages(prevMessages => [...prevMessages, processedMessage]);
 
         setUsers(prevUsers => {
@@ -199,6 +229,7 @@ const AdminChat = () => {
             return prevUsers;
         });
     };
+
     const fetchUsers = async () => {
         try {
             setUserLoading(true);
@@ -207,7 +238,6 @@ const AdminChat = () => {
             if (result.success) {
                 const usersWithInfo = result.data.map(user => {
                     const userName = user.userName || user.name || extractUserName(user) || 'Khách hàng';
-
 
                     return {
                         ...user,
@@ -243,8 +273,6 @@ const AdminChat = () => {
                 const userAvatar = userInfo.data.avatar || userInfo.data.avatarUrl || '';
 
                 if (userName === 'Khách hàng' && userInfo.data) {
-
-                    // Thử tìm trong các trường có thể chứa tên
                     for (const key in userInfo.data) {
                         const value = userInfo.data[key];
                         if (typeof value === 'string' && value.length > 0 && key !== 'email' && key !== '_id' && key !== 'id' && key !== 'userId') {
@@ -254,19 +282,16 @@ const AdminChat = () => {
                     }
                 }
 
-                // Nếu vẫn không có tên thì dùng email
                 if (userName === 'Khách hàng' && userEmail) {
                     userName = userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1);
                 }
 
-                // Set current user info with the name
                 setCurrentUserInfo({
                     name: userName,
                     email: userEmail,
                     avatar: userAvatar
                 });
 
-                // Update the user name in the list if it's a better name than what we had
                 if (userName !== 'Khách hàng' && userName !== userId) {
                     setUsers(prevUsers => {
                         const userIndex = prevUsers.findIndex(user => user.userId === userId);
@@ -282,7 +307,6 @@ const AdminChat = () => {
                     });
                 }
             } else {
-                // Use the existing name from our list if available
                 setCurrentUserInfo({
                     name: userName || 'Khách hàng',
                     email: userInfo?.data?.email || '',
@@ -291,8 +315,6 @@ const AdminChat = () => {
             }
         } catch (error) {
             console.error(`Lỗi khi lấy thông tin người dùng ${userId}:`, error);
-
-            // Use existing name from list if available, otherwise fallback
             const existingUser = users.find(u => u.userId === userId);
             setCurrentUserInfo({
                 name: existingUser?.name || 'Khách hàng',
@@ -302,23 +324,18 @@ const AdminChat = () => {
         }
     };
 
-    // Lấy lịch sử chat với một user
     const fetchMessages = async (userId) => {
         try {
             setLoading(true);
             setRefreshingMessages(true);
             const result = await fetchChatHistory(userId);
             if (result.success) {
-                // Process messages to ensure they have messageType and handle userName
                 const processedMessages = result.data.map(msg => {
-                    // Get userName from various sources
                     let userName;
 
                     if (msg.senderType === 'user') {
-                        // For user messages, try to use the userName from the message
                         userName = msg.userName || findUserName(userId) || currentUserInfo?.name;
                     } else {
-                        // For admin messages, use the current user's name
                         userName = currentUserInfo?.name || findUserName(userId);
                     }
 
@@ -331,15 +348,29 @@ const AdminChat = () => {
                     };
                 });
 
+                // Extract planId from the latest plan message
+                const planMessage = processedMessages
+                    .filter(msg => msg.messageType === 'plan' && msg.senderType === 'user')
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+                if (planMessage) {
+                    try {
+                        const parsedContent = JSON.parse(planMessage.message);
+                        if (parsedContent.planId) {
+                            setCurrentPlanId(parsedContent.planId);
+                        }
+                    } catch (e) {
+                        console.error('Lỗi parse JSON in fetchMessages:', e, 'Content:', planMessage.message);
+                    }
+                } else {
+                    setCurrentPlanId(null);
+                }
+
                 setMessages(processedMessages);
 
-                // Update chat name if we found a good userName in the messages
                 const userMessages = processedMessages.filter(msg => msg.senderType === 'user');
                 if (userMessages.length > 0) {
                     const lastUserMessage = userMessages[userMessages.length - 1];
                     if (lastUserMessage.userName && lastUserMessage.userName !== 'Khách hàng' && lastUserMessage.userName !== userId) {
-
-                        // Update the user's name in the user list
                         setUsers(prevUsers => {
                             const userIndex = prevUsers.findIndex(user => user.userId === userId);
                             if (userIndex >= 0) {
@@ -357,7 +388,6 @@ const AdminChat = () => {
                     }
                 }
 
-                // Đảm bảo cuộn xuống sau khi dữ liệu đã tải và DOM đã được cập nhật
                 setTimeout(() => {
                     if (messagesEndRef.current) {
                         messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -372,77 +402,60 @@ const AdminChat = () => {
         }
     };
 
-    // Xử lý khi chọn một user để chat
     const handleSelectUser = (userId) => {
         setCurrentUserId(userId);
         fetchMessages(userId);
         fetchUserInfo(userId);
 
-        // Đánh dấu tin nhắn đã đọc
         if (socket) {
             socket.emit('markAsRead', { userId });
         }
     };
 
-    // Gửi tin nhắn mới
     const handleSendMessage = () => {
         if ((!messageInput.trim() && !imagePreview) || !currentUserId || !socket) return;
 
-        // Find the current user's name from the users list or currentUserInfo
         const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
 
-
-        // Nếu có hình ảnh để gửi
         if (imagePreview) {
-            // Chuẩn bị dữ liệu tin nhắn hình ảnh
             const messageData = {
                 senderId: 'admin',
                 receiverId: currentUserId,
                 message: imagePreview,
                 senderType: 'admin',
                 messageType: 'image',
-                userName: userName  // Use user's name instead of 'Admin'
+                userName: userName
             };
 
-            // Gửi tin nhắn hình ảnh qua socket
             socket.emit('sendMessage', messageData);
-
-            // Reset image state
             setImagePreview('');
             setImageUpload(null);
 
             return;
         }
 
-        // Chuẩn bị dữ liệu tin nhắn văn bản
         const messageData = {
             senderId: 'admin',
             receiverId: currentUserId,
             message: messageInput.trim(),
             senderType: 'admin',
             messageType: 'text',
-            userName: userName  // Use user's name instead of 'Admin'
+            userName: userName
         };
 
-        // Gửi tin nhắn qua socket
         socket.emit('sendMessage', messageData);
-
-        // Reset input
         setMessageInput('');
     };
 
-    // Xử lý khi chọn file hình ảnh
     const handleImageSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Kiểm tra nếu file là hình ảnh
         if (!file.type.match('image.*')) {
             alert('Vui lòng chọn file hình ảnh');
             return;
         }
 
-        // Kiểm tra kích thước file (giới hạn 5MB)
         if (file.size > 5 * 1024 * 1024) {
             alert('Kích thước ảnh không được vượt quá 5MB');
             return;
@@ -450,11 +463,9 @@ const AdminChat = () => {
 
         setImageUpload(file);
 
-        // Đọc file và hiển thị preview
         const reader = new FileReader();
         reader.onload = (e) => {
             setImagePreview(e.target.result);
-            // Tự động cuộn xuống để hiển thị ảnh preview
             setTimeout(() => {
                 if (messagesContainerRef.current) {
                     messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
@@ -464,14 +475,12 @@ const AdminChat = () => {
         reader.readAsDataURL(file);
     };
 
-    // Xóa hình ảnh đã chọn
     const handleRemoveImage = () => {
         setImageUpload(null);
         setImagePreview('');
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
-        // Focus lại vào input sau khi xóa ảnh
         setTimeout(() => {
             const inputElement = document.querySelector('.chat-input input');
             if (inputElement) {
@@ -480,7 +489,6 @@ const AdminChat = () => {
         }, 100);
     };
 
-    // Xử lý khi nhấn phím Enter để gửi tin nhắn
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -488,82 +496,48 @@ const AdminChat = () => {
         }
     };
 
-    // Tự động cuộn xuống tin nhắn mới nhất
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Lấy danh sách người dùng khi component mount
     useEffect(() => {
         fetchUsers();
-
-        // Cập nhật danh sách người dùng mỗi 30 giây
         const interval = setInterval(fetchUsers, 30000);
-
         return () => clearInterval(interval);
     }, []);
 
-    // Hàm trích xuất tên người dùng từ dữ liệu
     const extractUserName = (userData) => {
-
-        // Kiểm tra các thuộc tính phổ biến chứa tên người dùng
-        if (userData.name) {
-            return userData.name;
-        }
-        if (userData.fullName) {
-            return userData.fullName;
-        }
-        if (userData.displayName) {
-            return userData.displayName;
-        }
-        if (userData.username) {
-            return userData.username;
-        }
-        if (userData.firstName && userData.lastName) {
-            const fullName = `${userData.firstName} ${userData.lastName}`;
-            return fullName;
-        }
-        if (userData.firstName) {
-            return userData.firstName;
-        }
-        if (userData.lastName) {
-            return userData.lastName;
-        }
-
-        // Nếu có email, lấy phần trước @
+        if (userData.name) return userData.name;
+        if (userData.fullName) return userData.fullName;
+        if (userData.displayName) return userData.displayName;
+        if (userData.username) return userData.username;
+        if (userData.firstName && userData.lastName) return `${userData.firstName} ${userData.lastName}`;
+        if (userData.firstName) return userData.firstName;
+        if (userData.lastName) return userData.lastName;
         if (userData.email) {
             const emailName = userData.email.split('@')[0];
-            // Biến đổi thành dạng tên hợp lý (viết hoa chữ cái đầu)
-            const emailUserName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
-            return emailUserName;
+            return emailName.charAt(0).toUpperCase() + emailName.slice(1);
         }
-
-        // Mặc định trả về "Khách hàng"
         return 'Khách hàng';
     };
 
-    // Format thời gian
     const formatTime = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
         const diff = now - date;
 
-        // Nếu tin nhắn được gửi trong ngày hôm nay, hiển thị giờ
         if (diff < 24 * 60 * 60 * 1000 && date.getDate() === now.getDate()) {
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
-        // Nếu tin nhắn được gửi trong tuần này, hiển thị thứ
         if (diff < 7 * 24 * 60 * 60 * 1000) {
             const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
             return `${days[date.getDay()]} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
         }
 
-        // Nếu tin nhắn được gửi trước đó, hiển thị ngày tháng năm
         return date.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
     };
 
-    // Format ngày để hiển thị giữa các tin nhắn
     const formatMessageDate = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
@@ -578,17 +552,14 @@ const AdminChat = () => {
             return 'Hôm qua';
         }
 
-        // Nếu tin nhắn được gửi trong tuần này
         if (now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
             const days = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
             return days[date.getDay()];
         }
 
-        // Nếu tin nhắn cũ hơn, hiển thị ngày tháng năm
         return date.toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
     };
 
-    // Kiểm tra nếu cần hiển thị ngày giữa các tin nhắn
     const shouldShowDate = (messages, index) => {
         if (index === 0) return true;
 
@@ -598,7 +569,6 @@ const AdminChat = () => {
         return currentDate !== prevDate;
     };
 
-    // Customize the message truncation for the user list
     const truncateMessage = (message, maxLength, messageType) => {
         if (!message) return '';
 
@@ -610,28 +580,23 @@ const AdminChat = () => {
         return message.substring(0, maxLength) + '...';
     };
 
-    // Kiểm tra nếu nên hiển thị nút cuộn xuống
     const checkScrollPosition = () => {
         const container = messagesContainerRef.current;
         if (!container) return;
 
         const { scrollTop, scrollHeight, clientHeight } = container;
-        // Hiển thị nút khi người dùng kéo lên khỏi cuối tối thiểu 300px
         const isScrolledUp = scrollHeight - scrollTop - clientHeight > 300;
         setShowScrollButton(isScrolledUp);
     };
 
-    // Cuộn xuống tin nhắn cuối cùng
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    // Cuộn xuống ngay khi mở cuộc trò chuyện hoặc có tin nhắn mới
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
-    // Thêm sự kiện scroll để kiểm tra vị trí cuộn
     useEffect(() => {
         const container = messagesContainerRef.current;
         if (container) {
@@ -640,23 +605,18 @@ const AdminChat = () => {
         }
     }, []);
 
-    // Hiển thị modal hình ảnh khi click vào hình ảnh
     const openImageModal = (imageUrl) => {
         setModalImage(imageUrl);
         setShowImageModal(true);
-        // Prevent scrolling when modal is open
         document.body.style.overflow = 'hidden';
     };
 
-    // Đóng modal hình ảnh
     const closeImageModal = () => {
         setShowImageModal(false);
         setModalImage('');
-        // Restore scrolling
         document.body.style.overflow = 'auto';
     };
 
-    // Add a helper function to find user name by ID
     const findUserName = (userId) => {
         const user = users.find(u => u.userId === userId);
         return user ? user.name : null;
@@ -669,7 +629,6 @@ const AdminChat = () => {
             </div>
 
             <div className="chat-content">
-                {/* Danh sách người dùng */}
                 <div className="user-list-container">
                     <div className="user-list-header">
                         <h5>Danh sách người dùng</h5>
@@ -732,7 +691,6 @@ const AdminChat = () => {
                     </div>
                 </div>
 
-                {/* Khung chat */}
                 <div className="chat-window">
                     <div className="chat-window-header">
                         {currentUserId ? (
@@ -800,15 +758,32 @@ const AdminChat = () => {
                                 <div className="messages-container">
                                     {messages.map((message, index) => {
                                         const isImage = message.messageType === 'image';
-                                        let senderName = '';
+                                        const isPlan = message.messageType === 'plan';
+                                        const isNewPlan = message.messageType === 'new_plan';
+                                        const isConfirmation = message.messageType === 'confirmation';
+                                        let senderName = message.senderType === 'user'
+                                            ? (message.userName || findUserName(message.senderId) || currentUserInfo?.name || 'Khách hàng')
+                                            : (currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng');
+                                        let messageContent = message.message;
+                                        let parsedContent = {};
 
-                                        // Get the user's name regardless of who sent the message
-                                        if (message.senderType === 'user') {
-                                            // For user messages, get their name
-                                            senderName = message.userName || findUserName(message.senderId) || currentUserInfo?.name || 'Khách hàng';
-                                        } else {
-                                            // For admin messages, we'll still display the current user's name (not "Admin")
-                                            senderName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
+                                        if ((isPlan || isNewPlan || isConfirmation) && typeof message.message === 'string') {
+                                            if (message.message.trim().startsWith('{') || message.message.trim().startsWith('[')) {
+                                                try {
+                                                    parsedContent = JSON.parse(message.message);
+                                                    messageContent = parsedContent.details
+                                                        ? JSON.stringify(parsedContent.details, null, 2)
+                                                        : parsedContent.newDetails
+                                                            ? JSON.stringify(parsedContent.newDetails, null, 2)
+                                                            : message.message;
+                                                } catch (e) {
+                                                    console.error('Lỗi parse JSON:', e, 'Content:', message.message, 'MessageType:', message.messageType);
+                                                    messageContent = message.message;
+                                                }
+                                            } else {
+                                                console.warn('Non-JSON content detected:', message.messageType, 'Content:', message.message);
+                                                messageContent = message.message;
+                                            }
                                         }
 
                                         return (
@@ -818,13 +793,11 @@ const AdminChat = () => {
                                                         <span>{formatMessageDate(message.createdAt)}</span>
                                                     </div>
                                                 )}
-
                                                 <div className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}>
                                                     <div className="message-content">
                                                         <div className="message-sender">
                                                             <UserNameDisplay userName={senderName} highlight={true} />
                                                         </div>
-
                                                         {isImage ? (
                                                             <div className="message-image-container">
                                                                 <img
@@ -837,10 +810,15 @@ const AdminChat = () => {
                                                                     <FontAwesomeIcon icon={faExpand} />
                                                                 </div>
                                                             </div>
+                                                        ) : isPlan || isNewPlan ? (
+                                                            <pre className="plan-message">{messageContent}</pre>
+                                                        ) : isConfirmation && parsedContent.action === 'confirm' ? (
+                                                            <div>
+                                                                <p>Yêu cầu xác nhận kế hoạch {parsedContent.planId}</p>
+                                                            </div>
                                                         ) : (
-                                                            <p>{message.message}</p>
+                                                            <p>{messageContent}</p>
                                                         )}
-
                                                         <div className="message-footer">
                                                             <span className="message-time">{formatTime(message.createdAt)}</span>
                                                         </div>
@@ -853,7 +831,6 @@ const AdminChat = () => {
                                 </div>
                             )}
 
-                            {/* Nút cuộn xuống cuối cùng */}
                             {showScrollButton && (
                                 <button className="scroll-bottom-button" onClick={scrollToBottom} title="Cuộn xuống cuối">
                                     <FontAwesomeIcon icon={faArrowDown} />
@@ -863,7 +840,63 @@ const AdminChat = () => {
 
                         {currentUserId && (
                             <div className="chat-input-container">
-                                {/* Image preview */}
+                                <button
+                                    className="confirmation-button"
+                                    onClick={async () => {
+                                        if (!currentUserId || !socket || !currentPlanId) return;
+                                        try {
+                                            // Clone kế hoạch
+                                            const newPlanId = await clonePlan(currentPlanId);
+                                            const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
+                                            const messageData = {
+                                                senderId: 'admin',
+                                                receiverId: currentUserId,
+                                                message: JSON.stringify({
+                                                  action: 'new_plan',
+                                                  planId: newPlanId,
+                                                  newDetails: {
+                                                    name: 'Kế hoạch mới',
+                                                    sanh: 'Sảnh mới',
+                                                  },
+                                                }),
+                                                senderType: 'admin',
+                                                messageType: 'new_plan',
+                                                userName: userName,
+                                              };
+                                              console.log('Gửi tin nhắn new_plan:', messageData); // Log tin nhắn
+                                              socket.emit('sendMessage', messageData);
+                                        } catch (error) {
+                                            console.error('Lỗi gửi kế hoạch mới:', error);
+                                            alert('Không thể gửi kế hoạch mới. Vui lòng thử lại.');
+                                        }
+                                    }}
+                                    disabled={!currentUserId || !currentPlanId}
+                                    title={currentPlanId ? "Gửi kế hoạch mới" : "Chưa có kế hoạch từ người dùng"}
+                                >
+                                    Gửi kế hoạch mới
+                                </button>
+
+                                <button
+                                    className="confirmation-button"
+                                    onClick={() => {
+                                        if (!currentUserId || !socket || !currentPlanId) return;
+                                        const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
+                                        const messageData = {
+                                            senderId: 'admin',
+                                            receiverId: currentUserId,
+                                            message: JSON.stringify({ action: 'confirm', planId: currentPlanId }),
+                                            senderType: 'admin',
+                                            messageType: 'confirmation',
+                                            userName: userName,
+                                        };
+                                        socket.emit('sendMessage', messageData);
+                                    }}
+                                    disabled={!currentUserId || !currentPlanId}
+                                    title={currentPlanId ? "Gửi yêu cầu xác nhận" : "Chưa có kế hoạch từ người dùng"}
+                                >
+                                    Gửi yêu cầu xác nhận
+                                </button>
+
                                 {imagePreview && (
                                     <div className="image-preview-container">
                                         <div className="image-preview">
@@ -890,7 +923,6 @@ const AdminChat = () => {
                                         disabled={!!imagePreview}
                                     />
 
-                                    {/* Image upload button */}
                                     <button
                                         className="upload-image-button"
                                         onClick={() => fileInputRef.current?.click()}
@@ -921,7 +953,6 @@ const AdminChat = () => {
                 </div>
             </div>
 
-            {/* Image Modal */}
             {showImageModal && (
                 <div className={`image-modal ${showImageModal ? 'active' : ''}`} onClick={closeImageModal}>
                     <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -936,4 +967,4 @@ const AdminChat = () => {
     );
 };
 
-export default AdminChat; 
+export default AdminChat;

@@ -1,3 +1,26 @@
+.plan-message {
+    background-color: #f0f0ff;
+    padding: 10px;
+    border-radius: 8px;
+    font-family: monospace;
+    white-space: pre-wrap;
+  }
+.confirmation-button {
+    background-color: #7A60FF;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  
+  .confirmation-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
 .admin-chat-container {
     display: flex;
     flex-direction: column;
