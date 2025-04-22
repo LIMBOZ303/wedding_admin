@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes} from '@fortawesome/free-solid-svg-icons';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { fetchPlanswithUser } from '../api/plan_api';
 import Swal from 'sweetalert2';
 import "../public/styles/PlanManagement.css";
@@ -91,7 +91,15 @@ const PlansManagement = () => {
                                     <p><strong>Tổng giá:</strong> {plan.totalPrice.toLocaleString()} VNĐ</p>
                                     <p><strong>Ngày sự kiện:</strong> {plan.plandateevent ? new Date(plan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</p>
                                     <p><strong>Người phụ trách:</strong> {plan.UserId?.name || 'N/A'}</p>
-                                    <p><strong>Trạng thái:</strong> {plan.status}</p>
+                                    <p>
+                                        <strong>Trạng thái:</strong> 
+                                        <span className={`status ${plan.status === 'Chưa kích hoạt' ? 'inactive' : 
+                                                                  plan.status === 'Đã kích hoạt' ? 'active' : 
+                                                                  plan.status === 'Đang chờ xác nhận' ? 'pending-confirmation' : 
+                                                                  'canceled'}`}>
+                                            {plan.status}
+                                        </span>
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -106,44 +114,52 @@ const PlansManagement = () => {
                     if (e.target.className === 'modal-overlay') closeDetailModal();
                 }}>
                     <div className="modal-content">
-            <div className="modal-header">
-                <h2>Chi Tiết Kế Hoạch: {selectedPlan.name}</h2>
-                <button className="close-btn" onClick={closeDetailModal}>
-                    <FontAwesomeIcon icon={faTimes} />
-                </button>
-            </div>
+                        <div className="modal-header">
+                            <h2>Chi Tiết Kế Hoạch: {selectedPlan.name}</h2>
+                            <button className="close-btn" onClick={closeDetailModal}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
 
-            {/* Phần thông tin cơ bản của kế hoạch */}
-            <div className="plan-detail-section">
-                <div className="plan-details">
-                    <h3 className="plan-name">{selectedPlan.name}</h3>
-                    <div className="plan-info">
-                        <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlan.totalPrice.toLocaleString()} VNĐ</span></p>
-                        <p><span className="label">Ngày sự kiện:</span> <span className="value">{selectedPlan.plandateevent ? new Date(selectedPlan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span></p>
-                        <p><span className="label">Số lượng khách:</span> <span className="value">{selectedPlan.plansoluongkhach || 'Chưa xác định'}</span></p>
-                        <p><span className="label">Người phụ trách:</span> <span className="value">{selectedPlan.UserId?.name || 'N/A'}</span></p>
-                        <p><span className="label">Trạng thái:</span> <span className={`value status ${selectedPlan.status === 'Chưa kích hoạt' ? 'inactive' : selectedPlan.status === 'Đã kích hoạt' ? 'active' : 'canceled'}`}>{selectedPlan.status}</span></p>
-                    </div>
-                </div>
-            </div>
+                        {/* Phần thông tin cơ bản của kế hoạch */}
+                        <div className="plan-detail-section">
+                            <div className="plan-details">
+                                <h3 className="plan-name">{selectedPlan.name}</h3>
+                                <div className="plan-info">
+                                    <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlan.totalPrice.toLocaleString()} VNĐ</span></p>
+                                    <p><span className="label">Ngày sự kiện:</span> <span className="value">{selectedPlan.plandateevent ? new Date(selectedPlan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span></p>
+                                    <p><span className="label">Số lượng khách:</span> <span className="value">{selectedPlan.plansoluongkhach || 'Chưa xác định'}</span></p>
+                                    <p><span className="label">Người phụ trách:</span> <span className="value">{selectedPlan.UserId?.name || 'N/A'}</span></p>
+                                    <p>
+                                        <span className="label">Trạng thái:</span> 
+                                        <span className={`value status ${selectedPlan.status === 'Chưa kích hoạt' ? 'inactive' : 
+                                                                        selectedPlan.status === 'Đã kích hoạt' ? 'active' : 
+                                                                        selectedPlan.status === 'Đang chờ xác nhận' ? 'pending-confirmation' : 
+                                                                        'canceled'}`}>
+                                            {selectedPlan.status}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
-            {/* Phần chi tiết sảnh riêng biệt */}
-            <div className="sanh-detail-section">
-                <h3>Chi Tiết Sảnh</h3>
-                <div className="sanh-content">
-                    <div className="sanh-image-container">
-                        <img
-                            src={selectedPlan.SanhId?.imageUrl || 'https://via.placeholder.com/120'}
-                            alt={selectedPlan.SanhId?.name || 'Sảnh'}
-                            className="sanh-image"
-                        />
-                    </div>
-                    <div className="sanh-details">
-                        <p><span className="label">Tên sảnh:</span> <span className="value">{selectedPlan.SanhId?.name || 'N/A'}</span></p>
-                        <p><span className="label">Giá:</span> <span className="value price">{selectedPlan.SanhId?.price.toLocaleString() || 'N/A'} VNĐ</span></p>
-                    </div>
-                </div>
-            </div>
+                        {/* Phần chi tiết sảnh riêng biệt */}
+                        <div className="sanh-detail-section">
+                            <h3>Chi Tiết Sảnh</h3>
+                            <div className="sanh-content">
+                                <div className="sanh-image-container">
+                                    <img
+                                        src={selectedPlan.SanhId?.imageUrl || 'https://via.placeholder.com/120'}
+                                        alt={selectedPlan.SanhId?.name || 'Sảnh'}
+                                        className="sanh-image"
+                                    />
+                                </div>
+                                <div className="sanh-details">
+                                    <p><span className="label">Tên sảnh:</span> <span className="value">{selectedPlan.SanhId?.name || 'N/A'}</span></p>
+                                    <p><span className="label">Giá:</span> <span className="value price">{selectedPlan.SanhId?.price.toLocaleString() || 'N/A'} VNĐ</span></p>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="form-group">
                             <h3>Dịch Vụ Ẩm Thực</h3>
