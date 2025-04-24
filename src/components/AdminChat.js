@@ -15,8 +15,18 @@ import {
     faArrowDown,
     faImage,
     faTimes,
-    faExpand
+    faExpand,
+    faEdit,
+    faSave,
+    faSpinner,
+    faCheck,
+    faList
 } from '@fortawesome/free-solid-svg-icons';
+import { fetchLobbies } from '../api/order_api';
+import { fetchCatering } from '../api/catering_api';
+import { fetchDecorate } from '../api/decorate_api';
+import { fetchGifts } from '../api/gift_api';
+import Swal from 'sweetalert2';
 
 const UserNameDisplay = ({ userName, highlight = false, fallback = 'Khách hàng' }) => {
     const displayName = userName || fallback;
@@ -38,10 +48,35 @@ const AdminChat = () => {
     const [userLoading, setUserLoading] = useState(true);
     const [socket, setSocket] = useState(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
-    const [currentPlanId, setCurrentPlanId] = useState(null); // New state for planId
+    const [currentPlanId, setCurrentPlanId] = useState(null);
     const messagesEndRef = useRef(null);
     const messagesContainerRef = useRef(null);
     const [localUnreadCount, setLocalUnreadCount] = useState(0);
+    const [imageUpload, setImageUpload] = useState(null);
+    const [imagePreview, setImagePreview] = useState('');
+    const fileInputRef = useRef(null);
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [modalImage, setModalImage] = useState('');
+    const [refreshingUsers, setRefreshingUsers] = useState(false);
+    const [refreshingMessages, setRefreshingMessages] = useState(false);
+    const [showPlanModal, setShowPlanModal] = useState(false);
+    const [editedPlan, setEditedPlan] = useState(null);
+    const [planDetails, setPlanDetails] = useState(null);
+    const [planOptions, setPlanOptions] = useState({
+        sanh: [],
+        catering: [],
+        decorate: [],
+        present: []
+    });
+    const [planLoading, setPlanLoading] = useState(false);
+    const [planError, setPlanError] = useState(null);
+    const [planSuccess, setPlanSuccess] = useState(false);
+    const [showLists, setShowLists] = useState({
+        sanh: false,
+        catering: false,
+        decorate: false,
+        present: false
+    });
 
     const appContext = useContext(AppContext) || {};
     const setUnreadMessages = appContext.setUnreadMessages || (() => {
@@ -49,19 +84,6 @@ const AdminChat = () => {
         setLocalUnreadCount(prev => prev + 1);
     });
 
-    const [imageUpload, setImageUpload] = useState(null);
-    const [imagePreview, setImagePreview] = useState('');
-    const fileInputRef = useRef(null);
-
-    const [showImageModal, setShowImageModal] = useState(false);
-    const [modalImage, setModalImage] = useState('');
-
-    const [refreshingUsers, setRefreshingUsers] = useState(false);
-    const [refreshingMessages, setRefreshingMessages] = useState(false);
-
-
-
-    // Trong AdminChat.js
     const clonePlan = async (planId) => {
         try {
             const response = await fetch(`https://apidatn.onrender.com/plan/clone/${planId}`, {
@@ -70,12 +92,72 @@ const AdminChat = () => {
             });
             const result = await response.json();
             if (result.success) {
-                return result.data.newPlanId; // Giả sử API trả về ID của kế hoạch mới
+                return result.data;
             }
             throw new Error('Không thể clone kế hoạch');
         } catch (error) {
             console.error('Lỗi clone kế hoạch:', error);
             throw error;
+        }
+    };
+
+    const fetchPlanDetails = async (planId) => {
+        try {
+            const response = await fetch(`https://apidatn.onrender.com/plan/${planId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            const result = await response.json();
+            if (result.status) {
+                return result.data;
+            }
+            throw new Error(result.message || 'Không thể lấy chi tiết kế hoạch');
+        } catch (error) {
+            console.error('Lỗi lấy chi tiết kế hoạch:', error);
+            throw error;
+        }
+    };
+
+    const updatePlan = async (planId, planData) => {
+        try {
+            const response = await fetch(`https://apidatn.onrender.com/plan/update/${planId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(planData),
+            });
+            const result = await response.json();
+            console.log('Update plan response:', result);
+            if (!result.status) {
+                throw new Error(result.message || 'Không thể cập nhật kế hoạch');
+            }
+            return result.data;
+        } catch (error) {
+            console.error('Lỗi cập nhật kế hoạch:', error);
+            throw error;
+        }
+    };
+
+    const fetchPlanData = async () => {
+        setPlanLoading(true);
+        try {
+            const [lobbyRes, cateringRes, decorateRes, presentRes] = await Promise.all([
+                fetchLobbies(),
+                fetchCatering(),
+                fetchDecorate(),
+                fetchGifts()
+            ]);
+            setPlanOptions({
+                sanh: lobbyRes.data || [],
+                catering: cateringRes.data || [],
+                decorate: decorateRes.data || [],
+                present: presentRes.data || []
+            });
+        } catch (err) {
+            setPlanError('Không thể tải dữ liệu kế hoạch');
+        } finally {
+            setPlanLoading(false);
         }
     };
 
@@ -124,12 +206,14 @@ const AdminChat = () => {
             userName: userName || (message.senderType === 'user' ? message.senderId : 'Khách hàng')
         };
 
-        // Extract planId from plan messages
-        if (processedMessage.messageType === 'plan' && processedMessage.senderType === 'user') {
+        // Handle plan message
+        if (processedMessage.messageType === 'plan' && processedMessage.senderType === 'user' && currentUserId === userId) {
             try {
                 const parsedContent = JSON.parse(processedMessage.message);
-                if (parsedContent.planId && currentUserId === userId) {
+                if (parsedContent.planId) {
                     setCurrentPlanId(parsedContent.planId);
+                } else {
+                    console.warn('No planId in plan message:', processedMessage.message);
                 }
             } catch (e) {
                 console.error('Lỗi parse JSON in handleNewMessage:', e, 'Content:', processedMessage.message);
@@ -275,7 +359,8 @@ const AdminChat = () => {
                 if (userName === 'Khách hàng' && userInfo.data) {
                     for (const key in userInfo.data) {
                         const value = userInfo.data[key];
-                        if (typeof value === 'string' && value.length > 0 && key !== 'email' && key !== '_id' && key !== 'id' && key !== 'userId') {
+                        if (typeof value === 'string' && value.length > 0 &&
+                            key !== 'email' && key !== '_id' && key !== 'id' && key !== 'userId') {
                             userName = value;
                             break;
                         }
@@ -348,21 +433,25 @@ const AdminChat = () => {
                     };
                 });
 
-                // Extract planId from the latest plan message
+                // Find the latest plan message from the user
                 const planMessage = processedMessages
                     .filter(msg => msg.messageType === 'plan' && msg.senderType === 'user')
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+
                 if (planMessage) {
                     try {
                         const parsedContent = JSON.parse(planMessage.message);
                         if (parsedContent.planId) {
                             setCurrentPlanId(parsedContent.planId);
+                        } else {
+                            setCurrentPlanId(null); // No valid planId in message
                         }
                     } catch (e) {
                         console.error('Lỗi parse JSON in fetchMessages:', e, 'Content:', planMessage.message);
+                        setCurrentPlanId(null); // Error parsing, reset planId
                     }
                 } else {
-                    setCurrentPlanId(null);
+                    setCurrentPlanId(null); // No plan message found
                 }
 
                 setMessages(processedMessages);
@@ -396,6 +485,7 @@ const AdminChat = () => {
             }
         } catch (error) {
             console.error('Error fetching messages:', error);
+            setCurrentPlanId(null); // Reset on error
         } finally {
             setLoading(false);
             setRefreshingMessages(false);
@@ -404,6 +494,7 @@ const AdminChat = () => {
 
     const handleSelectUser = (userId) => {
         setCurrentUserId(userId);
+        setCurrentPlanId(null); // Reset plan ID when switching users
         fetchMessages(userId);
         fetchUserInfo(userId);
 
@@ -494,6 +585,245 @@ const AdminChat = () => {
             e.preventDefault();
             handleSendMessage();
         }
+    };
+
+    const handleOpenPlanModal = async () => {
+        if (!currentUserId || !currentPlanId) return;
+        setPlanLoading(true);
+        try {
+            await fetchPlanData();
+            const clonedPlan = await clonePlan(currentPlanId);
+            const fetchedPlanDetails = await fetchPlanDetails(clonedPlan.newPlanId);
+            setPlanDetails(fetchedPlanDetails);
+            setEditedPlan({
+                _id: clonedPlan.newPlanId,
+                name: fetchedPlanDetails.name || 'Kế hoạch mới',
+                SanhId: fetchedPlanDetails.SanhId?._id || fetchedPlanDetails.SanhId,
+                cateringId: fetchedPlanDetails.caterings?.map(item => item._id) || [],
+                decorateId: fetchedPlanDetails.decorates?.map(item => item._id) || [],
+                presentId: fetchedPlanDetails.presents?.map(item => item._id) || [],
+                totalPrice: fetchedPlanDetails.totalPrice || 0,
+            });
+            setShowPlanModal(true);
+        } catch (error) {
+            Swal.fire({
+                title: 'Lỗi!',
+                text: error.message || 'Không thể tải kế hoạch',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        } finally {
+            setPlanLoading(false);
+        }
+    };
+
+    const handleClosePlanModal = () => {
+        setShowPlanModal(false);
+        setEditedPlan(null);
+        setPlanDetails(null);
+        setPlanError(null);
+        setPlanSuccess(false);
+        setShowLists({ sanh: false, catering: false, decorate: false, present: false });
+    };
+
+    const handleSendNewPlan = async () => {
+        if (!editedPlan.name || !editedPlan.SanhId) {
+            setPlanError('Vui lòng nhập Tên Kế hoạch và chọn Sảnh!');
+            return;
+        }
+        setPlanLoading(true);
+        try {
+            const updateData = {
+                UserId: currentUserId,
+                name: editedPlan.name,
+                SanhId: editedPlan.SanhId,
+                caterings: editedPlan.cateringId,
+                decorates: editedPlan.decorateId,
+                presents: editedPlan.presentId.map(id => ({
+                    id,
+                    quantity: planDetails?.presents?.find(p => p._id === id)?.quantity || 1,
+                })),
+                totalPrice: calculateTotalPrice(editedPlan),
+                forceDuplicate: false,
+            };
+
+            console.log('Sending update data:', JSON.stringify(updateData, null, 2));
+
+            const updatedPlan = await updatePlan(editedPlan._id, updateData);
+
+            const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
+            const messageData = {
+                senderId: 'admin',
+                receiverId: currentUserId,
+                message: JSON.stringify({
+                    action: 'new_plan',
+                    planId: editedPlan._id,
+                    name: editedPlan.name
+                }, null, 2),
+                senderType: 'admin',
+                messageType: 'new_plan',
+                userName: userName,
+            };
+
+            console.log('Gửi tin nhắn new_plan:', JSON.stringify(messageData, null, 2));
+
+            socket.emit('sendMessage', messageData);
+
+            setPlanSuccess(true);
+            Swal.fire({
+                title: 'Thành công!',
+                text: 'Kế hoạch đã được cập nhật và gửi thành công.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+            });
+
+            setTimeout(() => {
+                handleClosePlanModal();
+            }, 2000);
+        } catch (error) {
+            console.error('Lỗi gửi kế hoạch mới:', error);
+            setPlanError(error.message || 'Không thể gửi kế hoạch mới');
+            Swal.fire({
+                title: 'Lỗi!',
+                text: error.message || 'Không thể gửi kế hoạch mới',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        } finally {
+            setPlanLoading(false);
+        }
+    };
+
+    const calculateTotalPrice = (plan) => {
+        let total = 0;
+        const selectedLobby = planOptions.sanh.find(item => item._id === plan.SanhId);
+        if (selectedLobby) total += selectedLobby.price || 0;
+        plan.cateringId.forEach(id => {
+            const item = planOptions.catering.find(item => item._id === id);
+            if (item) total += item.price || 0;
+        });
+        plan.decorateId.forEach(id => {
+            const item = planOptions.decorate.find(item => item._id === id);
+            if (item) total += item.price || 0;
+        });
+        plan.presentId.forEach(id => {
+            const item = planOptions.present.find(item => item._id === id);
+            if (item) total += (item.price || 0) * (planDetails?.presents?.find(p => p._id === id)?.quantity || 1);
+        });
+        return total;
+    };
+
+    const toggleList = (type) => {
+        setShowLists(prev => ({ ...prev, [type]: !prev[type] }));
+    };
+
+    const handleSelectLobby = (id) => {
+        setEditedPlan(prev => ({ ...prev, SanhId: id }));
+    };
+
+    const handleToggleItem = (type, id) => {
+        setEditedPlan(prev => {
+            const currentIds = prev[type];
+            if (currentIds.includes(id)) {
+                return { ...prev, [type]: currentIds.filter(item => item !== id) };
+            }
+            return { ...prev, [type]: [...currentIds, id] };
+        });
+    };
+
+    const renderPlanList = (type, items, selectedIds) => {
+        const typeMap = {
+            sanh: { idField: 'SanhId', singleSelect: true },
+            catering: { idField: 'cateringId', singleSelect: false },
+            decorate: { idField: 'decorateId', singleSelect: false },
+            present: { idField: 'presentId', singleSelect: false },
+        };
+        const { idField, singleSelect } = typeMap[type];
+
+        return (
+            <div className="form-group">
+                <div className="form-group-header">
+                    <label>
+                        {type === 'sanh' ? 'Sảnh' : type === 'catering' ? 'Dịch Vụ Ẩm Thực' : type === 'decorate' ? 'Dịch Vụ Trang Trí' : 'Dịch Vụ Quà Tặng'}{' '}
+                        {type === 'sanh' && <span className="required">*</span>}
+                    </label>
+                    <button className={`list-btn ${showLists[type] ? 'active' : ''}`} onClick={() => toggleList(type)}>
+                        <FontAwesomeIcon icon={faList} /> {showLists[type] ? 'Ẩn' : 'Hiện'}
+                    </button>
+                </div>
+                {showLists[type] && (
+                    <div className="list-container">
+                        <div className="item-list">
+                            {items.map(item => (
+                                <div
+                                    key={item._id}
+                                    className={`list-item ${singleSelect ? selectedIds === item._id : selectedIds.includes(item._id) ? 'selected' : ''}`}
+                                    onClick={() => (singleSelect ? handleSelectLobby(item._id) : handleToggleItem(idField, item._id))}
+                                >
+                                    <div className="selection-indicator">
+                                        <input
+                                            type={singleSelect ? 'radio' : 'checkbox'}
+                                            name={singleSelect ? 'sanh' : type}
+                                            checked={singleSelect ? selectedIds === item._id : selectedIds.includes(item._id)}
+                                            onChange={() => {}}
+                                            disabled={planLoading}
+                                        />
+                                        {(singleSelect ? selectedIds === item._id : selectedIds.includes(item._id)) && (
+                                            <span className="checkmark">
+                                                <FontAwesomeIcon icon={faCheck} />
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="item-image-container">
+                                        <img src={item.imageUrl || 'https://via.placeholder.com/100'} alt={item.name} className="item-image" />
+                                    </div>
+                                    <div className="item-details">
+                                        <h4>{item.name}</h4>
+                                        <div className="item-info">
+                                            <span className="price">{item.price ? item.price.toLocaleString() : 'N/A'} VNĐ</span>
+                                            {type === 'sanh' && <span className="capacity">{item.SoLuongKhach || 'N/A'} khách</span>}
+                                            {type === 'present' && selectedIds.includes(item._id) && (
+                                                <div className="quantity-input">
+                                                    <label>Số lượng:</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={planDetails?.presents?.find(p => p._id === item._id)?.quantity || 1}
+                                                        onChange={(e) => {
+                                                            const quantity = parseInt(e.target.value) || 1;
+                                                            setPlanDetails(prev => ({
+                                                                ...prev,
+                                                                presents: prev.presents.map(p =>
+                                                                    p._id === item._id ? { ...p, quantity } : p
+                                                                ),
+                                                            }));
+                                                        }}
+                                                        disabled={planLoading}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {items.length === 0 && (
+                                <div className="no-results">
+                                    Không có {type === 'sanh' ? 'sảnh' : 'dịch vụ'} nào
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+                {(singleSelect ? selectedIds : selectedIds.length > 0) && (
+                    <div className="selected-summary">
+                        <span>Đã chọn: </span>
+                        {singleSelect
+                            ? planOptions[type].find(item => item._id === selectedIds)?.name
+                            : `${selectedIds.length} dịch vụ`}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     useEffect(() => {
@@ -723,7 +1053,7 @@ const AdminChat = () => {
                                         title="Tải lại tin nhắn"
                                         disabled={refreshingMessages}
                                     >
-                                        <FontAwesomeIcon icon={faSync} />
+                                        {/* <FontAwesomeIcon icon={faSyncdynamodb}/> */}
                                     </button>
                                 </div>
                             </div>
@@ -773,8 +1103,8 @@ const AdminChat = () => {
                                                     parsedContent = JSON.parse(message.message);
                                                     messageContent = parsedContent.details
                                                         ? JSON.stringify(parsedContent.details, null, 2)
-                                                        : parsedContent.newDetails
-                                                            ? JSON.stringify(parsedContent.newDetails, null, 2)
+                                                        : parsedContent.name
+                                                            ? JSON.stringify({ planId: parsedContent.planId, name: parsedContent.name }, null, 2)
                                                             : message.message;
                                                 } catch (e) {
                                                     console.error('Lỗi parse JSON:', e, 'Content:', message.message, 'MessageType:', message.messageType);
@@ -842,36 +1172,9 @@ const AdminChat = () => {
                             <div className="chat-input-container">
                                 <button
                                     className="confirmation-button"
-                                    onClick={async () => {
-                                        if (!currentUserId || !socket || !currentPlanId) return;
-                                        try {
-                                            // Clone kế hoạch
-                                            const newPlanId = await clonePlan(currentPlanId);
-                                            const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
-                                            const messageData = {
-                                                senderId: 'admin',
-                                                receiverId: currentUserId,
-                                                message: JSON.stringify({
-                                                  action: 'new_plan',
-                                                  planId: newPlanId,
-                                                  newDetails: {
-                                                    name: 'Kế hoạch mới',
-                                                    sanh: 'Sảnh mới',
-                                                  },
-                                                }),
-                                                senderType: 'admin',
-                                                messageType: 'new_plan',
-                                                userName: userName,
-                                              };
-                                              console.log('Gửi tin nhắn new_plan:', messageData); // Log tin nhắn
-                                              socket.emit('sendMessage', messageData);
-                                        } catch (error) {
-                                            console.error('Lỗi gửi kế hoạch mới:', error);
-                                            alert('Không thể gửi kế hoạch mới. Vui lòng thử lại.');
-                                        }
-                                    }}
-                                    disabled={!currentUserId || !currentPlanId}
-                                    title={currentPlanId ? "Gửi kế hoạch mới" : "Chưa có kế hoạch từ người dùng"}
+                                    onClick={handleOpenPlanModal}
+                                    disabled={!currentUserId || !currentPlanId || planLoading}
+                                    title={currentPlanId ? "Chỉnh sửa và gửi kế hoạch mới" : "Chưa có kế hoạch từ người dùng"}
                                 >
                                     Gửi kế hoạch mới
                                 </button>
@@ -887,7 +1190,7 @@ const AdminChat = () => {
                                             message: JSON.stringify({ action: 'confirm', planId: currentPlanId }),
                                             senderType: 'admin',
                                             messageType: 'confirmation',
-                                            userName: userName,
+                                            userName: userName
                                         };
                                         socket.emit('sendMessage', messageData);
                                     }}
@@ -960,6 +1263,77 @@ const AdminChat = () => {
                         <button className="image-modal-close" onClick={closeImageModal}>
                             <FontAwesomeIcon icon={faTimes} />
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {showPlanModal && editedPlan && (
+                <div className="modal-overlay" onClick={e => {
+                    if (e.target.className === 'modal-overlay') handleClosePlanModal();
+                }}>
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h2>Chỉnh Sửa Kế hoạch: {editedPlan.name}</h2>
+                            <button className="close-btn" onClick={handleClosePlanModal}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+
+                        {planError && <div className="error-message"><FontAwesomeIcon icon={faTimes} /> {planError}</div>}
+                        {planSuccess && <div className="success-message"><FontAwesomeIcon icon={faCheck} /> Gửi kế hoạch thành công!</div>}
+
+                        {planLoading ? (
+                            <div className="loading-spinner">
+                                <div className="spinner-border text-primary" role="status">
+                                    <span className="visually-hidden"></span>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="form-group">
+                                    <label htmlFor="edit-plan-name">Tên Kế hoạch <span className="required">*</span></label>
+                                    <input
+                                        id="edit-plan-name"
+                                        type="text"
+                                        value={editedPlan.name}
+                                        onChange={(e) => setEditedPlan(prev => ({ ...prev, name: e.target.value }))}
+                                        disabled={planLoading}
+                                        placeholder="Nhập tên kế hoạch..."
+                                        className="edit-input"
+                                    />
+                                </div>
+
+                                {renderPlanList('sanh', planOptions.sanh, editedPlan.SanhId)}
+                                {renderPlanList('catering', planOptions.catering, editedPlan.cateringId)}
+                                {renderPlanList('decorate', planOptions.decorate, editedPlan.decorateId)}
+                                {renderPlanList('present', planOptions.present, editedPlan.presentId)}
+
+                                <div className="combo-summary">
+                                    <div className="summary-header">
+                                        <h3>Tổng cộng</h3>
+                                        <div className="total-price">{calculateTotalPrice(editedPlan).toLocaleString()} VNĐ</div>
+                                    </div>
+                                </div>
+
+                                <div className="modal-actions">
+                                    <button
+                                        className="save-btn"
+                                        onClick={handleSendNewPlan}
+                                        disabled={planLoading || planSuccess}
+                                    >
+                                        <FontAwesomeIcon icon={planLoading ? faSpinner : faSave} spin={planLoading} />
+                                        {planLoading ? 'Đang gửi...' : 'Gửi Kế hoạch'}
+                                    </button>
+                                    <button
+                                        className="cancel-btn"
+                                        onClick={handleClosePlanModal}
+                                        disabled={planLoading}
+                                    >
+                                        <FontAwesomeIcon icon={faTimes} /> Hủy
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
