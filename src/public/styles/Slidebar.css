@@ -3,16 +3,19 @@
     top: 0;
     left: 0;
     width: var(--sidebar-width);
-    height: 100%;
-    background-color: #ffffff;
+    height: 100vh;
+    background-color: var(--sidebar-bg);
     padding-top: 0;
-    color: #333;
+    color: var(--sidebar-text);
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    transition: width var(--transition-normal), transform var(--transition-normal);
+    transition: all 0.3s ease;
+    overflow-y: auto;
     overflow-x: hidden;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
 
 .sidebar.closed {
@@ -44,6 +47,11 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: all 0.3s ease;
+}
+
+.logo:hover {
+    text-shadow: 0 0 10px rgba(122, 96, 255, 0.3);
 }
 
 .collapse-btn,
@@ -58,14 +66,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color var(--transition-fast), color var(--transition-fast);
+    transition: all 0.3s ease;
     flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
 }
 
 .collapse-btn:hover,
 .expand-btn:hover {
     background-color: var(--primary-light);
     color: var(--primary-color);
+    transform: rotate(-180deg);
 }
 
 .sidebar.closed .sidebar-header {
@@ -76,25 +87,30 @@
 /* Sidebar Content */
 .sidebar-content {
     flex: 1;
+    height: calc(100vh - 60px);
     overflow-y: auto;
+    overflow-x: hidden;
     padding: var(--spacing-md) 0;
-    scrollbar-width: thin;
-    -ms-overflow-style: none;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
 
 .sidebar-content::-webkit-scrollbar {
-    width: 4px;
-}
-
-.sidebar-content::-webkit-scrollbar-thumb {
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
+    display: none;  /* Chrome, Safari, Opera */
 }
 
 .menu-list {
-    list-style: none;
     padding: 0;
     margin: 0;
+    list-style: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.menu-list::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari, Opera */
 }
 
 .menu-item {
@@ -106,10 +122,11 @@
     align-items: center;
     padding: var(--spacing-md) var(--spacing-xl);
     color: var(--text-secondary);
-    transition: color var(--transition-fast), background-color var(--transition-fast);
+    transition: all 0.3s ease;
     border-left: 3px solid transparent;
     text-decoration: none;
     overflow: hidden;
+    position: relative;
 }
 
 .sidebar.closed .menu-item a {
@@ -120,6 +137,8 @@
 .menu-item a:hover {
     background-color: var(--primary-light);
     color: var(--primary-color);
+    transform: translateX(6px);
+    box-shadow: inset 0 0 10px rgba(122, 96, 255, 0.05);
 }
 
 .menu-item.active a {
@@ -127,6 +146,7 @@
     background-color: var(--primary-light);
     border-left-color: var(--primary-color);
     font-weight: 600;
+    box-shadow: inset 0 0 10px rgba(122, 96, 255, 0.1);
 }
 
 .menu-icon {
@@ -137,6 +157,11 @@
     width: 24px;
     margin-right: var(--spacing-md);
     flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+.menu-item a:hover .menu-icon {
+    transform: scale(1.2);
 }
 
 .sidebar.closed .menu-icon {
@@ -208,8 +233,15 @@
     display: none;
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.5);
     z-index: 999;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
 }
 
 /* Mobile Menu Button */
@@ -222,17 +254,28 @@
     color: white;
     border: none;
     border-radius: var(--border-radius-md);
-    padding: 8px 12px;
+    padding: 10px 14px;
     z-index: 1100;
-    font-size: 18px;
+    font-size: var(--font-size-lg);
     cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--primary-color);
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(122, 96, 255, 0.3);
+}
+
+.mobile-menu-btn:active {
+    transform: scale(0.95);
 }
 
 /* Responsive Styles */
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 414px) { /* iPhone 11 width */
     .sidebar {
+        width: 100%;
         transform: translateX(-100%);
-        transition: transform var(--transition-normal);
     }
 
     .sidebar.open {
@@ -243,8 +286,12 @@
         transform: translateX(-100%);
     }
 
-    .sidebar-overlay.active {
+    .mobile-menu-btn {
         display: block;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 1100;
     }
 
     .main-content {
@@ -253,36 +300,71 @@
         padding: 15px;
     }
 
-    .mobile-menu-btn {
+    .sidebar-overlay {
         display: block;
     }
+
+    .menu-item a {
+        padding: 12px 20px;
+    }
+}
+
+/* iPhone 11 Landscape Mode */
+@media screen and (max-width: 896px) and (orientation: landscape) {
+    .sidebar {
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    .menu-item a {
+        padding: 8px 20px;
+    }
+}
+
+/* Safe Area Support */
+@supports (padding-top: env(safe-area-inset-top)) {
+    .sidebar {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .mobile-menu-btn {
+        top: calc(env(safe-area-inset-top, 0) + 10px);
+    }
+}
+
+/* No Scroll Class */
+.no-scroll {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
 }
 
 /* Global variables */
 :root {
-    --sidebar-width: 300px;
-    --sidebar-collapsed-width: 60px;
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 70px;
+    --header-height: 60px;
     --transition-normal: 0.3s ease;
     --transition-fast: 0.2s ease;
-    --spacing-xs: 4px;
+    --spacing-xs: 8px;
     --spacing-md: 12px;
+    --spacing-lg: 16px;
     --spacing-xl: 20px;
-    --primary-color: #3498db;
-    --primary-light: rgba(52, 152, 219, 0.1);
-    --text-secondary: #333;
-    --divider-color: #e0e0e0;
-    --border-radius-md: 4px;
-    --border-radius-full: 50%;
-    --header-height: 60px;
+    --font-size-sm: 14px;
+    --font-size-md: 16px;
     --font-size-lg: 18px;
     --font-size-xl: 20px;
+    --primary-color: #7A60FF;
+    --primary-light: rgba(122, 96, 255, 0.1);
+    --text-secondary: #64748B;
+    --divider-color: #E2E8F0;
+    --border-radius-md: 8px;
+    --border-radius-full: 9999px;
 
     --dark-background-secondary: #1e1e2e;
     --dark-primary-color: #5e9eff;
     --dark-primary-light: rgba(94, 158, 255, 0.1);
     --dark-border-color: #3a3a3a;
-}
-
-.no-scroll {
-    overflow: hidden;
 }

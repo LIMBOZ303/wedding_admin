@@ -349,9 +349,6 @@ const ComboManagement = () => {
         <div className="combo-management">
             <div className="header">
                 <h1>Quản lý Combo</h1>
-                <button className="add-btn" onClick={openModal} disabled={loading}>
-                    <FontAwesomeIcon icon={faPlus} /> Thêm Combo
-                </button>
             </div>
 
             <div className="plans-no-user-section">
@@ -379,6 +376,10 @@ const ComboManagement = () => {
                     <p>Không có combo nào không liên kết với người dùng.</p>
                 )}
             </div>
+
+            <button className="add-btn" onClick={openModal} disabled={loading}>
+                <FontAwesomeIcon icon={faPlus} /> Thêm Combo
+            </button>
 
             {showModal && (
                 <div className="modal-overlay" onClick={e => {

@@ -311,4 +311,29 @@
 .success-state-icon {
   font-size: 3rem;
   margin-bottom: var(--spacing-md);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Ensure content is still scrollable */
+.dashboard-container,
+.chart-container,
+.stats-cards,
+.charts-grid {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Maintain smooth scrolling */
+html {
+  scroll-behavior: smooth;
 } 

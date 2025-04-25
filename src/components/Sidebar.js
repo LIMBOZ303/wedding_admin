@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -21,7 +21,7 @@ import Swal from 'sweetalert2';
 const Sidebar = () => {
   const [open, setOpen] = useState(() => {
     const savedState = localStorage.getItem('sidebarOpen');
-    return savedState !== null ? JSON.parse(savedState) : true;
+    return savedState !== null ? JSON.parse(savedState) : window.innerWidth > 414;
   });
 
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ const Sidebar = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth <= 768 && open) {
+      if (window.innerWidth <= 414 && open) {
         setOpen(false);
       }
     };
@@ -45,7 +45,7 @@ const Sidebar = () => {
 
   useEffect(() => {
     const body = document.body;
-    if (open && window.innerWidth <= 768) {
+    if (open && window.innerWidth <= 414) {
       body.classList.add('no-scroll');
     } else {
       body.classList.remove('no-scroll');
@@ -56,7 +56,7 @@ const Sidebar = () => {
     setOpen(!open);
   };
 
-  const handleNavigation = async (path) => {
+  const handleNavigation = useCallback(async (path) => {
     if (path === '/') {
       const result = await Swal.fire({
         title: 'Bạn có chắc chắn muốn đăng xuất?',
@@ -77,11 +77,8 @@ const Sidebar = () => {
       }
     } else {
       navigate(path);
-      if (window.innerWidth <= 768) {
-        setOpen(false);
-      }
     }
-  };
+  }, [navigate, setUser]);
 
   const menuItems = [
     { path: '/home', icon: faHome, text: 'Trang chủ' },
@@ -98,31 +95,41 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Nút mở sidebar trên mobile */}
-      {!open && window.innerWidth <= 768 && (
-        <button className="mobile-menu-btn" onClick={toggleSidebar}>
+      {!open && (
+        <button 
+          className="mobile-menu-btn" 
+          onClick={toggleSidebar}
+          aria-label="Mở menu"
+        >
           <FontAwesomeIcon icon={faBars} />
         </button>
       )}
 
-      {/* Sidebar */}
       <div className={`sidebar ${open ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           {open ? (
             <div className="logo-container">
               <h2 className="logo">Wedding Admin</h2>
-              <button className="collapse-btn" onClick={toggleSidebar}>
+              <button 
+                className="collapse-btn" 
+                onClick={toggleSidebar}
+                aria-label="Thu gọn menu"
+              >
                 <FontAwesomeIcon icon={faChevronLeft} />
               </button>
             </div>
           ) : (
-            <button className="expand-btn" onClick={toggleSidebar}>
+            <button 
+              className="expand-btn" 
+              onClick={toggleSidebar}
+              aria-label="Mở rộng menu"
+            >
               <FontAwesomeIcon icon={faBars} />
             </button>
           )}
         </div>
 
-        <div className="sidebar-content">
+        <nav className="sidebar-content">
           <ul className="menu-list">
             {menuItems.map((item, index) => (
               <li
@@ -146,12 +153,15 @@ const Sidebar = () => {
               </li>
             ))}
           </ul>
-        </div>
+        </nav>
       </div>
 
-      {/* Overlay trên mobile */}
-      {open && window.innerWidth <= 768 && (
-        <div className="sidebar-overlay" onClick={toggleSidebar}></div>
+      {open && window.innerWidth <= 414 && (
+        <div 
+          className="sidebar-overlay" 
+          onClick={toggleSidebar}
+          role="presentation"
+        />
       )}
     </>
   );

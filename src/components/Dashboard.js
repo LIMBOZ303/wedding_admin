@@ -501,18 +501,10 @@ const Dashboard = () => {
         borderWidth: 1,
         borderRadius: 8,
         barThickness: 20,
-      },
-      {
-        label: 'Số giao dịch',
-        data: quarterRevenue.map(q => q.transactionCount),
-        backgroundColor: 'rgba(54, 162, 235, 0.7)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
-        borderRadius: 8,
-        barThickness: 20,
       }
     ],
   };
+
   const quarterOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -544,12 +536,7 @@ const Dashboard = () => {
         borderWidth: 1,
         callbacks: {
           label: function(context) {
-            const label = context.dataset.label || '';
-            const value = context.raw;
-            if (label.includes('Doanh thu')) {
-              return `${label}: ${value.toLocaleString()} VND`;
-            }
-            return `${label}: ${value}`;
+            return `Doanh thu: ${context.raw.toLocaleString()} VND`;
           }
         }
       }
@@ -565,12 +552,7 @@ const Dashboard = () => {
           font: {
             size: 11
           },
-          callback: function(value) {
-            if (this.chart.data.datasets[0].data.includes(value)) {
-              return value.toLocaleString() + ' VND';
-            }
-            return value;
-          }
+          callback: value => value.toLocaleString() + ' VND'
         }
       },
       x: {
@@ -609,7 +591,6 @@ const Dashboard = () => {
         backgroundColor: 'rgba(75, 192, 192, 0.1)',
         borderColor: 'rgba(75, 192, 192, 1)',
         tension: 0.4,
-        yAxisID: 'y',
         pointRadius: (ctx) => {
           // Làm nổi bật điểm dữ liệu của tuần hiện tại
           const weekNum = startWeek + ctx.dataIndex;
@@ -619,25 +600,6 @@ const Dashboard = () => {
         pointBackgroundColor: (ctx) => {
           const weekNum = startWeek + ctx.dataIndex;
           return weekNum === currentWeek ? '#ff6b6b' : 'rgba(75, 192, 192, 1)';
-        },
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-      },
-      {
-        label: 'Số giao dịch',
-        data: weekRevenue.map(w => w.transactionCount),
-        fill: false,
-        borderColor: 'rgba(54, 162, 235, 1)',
-        tension: 0.4,
-        yAxisID: 'y1',
-        pointRadius: (ctx) => {
-          const weekNum = startWeek + ctx.dataIndex;
-          return weekNum === currentWeek ? 6 : 3;
-        },
-        pointHoverRadius: 6,
-        pointBackgroundColor: (ctx) => {
-          const weekNum = startWeek + ctx.dataIndex;
-          return weekNum === currentWeek ? '#ff6b6b' : 'rgba(54, 162, 235, 1)';
         },
         pointBorderColor: '#fff',
         pointBorderWidth: 2,
@@ -675,12 +637,7 @@ const Dashboard = () => {
         borderWidth: 1,
         callbacks: {
           label: function(context) {
-            const label = context.dataset.label || '';
-            const value = context.raw;
-            if (label.includes('Doanh thu')) {
-              return `${label}: ${value.toLocaleString()} VND`;
-            }
-            return `${label}: ${value}`;
+            return `Doanh thu: ${context.raw.toLocaleString()} VND`;
           }
         }
       }
@@ -700,22 +657,6 @@ const Dashboard = () => {
             size: 11
           },
           callback: value => value.toLocaleString() + ' VND'
-        }
-      },
-      y1: {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        beginAtZero: true,
-        grid: {
-          drawOnChartArea: false,
-          drawBorder: false
-        },
-        ticks: {
-          font: {
-            size: 11
-          },
-          callback: value => value
         }
       },
       x: {

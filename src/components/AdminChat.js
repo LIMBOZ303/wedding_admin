@@ -1170,35 +1170,39 @@ const AdminChat = () => {
 
                         {currentUserId && (
                             <div className="chat-input-container">
-                                <button
-                                    className="confirmation-button"
-                                    onClick={handleOpenPlanModal}
-                                    disabled={!currentUserId || !currentPlanId || planLoading}
-                                    title={currentPlanId ? "Chỉnh sửa và gửi kế hoạch mới" : "Chưa có kế hoạch từ người dùng"}
-                                >
-                                    Gửi kế hoạch mới
-                                </button>
+                                <div className="action-buttons-container">
+                                    <button
+                                        className="confirmation-button"
+                                        onClick={handleOpenPlanModal}
+                                        disabled={!currentUserId || !currentPlanId || planLoading}
+                                        title={currentPlanId ? "Chỉnh sửa và gửi kế hoạch mới" : "Chưa có kế hoạch từ người dùng"}
+                                    >
+                                        <FontAwesomeIcon icon={faEdit} />
+                                        Gửi kế hoạch mới
+                                    </button>
 
-                                <button
-                                    className="confirmation-button"
-                                    onClick={() => {
-                                        if (!currentUserId || !socket || !currentPlanId) return;
-                                        const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
-                                        const messageData = {
-                                            senderId: 'admin',
-                                            receiverId: currentUserId,
-                                            message: JSON.stringify({ action: 'confirm', planId: currentPlanId }),
-                                            senderType: 'admin',
-                                            messageType: 'confirmation',
-                                            userName: userName
-                                        };
-                                        socket.emit('sendMessage', messageData);
-                                    }}
-                                    disabled={!currentUserId || !currentPlanId}
-                                    title={currentPlanId ? "Gửi yêu cầu xác nhận" : "Chưa có kế hoạch từ người dùng"}
-                                >
-                                    Gửi yêu cầu xác nhận
-                                </button>
+                                    <button
+                                        className="confirmation-button"
+                                        onClick={() => {
+                                            if (!currentUserId || !socket || !currentPlanId) return;
+                                            const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
+                                            const messageData = {
+                                                senderId: 'admin',
+                                                receiverId: currentUserId,
+                                                message: JSON.stringify({ action: 'confirm', planId: currentPlanId }),
+                                                senderType: 'admin',
+                                                messageType: 'confirmation',
+                                                userName: userName
+                                            };
+                                            socket.emit('sendMessage', messageData);
+                                        }}
+                                        disabled={!currentUserId || !currentPlanId}
+                                        title={currentPlanId ? "Gửi yêu cầu xác nhận" : "Chưa có kế hoạch từ người dùng"}
+                                    >
+                                        <FontAwesomeIcon icon={faCheck} />
+                                        Gửi yêu cầu xác nhận
+                                    </button>
+                                </div>
 
                                 {imagePreview && (
                                     <div className="image-preview-container">
@@ -1246,6 +1250,7 @@ const AdminChat = () => {
                                         className="send-button"
                                         onClick={handleSendMessage}
                                         disabled={(!messageInput.trim() && !imagePreview) || !currentUserId}
+                                        title="Gửi tin nhắn"
                                     >
                                         <FontAwesomeIcon icon={faPaperPlane} />
                                     </button>

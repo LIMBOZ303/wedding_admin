@@ -109,25 +109,33 @@
 }
 
 .add-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
     background: linear-gradient(135deg, #2ecc71, #1abc9c);
     color: white;
-    padding: 12px 28px;
+    padding: 15px 30px;
     border: none;
-    border-radius: 10px;
+    border-radius: 50px;
     cursor: pointer;
     font-weight: 600;
     font-size: 16px;
     display: flex;
     align-items: center;
     gap: 10px;
-    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
     transition: all 0.3s ease;
+    z-index: 999;
 }
 
 .add-btn:hover {
     background: linear-gradient(135deg, #27ae60, #16a085);
     transform: translateY(-3px);
-    box-shadow: 0 6px 18px rgba(46, 204, 113, 0.4);
+    box-shadow: 0 6px 20px rgba(46, 204, 113, 0.5);
+}
+
+.add-btn:active {
+    transform: translateY(-1px);
 }
 
 .add-btn:disabled {
@@ -135,6 +143,15 @@
     cursor: not-allowed;
     box-shadow: none;
     transform: none;
+}
+
+@media (max-width: 768px) {
+    .add-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        font-size: 14px;
+    }
 }
 
 /* Plans No User Section */
@@ -155,63 +172,96 @@
 
 .plans-list {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 20px;
-    max-height: 400px;
-    overflow-y: auto;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    padding: 20px;
 }
 
 .plan-item {
     background: #fff;
-    padding: 15px;
-    border: 2px solid #e9ecef;
     border-radius: 12px;
-    transition: all 0.3s ease;
-    cursor: default;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .plan-item:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-    border-color: #3498db;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .plan-image-container {
     width: 100%;
-    height: 120px;
-    margin-bottom: 10px;
+    height: 200px;
+    overflow: hidden;
+    position: relative;
 }
 
 .plan-image {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.plan-item:hover .plan-image {
+    transform: scale(1.05);
 }
 
 .plan-details {
-    text-align: left;
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(to bottom, #ffffff, #f8f9fa);
 }
 
 .plan-details h3 {
-    margin: 0 0 8px;
-    font-size: 16px;
+    margin: 0 0 15px 0;
+    font-size: 1.25rem;
+    color: #2d3748;
     font-weight: 600;
-    color: #1e2a44;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.4;
 }
 
 .plan-details p {
-    margin: 4px 0;
-    font-size: 13px;
-    color: #7f8c8d;
+    margin: 8px 0;
+    color: #4a5568;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.plan-details p strong {
-    color: #2c3e50;
+.plan-details strong {
+    color: #2d3748;
+    font-weight: 600;
+    margin-right: 8px;
+}
+
+.plan-details .price {
+    color: #7A60FF;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.plan-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(122, 96, 255, 0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
 }
 
 /* Modal Overlay */
@@ -906,5 +956,27 @@
     .list-item {
         height: auto;
         min-height: 280px;
+    }
+    .plans-list {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+        padding: 16px;
+    }
+    .plan-image-container {
+        height: 180px;
+    }
+    .plan-details {
+        padding: 16px;
+    }
+    .plan-details h3 {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .plans-list {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 12px;
     }
 }
