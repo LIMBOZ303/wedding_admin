@@ -77,6 +77,8 @@ const AdminChat = () => {
         decorate: false,
         present: false
     });
+    const [showViewDetailModal, setShowViewDetailModal] = useState(false);
+    const [selectedPlanForView, setSelectedPlanForView] = useState(null);
 
     const appContext = useContext(AppContext) || {};
     const setUnreadMessages = appContext.setUnreadMessages || (() => {
@@ -159,6 +161,22 @@ const AdminChat = () => {
         } finally {
             setPlanLoading(false);
         }
+    };
+
+    // Hàm tính tổng giá dịch vụ ẩm thực
+    const calculateCateringTotal = (caterings, guestCount) => {
+        if (!guestCount) return 0;
+        return caterings.reduce((total, item) => total + item.price * (guestCount / 10), 0);
+    };
+
+    // Hàm tính tổng giá dịch vụ trang trí
+    const calculateDecorateTotal = (decorates) => {
+        return decorates.reduce((total, item) => total + item.price, 0);
+    };
+
+    // Hàm tính tổng giá dịch vụ MC/Quà tặng
+    const calculatePresentTotal = (presents) => {
+        return presents.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
     };
 
     useEffect(() => {
@@ -617,6 +635,24 @@ const AdminChat = () => {
         }
     };
 
+    const handleViewPlanDetails = async (planId) => {
+        setPlanLoading(true);
+        try {
+            const fetchedPlanDetails = await fetchPlanDetails(planId);
+            setSelectedPlanForView(fetchedPlanDetails);
+            setShowViewDetailModal(true);
+        } catch (error) {
+            Swal.fire({
+                title: 'Lỗi!',
+                text: error.message || 'Không thể tải chi tiết kế hoạch',
+                icon: 'error',
+                confirmButtonText: 'OK',
+            });
+        } finally {
+            setPlanLoading(false);
+        }
+    };
+
     const handleClosePlanModal = () => {
         setShowPlanModal(false);
         setEditedPlan(null);
@@ -624,6 +660,11 @@ const AdminChat = () => {
         setPlanError(null);
         setPlanSuccess(false);
         setShowLists({ sanh: false, catering: false, decorate: false, present: false });
+    };
+
+    const handleCloseViewDetailModal = () => {
+        setShowViewDetailModal(false);
+        setSelectedPlanForView(null);
     };
 
     const handleSendNewPlan = async () => {
@@ -1141,7 +1182,27 @@ const AdminChat = () => {
                                                                 </div>
                                                             </div>
                                                         ) : isPlan || isNewPlan ? (
-                                                            <pre className="plan-message">{messageContent}</pre>
+                                                            <div>
+                                                                <pre className="plan-message">{messageContent}</pre>
+                                                                {isPlan && message.senderType === 'user' && (
+                                                                    <button
+                                                                        className="view-details-button"
+                                                                        onClick={() => {
+                                                                            try {
+                                                                                const parsed = JSON.parse(message.message);
+                                                                                if (parsed.planId) {
+                                                                                    handleViewPlanDetails(parsed.planId);
+                                                                                }
+                                                                            } catch (e) {
+                                                                                console.error('Lỗi parse JSON for view details:', e);
+                                                                            }
+                                                                        }}
+                                                                        title="Xem chi tiết kế hoạch"
+                                                                    >
+                                                                        Xem chi tiết
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         ) : isConfirmation && parsedContent.action === 'confirm' ? (
                                                             <div>
                                                                 <p>Yêu cầu xác nhận kế hoạch {parsedContent.planId}</p>
@@ -1278,7 +1339,7 @@ const AdminChat = () => {
                 }}>
                     <div className="modal-content">
                         <div className="modal-header">
-                            <h2>Chỉnh Sửa Kế hoạch: {editedPlan.name}</h2>
+                            <h2>Chỉnh Sửa Kế Hoạch: {editedPlan.name}</h2>
                             <button className="close-btn" onClick={handleClosePlanModal}>
                                 <FontAwesomeIcon icon={faTimes} />
                             </button>
@@ -1339,6 +1400,170 @@ const AdminChat = () => {
                                 </div>
                             </>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {showViewDetailModal && selectedPlanForView && (
+                <div className="modal-overlay" onClick={e => {
+                    if (e.target.className === 'modal-overlay') handleCloseViewDetailModal();
+                }}>
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h2>Chi Tiết Kế Hoạch: {selectedPlanForView.name}</h2>
+                            <button className="close-btn" onClick={handleCloseViewDetailModal}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+
+                        <div className="plan-detail-section">
+                            <div className="plan-details">
+                                <h3 className="plan-name">{selectedPlanForView.name}</h3>
+                                <div className="plan-info">
+                                    <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlanForView.totalPrice.toLocaleString()} VNĐ</span></p>
+                                    <p><span className="label">Ngày sự kiện:</span> <span className="value">{selectedPlanForView.plandateevent ? new Date(selectedPlanForView.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span></p>
+                                    <p><span className="label">Số lượng khách:</span> <span className="value">{selectedPlanForView.plansoluongkhach || 'Chưa xác định'}</span></p>
+                                    <p><span className="label">Người phụ trách:</span> <span className="value">{selectedPlanForView.UserId?.name || 'N/A'}</span></p>
+                                    <p>
+                                        <span className="label">Trạng thái:</span> 
+                                        <span className={`value status ${selectedPlanForView.status === 'Chưa kích hoạt' ? 'inactive' : 
+                                                                        selectedPlanForView.status === 'Đã kích hoạt' ? 'active' : 
+                                                                        selectedPlanForView.status === 'Đang chờ xác nhận' ? 'pending-confirmation' : 
+                                                                        'canceled'}`}>
+                                            {selectedPlanForView.status}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="sanh-detail-section">
+                            <h3>Chi Tiết Sảnh</h3>
+                            <div className="sanh-content">
+                                <div className="sanh-image-container">
+                                    <img
+                                        src={selectedPlanForView.SanhId?.imageUrl || 'https://via.placeholder.com/120'}
+                                        alt={selectedPlanForView.SanhId?.name || 'Sảnh'}
+                                        className="sanh-image"
+                                    />
+                                </div>
+                                <div className="sanh-details">
+                                    <p><span className="label">Tên sảnh:</span> <span className="value">{selectedPlanForView.SanhId?.name || 'N/A'}</span></p>
+                                    <p><span className="label">Giá:</span> <span className="value price">{selectedPlanForView.SanhId?.price.toLocaleString() || 'N/A'} VNĐ</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <h3>Dịch Vụ Ẩm Thực</h3>
+                            {selectedPlanForView.caterings.length > 0 ? (
+                                <>
+                                    <div className="item-list">
+                                        {selectedPlanForView.caterings.map(item => (
+                                            <div key={item._id} className="list-item">
+                                                <div className="item-image-container">
+                                                    <img
+                                                        src={item.imageUrl || 'https://via.placeholder.com/120'}
+                                                        alt={item.name}
+                                                        className="item-image"
+                                                    />
+                                                </div>
+                                                <div className="item-details">
+                                                    <h4>{item.name}</h4>
+                                                    <div className="item-info">
+                                                        <span className="price">{item.price.toLocaleString()} VNĐ</span>
+                                                        {selectedPlanForView.plansoluongkhach && (
+                                                            <span className="total-per-item">
+                                                                Tổng: {(item.price * (selectedPlanForView.plansoluongkhach / 10)).toLocaleString()} VNĐ
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="service-total">
+                                        <strong>Tổng giá dịch vụ ẩm thực:</strong> {calculateCateringTotal(selectedPlanForView.caterings, selectedPlanForView.plansoluongkhach).toLocaleString()} VNĐ
+                                    </div>
+                                </>
+                            ) : (
+                                <p>Không có dịch vụ ẩm thực nào.</p>
+                            )}
+                        </div>
+
+                        <div className="form-group">
+                            <h3>Dịch Vụ Trang Trí</h3>
+                            {selectedPlanForView.decorates.length > 0 ? (
+                                <>
+                                    <div className="item-list">
+                                        {selectedPlanForView.decorates.map(item => (
+                                            <div key={item._id} className="list-item">
+                                                <div className="item-image-container">
+                                                    <img
+                                                        src={item.imageUrl || 'https://via.placeholder.com/120'}
+                                                        alt={item.name}
+                                                        className="item-image"
+                                                    />
+                                                </div>
+                                                <div className="item-details">
+                                                    <h4>{item.name}</h4>
+                                                    <div className="item-info">
+                                                        <span className="price">{item.price.toLocaleString()} VNĐ</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="service-total">
+                                        <strong>Tổng giá dịch vụ trang trí:</strong> {calculateDecorateTotal(selectedPlanForView.decorates).toLocaleString()} VNĐ
+                                    </div>
+                                </>
+                            ) : (
+                                <p>Không có dịch vụ trang trí nào.</p>
+                            )}
+                        </div>
+
+                        <div className="form-group">
+                            <h3>Dịch Vụ MC/Quà Tặng</h3>
+                            {selectedPlanForView.presents.length > 0 ? (
+                                <>
+                                    <div className="item-list">
+                                        {selectedPlanForView.presents.map(item => (
+                                            <div key={item._id} className="list-item">
+                                                <div className="item-image-container">
+                                                    <img
+                                                        src={item.imageUrl || 'https://via.placeholder.com/120'}
+                                                        alt={item.name}
+                                                        className="item-image"
+                                                    />
+                                                </div>
+                                                <div className="item-details">
+                                                    <h4>{item.name}</h4>
+                                                    <div className="item-info">
+                                                        <span className="price">{item.price.toLocaleString()} VNĐ</span>
+                                                        <span className="quantity">Số lượng: {item.quantity || 1}</span>
+                                                        <span className="total-per-item">
+                                                            Tổng: {(item.price * (item.quantity || 1)).toLocaleString()} VNĐ
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="service-total">
+                                        <strong>Tổng giá dịch vụ Quà tặng:</strong> {calculatePresentTotal(selectedPlanForView.presents).toLocaleString()} VNĐ
+                                    </div>
+                                </>
+                            ) : (
+                                <p>Không có dịch vụ quà tặng nào.</p>
+                            )}
+                        </div>
+
+                        <div className="modal-actions">
+                            <button className="cancel-btn" onClick={handleCloseViewDetailModal}>
+                                <FontAwesomeIcon icon={faTimes} /> Đóng
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
