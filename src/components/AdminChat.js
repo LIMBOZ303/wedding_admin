@@ -1185,7 +1185,7 @@ const AdminChat = () => {
                                                                 </div>
                                                                 <div className="plan-message-body">
                                                                     <p><strong>Tên kế hoạch:</strong> {parsedContent.name || 'N/A'}</p>
-                                                                    <p><strong>Số lượng khách:</strong> {parsedContent.numberOfGuests || 'N/A'}</p>
+                                                                    {/* <p><strong>Số lượng khách:</strong> {parsedContent.numberOfGuests || 'N/A'}</p> */}
                                                                 </div>
                                                                 <div className="plan-message-footer">
                                                                     <button
