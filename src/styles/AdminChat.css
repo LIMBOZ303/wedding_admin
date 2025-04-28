@@ -1,4 +1,8 @@
-
+.confirmation-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #ccc;
+}
 /* Plan message card */
 .plan-message-card,
 .new-plan-message-card,

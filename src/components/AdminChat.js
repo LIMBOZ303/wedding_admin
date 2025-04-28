@@ -80,6 +80,8 @@ const AdminChat = () => {
     const [showViewDetailModal, setShowViewDetailModal] = useState(false);
     const [selectedPlanForView, setSelectedPlanForView] = useState(null);
 
+    const [isPlanConfirmed, setIsPlanConfirmed] = useState(false);
+
     const appContext = useContext(AppContext) || {};
     const setUnreadMessages = appContext.setUnreadMessages || (() => {
         console.warn('setUnreadMessages not available in AppContext, using local state');
@@ -224,17 +226,35 @@ const AdminChat = () => {
             userName: userName || (message.senderType === 'user' ? message.senderId : 'Khách hàng')
         };
 
-        // Handle plan message
+        // Xử lý tin nhắn kế hoạch
         if (processedMessage.messageType === 'plan' && processedMessage.senderType === 'user' && currentUserId === userId) {
             try {
                 const parsedContent = JSON.parse(processedMessage.message);
                 if (parsedContent.planId) {
                     setCurrentPlanId(parsedContent.planId);
+                    // Kiểm tra trạng thái kế hoạch
+                    const planDetails = await fetchPlanDetails(parsedContent.planId);
+                    // Đặt isPlanConfirmed thành true nếu trạng thái không phải "Đang chờ xác nhận"
+                    setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(planDetails.status));
                 } else {
-                    console.warn('No planId in plan message:', processedMessage.message);
+                    console.warn('Không có planId trong tin nhắn kế hoạch:', processedMessage.message);
                 }
             } catch (e) {
-                console.error('Lỗi parse JSON in handleNewMessage:', e, 'Content:', processedMessage.message);
+                console.error('Lỗi parse JSON trong handleNewMessage:', e, 'Nội dung:', processedMessage.message);
+            }
+        }
+
+        // Xử lý tin nhắn xác nhận
+        if (processedMessage.messageType === 'confirmation' && processedMessage.senderType === 'user') {
+            try {
+                const parsedContent = JSON.parse(processedMessage.message);
+                if (parsedContent.action === 'confirm' && parsedContent.planId === currentPlanId) {
+                    // Kiểm tra trạng thái kế hoạch từ API để xác nhận
+                    const planDetails = await fetchPlanDetails(parsedContent.planId);
+                    setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(planDetails.status));
+                }
+            } catch (e) {
+                console.error('Lỗi parse JSON trong tin nhắn xác nhận:', e);
             }
         }
 
@@ -245,7 +265,7 @@ const AdminChat = () => {
                 try {
                     setUnreadMessages(prev => prev + 1);
                 } catch (error) {
-                    console.error('Error updating unread messages count:', error);
+                    console.error('Lỗi khi cập nhật số lượng tin nhắn chưa đọc:', error);
                     setLocalUnreadCount(prev => prev + 1);
                 }
             }
@@ -451,7 +471,7 @@ const AdminChat = () => {
                     };
                 });
 
-                // Find the latest plan message from the user
+                // Tìm tin nhắn kế hoạch mới nhất từ người dùng
                 const planMessage = processedMessages
                     .filter(msg => msg.messageType === 'plan' && msg.senderType === 'user')
                     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
@@ -461,15 +481,22 @@ const AdminChat = () => {
                         const parsedContent = JSON.parse(planMessage.message);
                         if (parsedContent.planId) {
                             setCurrentPlanId(parsedContent.planId);
+                            // Lấy chi tiết kế hoạch để kiểm tra trạng thái xác nhận
+                            const planDetails = await fetchPlanDetails(parsedContent.planId);
+                            // Đặt isPlanConfirmed thành true nếu trạng thái không phải "Đang chờ xác nhận"
+                            setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(planDetails.status));
                         } else {
-                            setCurrentPlanId(null); // No valid planId in message
+                            setCurrentPlanId(null);
+                            setIsPlanConfirmed(false);
                         }
                     } catch (e) {
-                        console.error('Lỗi parse JSON in fetchMessages:', e, 'Content:', planMessage.message);
-                        setCurrentPlanId(null); // Error parsing, reset planId
+                        console.error('Lỗi parse JSON trong fetchMessages:', e, 'Nội dung:', planMessage.message);
+                        setCurrentPlanId(null);
+                        setIsPlanConfirmed(false);
                     }
                 } else {
-                    setCurrentPlanId(null); // No plan message found
+                    setCurrentPlanId(null);
+                    setIsPlanConfirmed(false);
                 }
 
                 setMessages(processedMessages);
@@ -502,20 +529,22 @@ const AdminChat = () => {
                 }, 300);
             }
         } catch (error) {
-            console.error('Error fetching messages:', error);
-            setCurrentPlanId(null); // Reset on error
+            console.error('Lỗi khi lấy tin nhắn:', error);
+            setCurrentPlanId(null);
+            setIsPlanConfirmed(false);
         } finally {
             setLoading(false);
             setRefreshingMessages(false);
         }
     };
 
-    const handleSelectUser = (userId) => {
+    const handleSelectUser = async (userId) => {
         setCurrentUserId(userId);
-        setCurrentPlanId(null); // Reset plan ID when switching users
-        fetchMessages(userId);
-        fetchUserInfo(userId);
-
+        setCurrentPlanId(null);
+        setIsPlanConfirmed(false);
+        await fetchMessages(userId);
+        await fetchUserInfo(userId);
+    
         if (socket) {
             socket.emit('markAsRead', { userId });
         }
@@ -642,6 +671,8 @@ const AdminChat = () => {
         try {
             const fetchedPlanDetails = await fetchPlanDetails(planId);
             setSelectedPlanForView(fetchedPlanDetails);
+            // Đặt isPlanConfirmed dựa trên trạng thái kế hoạch
+            setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(fetchedPlanDetails.status));
             setShowViewDetailModal(true);
         } catch (error) {
             Swal.fire({
@@ -1266,21 +1297,70 @@ const AdminChat = () => {
 
                                     <button
                                         className="confirmation-button"
-                                        onClick={() => {
-                                            if (!currentUserId || !socket || !currentPlanId) return;
-                                            const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
-                                            const messageData = {
-                                                senderId: 'admin',
-                                                receiverId: currentUserId,
-                                                message: JSON.stringify({ action: 'confirm', planId: currentPlanId }),
-                                                senderType: 'admin',
-                                                messageType: 'confirmation',
-                                                userName: userName
-                                            };
-                                            socket.emit('sendMessage', messageData);
+                                        onClick={async () => {
+                                            if (!currentUserId || !socket || !currentPlanId || isPlanConfirmed) return;
+
+                                            // Kiểm tra trạng thái kế hoạch từ API
+                                            try {
+                                                const planDetails = await fetchPlanDetails(currentPlanId);
+                                                if (planDetails.status !== 'Đang chờ xác nhận') {
+                                                    setIsPlanConfirmed(true);
+                                                    let message = '';
+                                                    switch (planDetails.status) {
+                                                        case 'Chưa đặt cọc':
+                                                            message = 'Yêu cầu xác nhận đã được gửi, đang chờ người dùng đặt cọc.';
+                                                            break;
+                                                        case 'Đang chờ':
+                                                            message = 'Kế hoạch đang trong trạng thái chờ xử lý.';
+                                                            break;
+                                                        case 'Đã đặt cọc':
+                                                            message = 'Kế hoạch đã được xác nhận và đặt cọc.';
+                                                            break;
+                                                        case 'Đã hủy':
+                                                            message = 'Kế hoạch đã bị hủy.';
+                                                            break;
+                                                        default:
+                                                            message = 'Không thể gửi yêu cầu xác nhận do trạng thái kế hoạch không phù hợp.';
+                                                    }
+                                                    Swal.fire({
+                                                        title: 'Thông báo',
+                                                        text: message,
+                                                        icon: 'info',
+                                                        confirmButtonText: 'OK',
+                                                    });
+                                                    return;
+                                                }
+
+                                                const userName = currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng';
+                                                const messageData = {
+                                                    senderId: 'admin',
+                                                    receiverId: currentUserId,
+                                                    message: JSON.stringify({ action: 'confirm', planId: currentPlanId }),
+                                                    senderType: 'admin',
+                                                    messageType: 'confirmation',
+                                                    userName: userName
+                                                };
+                                                socket.emit('sendMessage', messageData);
+                                                // Cập nhật trạng thái ngay lập tức để vô hiệu hóa nút
+                                                setIsPlanConfirmed(true);
+                                            } catch (error) {
+                                                console.error('Lỗi kiểm tra trạng thái kế hoạch:', error);
+                                                Swal.fire({
+                                                    title: 'Lỗi',
+                                                    text: 'Không thể kiểm tra trạng thái kế hoạch. Vui lòng thử lại.',
+                                                    icon: 'error',
+                                                    confirmButtonText: 'OK',
+                                                });
+                                            }
                                         }}
-                                        disabled={!currentUserId || !currentPlanId}
-                                        title={currentPlanId ? "Gửi yêu cầu xác nhận" : "Chưa có kế hoạch từ người dùng"}
+                                        disabled={!currentUserId || !currentPlanId || isPlanConfirmed}
+                                        title={
+                                            isPlanConfirmed
+                                                ? "Yêu cầu xác nhận đã được gửi hoặc kế hoạch đã được xác nhận"
+                                                : currentPlanId
+                                                    ? "Gửi yêu cầu xác nhận"
+                                                    : "Chưa có kế hoạch từ người dùng"
+                                        }
                                     >
                                         <FontAwesomeIcon icon={faCheck} />
                                         Gửi yêu cầu xác nhận
