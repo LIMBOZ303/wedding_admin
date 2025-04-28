@@ -96,12 +96,13 @@ const AdminChat = () => {
             if (result.success) {
                 return result.data;
             }
-            throw new Error('Không thể clone kế hoạch');
+            throw new Error(result.message || 'Không thể clone kế hoạch');
         } catch (error) {
             console.error('Lỗi clone kế hoạch:', error);
             throw error;
         }
     };
+
 
     const fetchPlanDetails = async (planId) => {
         try {
@@ -130,7 +131,6 @@ const AdminChat = () => {
                 body: JSON.stringify(planData),
             });
             const result = await response.json();
-            console.log('Update plan response:', result);
             if (!result.status) {
                 throw new Error(result.message || 'Không thể cập nhật kế hoạch');
             }
@@ -166,7 +166,7 @@ const AdminChat = () => {
     // Hàm tính tổng giá dịch vụ ẩm thực
     const calculateCateringTotal = (caterings, guestCount) => {
         if (!guestCount) return 0;
-        return caterings.reduce((total, item) => total + item.price * (guestCount / 10), 0);
+        return caterings.reduce((total, item) => total + item.price * Math.ceil(guestCount / 10), 0);
     };
 
     // Hàm tính tổng giá dịch vụ trang trí
@@ -610,17 +610,19 @@ const AdminChat = () => {
         setPlanLoading(true);
         try {
             await fetchPlanData();
+            const fetchedPlanDetails = await fetchPlanDetails(currentPlanId);
             const clonedPlan = await clonePlan(currentPlanId);
-            const fetchedPlanDetails = await fetchPlanDetails(clonedPlan.newPlanId);
-            setPlanDetails(fetchedPlanDetails);
+            const clonedPlanDetails = await fetchPlanDetails(clonedPlan.newPlanId);
+            setPlanDetails(clonedPlanDetails);
             setEditedPlan({
                 _id: clonedPlan.newPlanId,
-                name: fetchedPlanDetails.name || 'Kế hoạch mới',
-                SanhId: fetchedPlanDetails.SanhId?._id || fetchedPlanDetails.SanhId,
-                cateringId: fetchedPlanDetails.caterings?.map(item => item._id) || [],
-                decorateId: fetchedPlanDetails.decorates?.map(item => item._id) || [],
-                presentId: fetchedPlanDetails.presents?.map(item => item._id) || [],
-                totalPrice: fetchedPlanDetails.totalPrice || 0,
+                name: clonedPlanDetails.name || 'Kế hoạch mới',
+                SanhId: clonedPlanDetails.SanhId?._id || clonedPlanDetails.SanhId,
+                cateringId: clonedPlanDetails.caterings?.map(item => item._id) || [],
+                decorateId: clonedPlanDetails.decorates?.map(item => item._id) || [],
+                presentId: clonedPlanDetails.presents?.map(item => item._id) || [],
+                totalPrice: clonedPlanDetails.totalPrice || 0,
+                numberOfGuests: clonedPlanDetails.plansoluongkhach || fetchedPlanDetails.plansoluongkhach || 0,
             });
             setShowPlanModal(true);
         } catch (error) {
@@ -672,6 +674,10 @@ const AdminChat = () => {
             setPlanError('Vui lòng nhập Tên Kế hoạch và chọn Sảnh!');
             return;
         }
+        if (!editedPlan.numberOfGuests || editedPlan.numberOfGuests <= 0) {
+            setPlanError('Vui lòng nhập số lượng khách hợp lệ!');
+            return;
+        }
         setPlanLoading(true);
         try {
             const updateData = {
@@ -682,13 +688,12 @@ const AdminChat = () => {
                 decorates: editedPlan.decorateId,
                 presents: editedPlan.presentId.map(id => ({
                     id,
-                    quantity: planDetails?.presents?.find(p => p._id === id)?.quantity || 1,
+                    quantity: planDetails?.presents?.find(p => p._id === id)?.quantity || editedPlan.numberOfGuests || 1,
                 })),
                 totalPrice: calculateTotalPrice(editedPlan),
+                plansoluongkhach: editedPlan.numberOfGuests,
                 forceDuplicate: false,
             };
-
-            console.log('Sending update data:', JSON.stringify(updateData, null, 2));
 
             const updatedPlan = await updatePlan(editedPlan._id, updateData);
 
@@ -699,14 +704,13 @@ const AdminChat = () => {
                 message: JSON.stringify({
                     action: 'new_plan',
                     planId: editedPlan._id,
-                    name: editedPlan.name
+                    name: editedPlan.name,
+                    numberOfGuests: editedPlan.numberOfGuests,
                 }, null, 2),
                 senderType: 'admin',
                 messageType: 'new_plan',
                 userName: userName,
             };
-
-            console.log('Gửi tin nhắn new_plan:', JSON.stringify(messageData, null, 2));
 
             socket.emit('sendMessage', messageData);
 
@@ -739,9 +743,11 @@ const AdminChat = () => {
         let total = 0;
         const selectedLobby = planOptions.sanh.find(item => item._id === plan.SanhId);
         if (selectedLobby) total += selectedLobby.price || 0;
+        const guestCount = plan.numberOfGuests || planDetails?.plansoluongkhach || 0;
+        const soLuongBan = guestCount ? Math.ceil(guestCount / 10) : 0;
         plan.cateringId.forEach(id => {
             const item = planOptions.catering.find(item => item._id === id);
-            if (item) total += item.price || 0;
+            if (item && soLuongBan) total += (item.price || 0) * soLuongBan;
         });
         plan.decorateId.forEach(id => {
             const item = planOptions.decorate.find(item => item._id === id);
@@ -749,7 +755,7 @@ const AdminChat = () => {
         });
         plan.presentId.forEach(id => {
             const item = planOptions.present.find(item => item._id === id);
-            if (item) total += (item.price || 0) * (planDetails?.presents?.find(p => p._id === id)?.quantity || 1);
+            if (item) total += (item.price || 0) * (planDetails?.presents?.find(p => p._id === id)?.quantity || plan.numberOfGuests || 1);
         });
         return total;
     };
@@ -806,7 +812,7 @@ const AdminChat = () => {
                                             type={singleSelect ? 'radio' : 'checkbox'}
                                             name={singleSelect ? 'sanh' : type}
                                             checked={singleSelect ? selectedIds === item._id : selectedIds.includes(item._id)}
-                                            onChange={() => {}}
+                                            onChange={() => { }}
                                             disabled={planLoading}
                                         />
                                         {(singleSelect ? selectedIds === item._id : selectedIds.includes(item._id)) && (
@@ -829,7 +835,7 @@ const AdminChat = () => {
                                                     <input
                                                         type="number"
                                                         min="1"
-                                                        value={planDetails?.presents?.find(p => p._id === item._id)?.quantity || 1}
+                                                        value={planDetails?.presents?.find(p => p._id === item._id)?.quantity || editedPlan.numberOfGuests || 1}
                                                         onChange={(e) => {
                                                             const quantity = parseInt(e.target.value) || 1;
                                                             setPlanDetails(prev => ({
@@ -1094,7 +1100,7 @@ const AdminChat = () => {
                                         title="Tải lại tin nhắn"
                                         disabled={refreshingMessages}
                                     >
-                                        {/* <FontAwesomeIcon icon={faSyncdynamodb}/> */}
+                                        <FontAwesomeIcon icon={faSync} />
                                     </button>
                                 </div>
                             </div>
@@ -1135,25 +1141,15 @@ const AdminChat = () => {
                                         let senderName = message.senderType === 'user'
                                             ? (message.userName || findUserName(message.senderId) || currentUserInfo?.name || 'Khách hàng')
                                             : (currentUserInfo?.name || findUserName(currentUserId) || 'Khách hàng');
-                                        let messageContent = message.message;
                                         let parsedContent = {};
 
+                                        // Parse JSON content for plan-related messages
                                         if ((isPlan || isNewPlan || isConfirmation) && typeof message.message === 'string') {
-                                            if (message.message.trim().startsWith('{') || message.message.trim().startsWith('[')) {
-                                                try {
-                                                    parsedContent = JSON.parse(message.message);
-                                                    messageContent = parsedContent.details
-                                                        ? JSON.stringify(parsedContent.details, null, 2)
-                                                        : parsedContent.name
-                                                            ? JSON.stringify({ planId: parsedContent.planId, name: parsedContent.name }, null, 2)
-                                                            : message.message;
-                                                } catch (e) {
-                                                    console.error('Lỗi parse JSON:', e, 'Content:', message.message, 'MessageType:', message.messageType);
-                                                    messageContent = message.message;
-                                                }
-                                            } else {
-                                                console.warn('Non-JSON content detected:', message.messageType, 'Content:', message.message);
-                                                messageContent = message.message;
+                                            try {
+                                                parsedContent = JSON.parse(message.message);
+                                            } catch (e) {
+                                                console.error('Lỗi parse JSON:', e, 'Content:', message.message, 'MessageType:', message.messageType);
+                                                parsedContent = { error: 'Invalid content' };
                                             }
                                         }
 
@@ -1181,34 +1177,60 @@ const AdminChat = () => {
                                                                     <FontAwesomeIcon icon={faExpand} />
                                                                 </div>
                                                             </div>
-                                                        ) : isPlan || isNewPlan ? (
-                                                            <div>
-                                                                <pre className="plan-message">{messageContent}</pre>
-                                                                {isPlan && message.senderType === 'user' && (
+                                                        ) : isPlan && message.senderType === 'user' ? (
+                                                            <div className="plan-message-card">
+                                                                <div className="plan-message-header">
+                                                                    <FontAwesomeIcon icon={faInfoCircle} className="plan-icon" />
+                                                                    <h4>Kế hoạch từ người dùng</h4>
+                                                                </div>
+                                                                <div className="plan-message-body">
+                                                                    <p><strong>Tên kế hoạch:</strong> {parsedContent.name || 'N/A'}</p>
+                                                                    <p><strong>Số lượng khách:</strong> {parsedContent.numberOfGuests || 'N/A'}</p>
+                                                                </div>
+                                                                <div className="plan-message-footer">
                                                                     <button
                                                                         className="view-details-button"
-                                                                        onClick={() => {
-                                                                            try {
-                                                                                const parsed = JSON.parse(message.message);
-                                                                                if (parsed.planId) {
-                                                                                    handleViewPlanDetails(parsed.planId);
-                                                                                }
-                                                                            } catch (e) {
-                                                                                console.error('Lỗi parse JSON for view details:', e);
-                                                                            }
-                                                                        }}
+                                                                        onClick={() => parsedContent.planId && handleViewPlanDetails(parsedContent.planId)}
+                                                                        disabled={!parsedContent.planId}
                                                                         title="Xem chi tiết kế hoạch"
                                                                     >
                                                                         Xem chi tiết
                                                                     </button>
-                                                                )}
+                                                                </div>
+                                                            </div>
+                                                        ) : isNewPlan && message.senderType === 'admin' ? (
+                                                            <div className="new-plan-message-card">
+                                                                <div className="plan-message-header">
+                                                                    <FontAwesomeIcon icon={faCheck} className="plan-icon success" />
+                                                                    <h4>Kế hoạch mới đã gửi</h4>
+                                                                </div>
+                                                                <div className="plan-message-body">
+                                                                    <p><strong>Tên kế hoạch:</strong> {parsedContent.name || 'N/A'}</p>
+                                                                    <p><strong>Số lượng khách:</strong> {parsedContent.numberOfGuests || 'N/A'}</p>
+                                                                </div>
+                                                                <div className="plan-message-footer">
+                                                                    <button
+                                                                        className="view-details-button"
+                                                                        onClick={() => parsedContent.planId && handleViewPlanDetails(parsedContent.planId)}
+                                                                        disabled={!parsedContent.planId}
+                                                                        title="Xem chi tiết kế hoạch"
+                                                                    >
+                                                                        Xem chi tiết
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         ) : isConfirmation && parsedContent.action === 'confirm' ? (
-                                                            <div>
-                                                                <p>Yêu cầu xác nhận kế hoạch {parsedContent.planId}</p>
+                                                            <div className="confirmation-message-card">
+                                                                <div className="plan-message-header">
+                                                                    <FontAwesomeIcon icon={faCheck} className="plan-icon confirmation" />
+                                                                    <h4>Yêu cầu xác nhận kế hoạch</h4>
+                                                                </div>
+                                                                <div className="plan-message-body">
+                                                                    <p><strong>Mã kế hoạch:</strong> {parsedContent.planId || 'N/A'}</p>
+                                                                </div>
                                                             </div>
                                                         ) : (
-                                                            <p>{messageContent}</p>
+                                                            <p>{message.message}</p>
                                                         )}
                                                         <div className="message-footer">
                                                             <span className="message-time">{formatTime(message.createdAt)}</span>
@@ -1369,6 +1391,28 @@ const AdminChat = () => {
                                     />
                                 </div>
 
+                                <div className="form-group">
+                                    <label htmlFor="edit-plan-guests">Số Lượng Khách <span className="required">*</span></label>
+                                    <input
+                                        id="edit-plan-guests"
+                                        type="number"
+                                        min="1"
+                                        value={editedPlan.numberOfGuests}
+                                        onChange={(e) => {
+                                            const value = parseInt(e.target.value) || 0;
+                                            setEditedPlan(prev => ({ ...prev, numberOfGuests: value }));
+                                        }}
+                                        disabled={planLoading}
+                                        placeholder="Nhập số lượng khách..."
+                                        className="edit-input"
+                                    />
+                                    {planOptions.sanh.find(item => item._id === editedPlan.SanhId)?.SoLuongKhach && (
+                                        <small className="capacity-info">
+                                            Sảnh tối đa: {planOptions.sanh.find(item => item._id === editedPlan.SanhId).SoLuongKhach} khách
+                                        </small>
+                                    )}
+                                </div>
+
                                 {renderPlanList('sanh', planOptions.sanh, editedPlan.SanhId)}
                                 {renderPlanList('catering', planOptions.catering, editedPlan.cateringId)}
                                 {renderPlanList('decorate', planOptions.decorate, editedPlan.decorateId)}
@@ -1425,11 +1469,11 @@ const AdminChat = () => {
                                     <p><span className="label">Số lượng khách:</span> <span className="value">{selectedPlanForView.plansoluongkhach || 'Chưa xác định'}</span></p>
                                     <p><span className="label">Người phụ trách:</span> <span className="value">{selectedPlanForView.UserId?.name || 'N/A'}</span></p>
                                     <p>
-                                        <span className="label">Trạng thái:</span> 
-                                        <span className={`value status ${selectedPlanForView.status === 'Chưa kích hoạt' ? 'inactive' : 
-                                                                        selectedPlanForView.status === 'Đã kích hoạt' ? 'active' : 
-                                                                        selectedPlanForView.status === 'Đang chờ xác nhận' ? 'pending-confirmation' : 
-                                                                        'canceled'}`}>
+                                        <span className="label">Trạng thái:</span>
+                                        <span className={`value status ${selectedPlanForView.status === 'Chưa kích hoạt' ? 'inactive' :
+                                            selectedPlanForView.status === 'Đã kích hoạt' ? 'active' :
+                                                selectedPlanForView.status === 'Đang chờ xác nhận' ? 'pending-confirmation' :
+                                                    'canceled'}`}>
                                             {selectedPlanForView.status}
                                         </span>
                                     </p>
@@ -1474,7 +1518,7 @@ const AdminChat = () => {
                                                         <span className="price">{item.price.toLocaleString()} VNĐ</span>
                                                         {selectedPlanForView.plansoluongkhach && (
                                                             <span className="total-per-item">
-                                                                Tổng: {(item.price * (selectedPlanForView.plansoluongkhach / 10)).toLocaleString()} VNĐ
+                                                                Tổng: {(item.price * Math.ceil(selectedPlanForView.plansoluongkhach / 10)).toLocaleString()} VNĐ
                                                             </span>
                                                         )}
                                                     </div>

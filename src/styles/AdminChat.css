@@ -1,4 +1,117 @@
+
+/* Plan message card */
+.plan-message-card,
+.new-plan-message-card,
+.confirmation-message-card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 10px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+}
+
+/* Header */
+.plan-message-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.plan-message-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.plan-message-header .plan-icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.plan-message-header .plan-icon.success {
+  color: #28a745; /* Green for success */
+}
+
+.plan-message-header .plan-icon.confirmation {
+  color: #007bff; /* Blue for confirmation */
+}
+
+/* Body */
+.plan-message-body {
+  margin-bottom: 10px;
+}
+
+.plan-message-body p {
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.plan-message-body p strong {
+  color: #333;
+}
+
+/* Footer */
+.plan-message-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .view-details-button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.view-details-button:hover {
+  background: #0056b3;
+}
+
+.view-details-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* New plan card */
+.new-plan-message-card {
+  background: #e6f4ea; /* Light green background for sent plans */
+}
+
+/* Confirmation card */
+.confirmation-message-card {
+  background: #e7f1ff; /* Light blue background for confirmation */
+  padding: 10px;
+}
+
+.confirmation-message-card .plan-message-body p {
+  font-size: 13px;
+}
+
+/* Ensure message alignment */
+.message.sent .plan-message-card,
+.message.sent .new-plan-message-card,
+.message.sent .confirmation-message-card {
+  background: #007bff;
+  color: #fff;
+}
+
+.message.sent .plan-message-body p strong,
+.message.sent .plan-message-body p {
+  color: #fff;
+}
+
+.message.sent .plan-message-header h4 {
+  color: #fff;
+}
+
+.message.sent .plan-icon {
+  color: #fff;
+}.view-details-button {
     margin-top: 8px;
     padding: 6px 12px;
     background-color: #007bff;
