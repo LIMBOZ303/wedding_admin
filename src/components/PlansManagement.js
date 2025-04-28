@@ -90,7 +90,7 @@ const PlansManagement = () => {
                                     <p><strong>Sảnh:</strong> {plan.SanhId?.name || 'N/A'}</p>
                                     <p><strong>Tổng giá:</strong> {plan.totalPrice.toLocaleString()} VNĐ</p>
                                     <p><strong>Ngày sự kiện:</strong> {plan.plandateevent ? new Date(plan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</p>
-                                    <p><strong>Người phụ trách:</strong> {plan.UserId?.name || 'N/A'}</p>
+                                    <p><strong>Khách hàng:</strong> {plan.UserId?.name || 'N/A'}</p>
                                     <p>
                                         <strong>Trạng thái:</strong> 
                                         <span className={`status ${plan.status === 'Chưa kích hoạt' ? 'inactive' : 
@@ -129,7 +129,7 @@ const PlansManagement = () => {
                                     <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlan.totalPrice.toLocaleString()} VNĐ</span></p>
                                     <p><span className="label">Ngày sự kiện:</span> <span className="value">{selectedPlan.plandateevent ? new Date(selectedPlan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span></p>
                                     <p><span className="label">Số lượng khách:</span> <span className="value">{selectedPlan.plansoluongkhach || 'Chưa xác định'}</span></p>
-                                    <p><span className="label">Người phụ trách:</span> <span className="value">{selectedPlan.UserId?.name || 'N/A'}</span></p>
+                                    <p><span className="label">Khách Hàng:</span> <span className="value">{selectedPlan.UserId?.name || 'N/A'}</span></p>
                                     <p>
                                         <span className="label">Trạng thái:</span> 
                                         <span className={`value status ${selectedPlan.status === 'Chưa kích hoạt' ? 'inactive' : 
