@@ -1,3 +1,28 @@
+.status-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 20px;
+}
+
+.status-filter-container label {
+    font-size: 14px;
+    color: #333;
+}
+
+.status-filter {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.status-filter:focus {
+    outline: none;
+    border-color: #007bff;
+}
 /* Sanh Detail Section */
 .sanh-detail-section {
     background: #f8f9fa;

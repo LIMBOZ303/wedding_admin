@@ -37,6 +37,8 @@ const PlansManagement = () => {
     const [planDetails, setPlanDetails] = useState(null);
     const [loadingPlanDetails, setLoadingPlanDetails] = useState(false);
 
+    const [transactionStatusFilter, setTransactionStatusFilter] = useState('all');
+
     const lastFetchTime = useRef(Date.now());
     const isMounted = useRef(true);
     const lastVisibilityChange = useRef(Date.now());
@@ -202,17 +204,26 @@ const PlansManagement = () => {
 
     const filteredTransactions = React.useMemo(() => {
         return transactions.filter((tx) => {
-            if (!searchTerm) return true;
-
+            // Lọc theo searchTerm
+            if (!searchTerm) {
+                // Lọc theo trạng thái
+                if (transactionStatusFilter === 'all') return true;
+                return tx.status === transactionStatusFilter;
+            }
+    
             const searchString = searchTerm.toLowerCase();
-            return (
+            const matchesSearch = (
                 (tx._id && String(tx._id).toLowerCase().includes(searchString)) ||
                 (tx.userId?.name && tx.userId.name.toLowerCase().includes(searchString)) ||
                 (tx.userId?.email && tx.userId.email.toLowerCase().includes(searchString)) ||
                 (tx.planName && tx.planName.toLowerCase().includes(searchString))
             );
+    
+            // Lọc theo trạng thái
+            if (transactionStatusFilter === 'all') return matchesSearch;
+            return matchesSearch && tx.status === transactionStatusFilter;
         });
-    }, [transactions, searchTerm]);
+    }, [transactions, searchTerm, transactionStatusFilter]);
 
     const requestSort = (key) => {
         let direction = 'ascending';
@@ -314,8 +325,11 @@ const PlansManagement = () => {
     };
 
     const fetchPlanDetails = async (planId) => {
-        if (!planId) return;
-        
+        if (!planId) {
+            setPlanDetails(null);
+            return;
+        }
+    
         try {
             setLoadingPlanDetails(true);
             const response = await axios.get(
@@ -327,18 +341,23 @@ const PlansManagement = () => {
                     },
                 }
             );
-
+    
             if (response.data.status) {
                 setPlanDetails(response.data.data);
+            } else {
+                console.error('API không trả về dữ liệu hợp lệ:', response.data);
+                setPlanDetails(null);
             }
         } catch (err) {
-            console.error('Lỗi khi lấy thông tin kế hoạch:', err);
+            console.error('Lỗi khi lấy thông tin kế hoạch:', err.message);
+            setPlanDetails(null); // Vẫn cho phép modal hiển thị dù không có chi tiết kế hoạch
         } finally {
             setLoadingPlanDetails(false);
         }
     };
 
     const handleRowClick = async (transaction) => {
+        console.log('Row clicked:', transaction); // Thêm log để kiểm tra
         setSelectedTransaction(transaction);
         if (transaction.planId) {
             await fetchPlanDetails(transaction.planId);
@@ -437,6 +456,23 @@ const PlansManagement = () => {
                 <div className="transactions-header">
                     <h2>Quản lý Giao dịch</h2>
                     <div className="header-actions">
+                        {/* Bộ lọc trạng thái */}
+                        <div className="status-filter-container">
+                            <label htmlFor="status-filter">Lọc theo trạng thái: </label>
+                            <select
+                                id="status-filter"
+                                value={transactionStatusFilter}
+                                onChange={(e) => setTransactionStatusFilter(e.target.value)}
+                                className="status-filter"
+                            >
+                                <option value="all">Tất cả</option>
+                                
+                                <option value="Đang chờ">Chờ xác nhận</option>
+                                <option value="Đã đặt cọc">Đã đặt cọc</option>
+                                <option value="Đã hủy">Đã hủy</option>
+                            </select>
+                        </div>
+                        {/* Thanh tìm kiếm */}
                         <div className="search-container">
                             <FontAwesomeIcon icon={faSearch} className="search-icon" />
                             <input
@@ -454,13 +490,13 @@ const PlansManagement = () => {
                         </div>
                     </div>
                 </div>
-
+    
                 {error && (
                     <div className="error-message">
                         {error}
                     </div>
                 )}
-
+    
                 <div className="transactions-content">
                     {loadingTransactions ? (
                         <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
@@ -472,9 +508,15 @@ const PlansManagement = () => {
                     ) : filteredTransactions.length === 0 ? (
                         <div className="no-data">
                             <FontAwesomeIcon icon={faExclamationTriangle} size="2x" />
-                            <p>Không tìm thấy giao dịch khớp với tìm kiếm</p>
-                            <button onClick={() => setSearchTerm('')} className="clear-search-button">
-                                Xóa tìm kiếm
+                            <p>Không tìm thấy giao dịch khớp với tìm kiếm hoặc bộ lọc</p>
+                            <button
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setTransactionStatusFilter('all');
+                                }}
+                                className="clear-search-button"
+                            >
+                                Xóa bộ lọc
                             </button>
                         </div>
                     ) : (
@@ -534,120 +576,116 @@ const PlansManagement = () => {
                         </div>
                     )}
                 </div>
-
+    
                 {selectedTransaction && (
-                    <div className="transaction-modal-overlay" onClick={closeModal}>
-                        <div className="transaction-modal" onClick={(e) => e.stopPropagation()}>
-                            <div className="modal-header">
-                                <h3>Chi tiết Giao dịch</h3>
-                                <button className="modal-close" onClick={closeModal}>
-                                    <FontAwesomeIcon icon={faTimes} />
-                                </button>
+    <div className="transaction-modal-overlay" onClick={closeModal}>
+        <div className="transaction-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+                <h3>Chi tiết Giao dịch</h3>
+                <button className="modal-close" onClick={closeModal}>
+                    <FontAwesomeIcon icon={faTimes} />
+                </button>
+            </div>
+            <div className="transaction-details">
+                <div className="section-title">Thông tin giao dịch</div>
+                <div className="detail-group transaction-id-group">
+                    <span className="detail-label">Mã giao dịch</span>
+                    <span className="detail-value transaction-id">{selectedTransaction._id || 'N/A'}</span>
+                </div>
+                <div className="detail-group">
+                    <span className="detail-label">Người đặt cọc</span>
+                    <span className="detail-value">{selectedTransaction.userId?.name || 'N/A'}</span>
+                </div>
+                <div className="detail-group">
+                    <span className="detail-label">Email</span>
+                    <span className="detail-value">{selectedTransaction.userId?.email || 'N/A'}</span>
+                </div>
+                <div className="detail-group">
+                    <span className="detail-label">Tên kế hoạch</span>
+                    <span className="detail-value">{selectedTransaction.planName || 'Không có tên kế hoạch'}</span>
+                </div>
+                <div className="detail-group">
+                    <span className="detail-label">Trạng thái</span>
+                    <span className="detail-value status">{getStatusBadge(selectedTransaction.status)}</span>
+                </div>
+                <div className="detail-group">
+                    <span className="detail-label">Ngày tạo giao dịch</span>
+                    <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
+                </div>
+
+                {loadingPlanDetails ? (
+                    <LoadingSpinner size="small" text="Đang tải thông tin kế hoạch..." />
+                ) : planDetails ? (
+                    <>
+                        <div className="section-title">Chi tiết kế hoạch</div>
+                        <div className="plan-details-section">
+                            <div className="plan-image-container">
+                                <img 
+                                    src={planDetails.image || 'https://via.placeholder.com/120'} 
+                                    alt={planDetails.name}
+                                    className="plan-image"
+                                />
                             </div>
-                            <div className="transaction-details">
-                                <div className="section-title">Thông tin giao dịch</div>
-                                <div className="detail-group transaction-id-group">
-                                    <span className="detail-label">Mã giao dịch</span>
-                                    <span className="detail-value transaction-id">{selectedTransaction._id || 'N/A'}</span>
+                            <div className="plan-info">
+                                <div className="detail-group">
+                                    <span className="detail-label">Sảnh</span>
+                                    <span className="detail-value">{planDetails.sanhName || 'N/A'}</span>
                                 </div>
                                 <div className="detail-group">
-                                    <span className="detail-label">Người đặt cọc</span>
-                                    <span className="detail-value">{selectedTransaction.userId?.name || 'N/A'}</span>
+                                    <span className="detail-label">Tổng giá</span>
+                                    <span className="detail-value price">{planDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ</span>
                                 </div>
                                 <div className="detail-group">
-                                    <span className="detail-label">Email</span>
-                                    <span className="detail-value">{selectedTransaction.userId?.email || 'N/A'}</span>
+                                    <span className="detail-label">Ngày tổ chức</span>
+                                    <span className="detail-value">{formatDate(planDetails.eventDate)}</span>
                                 </div>
                                 <div className="detail-group">
-                                    <span className="detail-label">Tên kế hoạch</span>
-                                    <span className="detail-value">
-                                        {selectedTransaction.planName || 'Không có tên kế hoạch'}
-                                    </span>
+                                    <span className="detail-label">Số bàn</span>
+                                    <span className="detail-value">{planDetails.tableCount || 'N/A'}</span>
                                 </div>
                                 <div className="detail-group">
-                                    <span className="detail-label">Trạng thái</span>
-                                    <span className="detail-value status">{getStatusBadge(selectedTransaction.status)}</span>
+                                    <span className="detail-label">Menu</span>
+                                    <span className="detail-value">{planDetails.menuName || 'N/A'}</span>
                                 </div>
                                 <div className="detail-group">
-                                    <span className="detail-label">Ngày tạo giao dịch</span>
-                                    <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
-                                </div>
-
-                                {loadingPlanDetails ? (
-                                    <LoadingSpinner size="small" text="Đang tải thông tin kế hoạch..." />
-                                ) : planDetails ? (
-                                    <>
-                                        <div className="section-title">Chi tiết kế hoạch</div>
-                                        <div className="plan-details-section">
-                                            <div className="plan-image-container">
-                                                <img 
-                                                    src={planDetails.image || 'placeholder.jpg'} 
-                                                    alt={planDetails.name}
-                                                    className="plan-image"
-                                                />
+                                    <span className="detail-label">Dịch vụ</span>
+                                    <div className="services-list">
+                                        {planDetails.services?.map((service, index) => (
+                                            <div key={index} className="service-item">
+                                                {service.name} - {service.price?.toLocaleString('vi-VN')} VNĐ
                                             </div>
-                                            <div className="plan-info">
-                                                <div className="detail-group">
-                                                    <span className="detail-label">Sảnh</span>
-                                                    <span className="detail-value">{planDetails.sanhName || 'N/A'}</span>
-                                                </div>
-                                                <div className="detail-group">
-                                                    <span className="detail-label">Tổng giá</span>
-                                                    <span className="detail-value price">
-                                                        {planDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ
-                                                    </span>
-                                                </div>
-                                                <div className="detail-group">
-                                                    <span className="detail-label">Ngày tổ chức</span>
-                                                    <span className="detail-value">{formatDate(planDetails.eventDate)}</span>
-                                                </div>
-                                                <div className="detail-group">
-                                                    <span className="detail-label">Số bàn</span>
-                                                    <span className="detail-value">{planDetails.tableCount || 'N/A'}</span>
-                                                </div>
-                                                <div className="detail-group">
-                                                    <span className="detail-label">Menu</span>
-                                                    <span className="detail-value">{planDetails.menuName || 'N/A'}</span>
-                                                </div>
-                                                <div className="detail-group">
-                                                    <span className="detail-label">Dịch vụ</span>
-                                                    <div className="services-list">
-                                                        {planDetails.services?.map((service, index) => (
-                                                            <div key={index} className="service-item">
-                                                                {service.name} - {service.price?.toLocaleString('vi-VN')} VNĐ
-                                                            </div>
-                                                        )) || 'Không có dịch vụ'}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="no-plan-details">
-                                        Không có thông tin chi tiết kế hoạch
+                                        )) || 'Không có dịch vụ'}
                                     </div>
-                                )}
-
-                                {selectedTransaction.status !== 'Đã đặt cọc' &&
-                                    selectedTransaction.status !== 'Đã hủy' &&
-                                    userRole === 'admin' && (
-                                        <div className="detail-group actions">
-                                            <button
-                                                className="button-confirm"
-                                                onClick={() => {
-                                                    confirmTransaction(selectedTransaction._id);
-                                                    closeModal();
-                                                }}
-                                                disabled={loadingConfirm[selectedTransaction._id]}
-                                            >
-                                                <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
-                                            </button>
-                                        </div>
-                                    )}
+                                </div>
                             </div>
                         </div>
+                    </>
+                ) : (
+                    <div className="no-plan-details">
+                        Không có thông tin chi tiết kế hoạch
                     </div>
                 )}
+
+                {selectedTransaction.status !== 'Đã đặt cọc' &&
+                    selectedTransaction.status !== 'Đã hủy' &&
+                    userRole === 'admin' && (
+                        <div className="detail-group actions">
+                            <button
+                                className="button-confirm"
+                                onClick={() => {
+                                    confirmTransaction(selectedTransaction._id);
+                                    closeModal();
+                                }}
+                                disabled={loadingConfirm[selectedTransaction._id]}
+                            >
+                                <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                            </button>
+                        </div>
+                    )}
+            </div>
+        </div>
+    </div>
+)}
             </div>
         );
     };
