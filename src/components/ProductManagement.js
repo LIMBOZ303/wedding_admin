@@ -77,6 +77,7 @@ const ProductManagement = () => {
   const [editSelectedImage, setEditSelectedImage] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   const [addFormType, setAddFormType] = useState("food");
   const [giftCategories, setGiftCategories] = useState([]);
@@ -986,6 +987,11 @@ const ProductManagement = () => {
     }
   };
 
+  // Thêm hàm mới để mở modal cập nhật
+  const handleOpenUpdateModal = () => {
+    setShowUpdateModal(true);
+  };
+
   // Khi nhấn nút Thêm
   const handleOpenAddModal = () => {
     // Reset all form fields
@@ -1162,7 +1168,7 @@ const ProductManagement = () => {
                           className="button-detail"
                           onClick={() => handleShowDetail(item._id)}
                         >
-                          Chi Tiết
+                          <i className="fas fa-eye"></i> Chi Tiết
                         </button>
                       </td>
                     </tr>
@@ -1177,7 +1183,7 @@ const ProductManagement = () => {
           )}
 
           {/* Modal Chi Tiết */}
-          {selectedItem && (
+          {selectedItem && !showUpdateModal && (
             <div className="detail-card">
               <div className="detail-card-content">
                 <button
@@ -1204,307 +1210,57 @@ const ProductManagement = () => {
                 <p>
                   <strong>ID:</strong> {selectedItem._id}
                 </p>
-                {selectedItem.type === "DichVu" ? (
+                <p>
+                  <strong>Tên:</strong> {selectedItem.name}
+                </p>
+                <p>
+                  <strong>Giá:</strong> {formatCurrency(selectedItem.price)} VND
+                </p>
+                {selectedItem.type === "DichVu" && (
                   <>
-                    <div>
-                      <label><strong>Tên:</strong></label>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Giá:</strong></label>
-                      <input
-                        type="text"
-                        value={editPrice}
-                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
-                      />
-                      <span className="current-price">
-                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
-                      </span>
-                    </div>
-                    <div>
-                      <label><strong>Loại dịch vụ:</strong></label>
-                      <select
-                        value={editCate}
-                        onChange={(e) => setEditCate(e.target.value)}
-                      >
-                        <option value="">-- Chọn loại dịch vụ --</option>
-                        {cateringCategories.map(category => (
-                          <option key={category._id} value={category._id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                      {cateringCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
-                          Đang tải danh sách loại dịch vụ...
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label><strong>Mô tả:</strong></label>
-                      <input
-                        type="text"
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Hình ảnh:</strong></label>
-                      <div className="image-upload-container">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleEditImageUpload}
-                          className="image-upload-input"
-                          id="edit-food-image-upload"
-                        />
-                        <label htmlFor="edit-food-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
-                        </span>
-                      </div>
-                      {editImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh hiện tại:</strong></p>
-                          <img src={editImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
+                    <p>
+                      <strong>Loại dịch vụ:</strong> {selectedItem.cate_cateringId?.name || "Chưa có"}
+                    </p>
+                    <p>
+                      <strong>Mô tả:</strong> {selectedItem.description || "Không có mô tả"}
+                    </p>
                   </>
-                ) : selectedItem.type === "QuaTang" ? (
+                )}
+                {selectedItem.type === "QuaTang" && (
                   <>
-                    <div>
-                      <label><strong>Tên:</strong></label>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Giá:</strong></label>
-                      <input
-                        type="text"
-                        value={editPrice}
-                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
-                      />
-                      <span className="current-price">
-                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
-                      </span>
-                    </div>
-                    <div>
-                      <label><strong>Loại quà tặng:</strong></label>
-                      <select
-                        value={editCate}
-                        onChange={(e) => setEditCate(e.target.value)}
-                      >
-                        <option value="">-- Chọn loại quà tặng --</option>
-                        {giftCategories.map(category => (
-                          <option key={category._id} value={category._id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                      {giftCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
-                          Đang tải danh sách loại quà tặng...
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label><strong>Mô tả:</strong></label>
-                      <input
-                        type="text"
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Hình ảnh:</strong></label>
-                      <div className="image-upload-container">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleEditImageUpload}
-                          className="image-upload-input"
-                          id="edit-gift-image-upload"
-                        />
-                        <label htmlFor="edit-gift-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
-                        </span>
-                      </div>
-                      {editImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh hiện tại:</strong></p>
-                          <img src={editImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label><strong>Trạng thái:</strong></label>
-                      <input
-                        type="text"
-                        value={editStatus}
-                        onChange={(e) => setEditStatus(e.target.value)}
-                      />
-                    </div>
+                    <p>
+                      <strong>Loại quà tặng:</strong> {selectedItem.Cate_presentId?.name || "Chưa có"}
+                    </p>
+                    <p>
+                      <strong>Mô tả:</strong> {selectedItem.Description || "Không có mô tả"}
+                    </p>
+                    <p>
+                      <strong>Trạng thái:</strong> {selectedItem.Status || "Chưa có"}
+                    </p>
                   </>
-                ) : selectedItem.type === "TrangTri" ? (
+                )}
+                {selectedItem.type === "TrangTri" && (
                   <>
-                    <div>
-                      <label><strong>Tên:</strong></label>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Giá:</strong></label>
-                      <input
-                        type="text"
-                        value={editPrice}
-                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
-                      />
-                      <span className="current-price">
-                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
-                      </span>
-                    </div>
-                    <div>
-                      <label><strong>Loại trang trí:</strong></label>
-                      <select
-                        value={editCate}
-                        onChange={(e) => setEditCate(e.target.value)}
-                      >
-                        <option value="">-- Chọn loại trang trí --</option>
-                        {decorateCategories.map(category => (
-                          <option key={category._id} value={category._id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                      {decorateCategories.length === 0 && (
-                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
-                          Đang tải danh sách loại trang trí...
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label><strong>Mô tả:</strong></label>
-                      <input
-                        type="text"
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Hình ảnh:</strong></label>
-                      <div className="image-upload-container">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleEditImageUpload}
-                          className="image-upload-input"
-                          id="edit-decorate-image-upload"
-                        />
-                        <label htmlFor="edit-decorate-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
-                        </span>
-                      </div>
-                      {editImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh hiện tại:</strong></p>
-                          <img src={editImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <label><strong>Trạng thái:</strong></label>
-                      <input
-                        type="text"
-                        value={editStatus}
-                        onChange={(e) => setEditStatus(e.target.value)}
-                      />
-                    </div>
+                    <p>
+                      <strong>Loại trang trí:</strong> {selectedItem.Cate_decorateId?.name || "Chưa có"}
+                    </p>
+                    <p>
+                      <strong>Mô tả:</strong> {selectedItem.Description || "Không có mô tả"}
+                    </p>
+                    <p>
+                      <strong>Trạng thái:</strong> {selectedItem.Status || "Chưa có"}
+                    </p>
                   </>
-                ) : selectedItem.type === "Order" ? (
+                )}
+                {selectedItem.type === "Order" && (
                   <>
-                    <div>
-                      <label><strong>Tên phòng/sảnh:</strong></label>
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Giá:</strong></label>
-                      <input
-                        type="text"
-                        value={editPrice}
-                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
-                      />
-                      <span className="current-price">
-                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
-                      </span>
-                    </div>
-                    <div>
-                      <label><strong>Số lượng khách:</strong></label>
-                      <input
-                        type="number"
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label><strong>Hình ảnh:</strong></label>
-                      <div className="image-upload-container">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleEditImageUpload}
-                          className="image-upload-input"
-                          id="edit-lobby-image-upload"
-                        />
-                        <label htmlFor="edit-lobby-image-upload" className="image-upload-label">
-                          Chọn hình ảnh
-                        </label>
-                        <span className="file-name">
-                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
-                        </span>
-                      </div>
-                      {editImageUrl && (
-                        <div className="image-preview">
-                          <p><strong>Hình ảnh hiện tại:</strong></p>
-                          <img src={editImageUrl} alt="Preview" className="preview-image" />
-                        </div>
-                      )}
-                    </div>
+                    <p>
+                      <strong>Số lượng khách:</strong> {selectedItem.SoLuongKhach || "Chưa có"}
+                    </p>
                   </>
-                ) : (
-                  <div>
-                    <label><strong>Tên:</strong></label>
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                    />
-                  </div>
                 )}
                 <div className="detail-card-buttons">
-                  <button className="button-update" onClick={handleUpdate}>
+                  <button className="button-update" onClick={handleOpenUpdateModal}>
                     Cập Nhật
                   </button>
                   <button className="button-delete" onClick={handleDelete}>
@@ -1873,6 +1629,319 @@ const ProductManagement = () => {
               </div>
             </div>
           )}
+
+          {/* Modal Cập Nhật */}
+          {showUpdateModal && selectedItem && (
+            <div className="detail-card">
+              <div className="detail-card-content">
+                <button
+                  className="detail-card-close"
+                  onClick={() => setShowUpdateModal(false)}
+                >
+                  &times;
+                </button>
+                <h3>Cập Nhật Sản Phẩm</h3>
+                {selectedItem.type === "DichVu" ? (
+                  <>
+                    <div>
+                      <label><strong>Tên:</strong></label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Giá:</strong></label>
+                      <input
+                        type="text"
+                        value={editPrice}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
+                      />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
+                    </div>
+                    <div>
+                      <label><strong>Loại dịch vụ:</strong></label>
+                      <select
+                        value={editCate}
+                        onChange={(e) => setEditCate(e.target.value)}
+                      >
+                        <option value="">-- Chọn loại dịch vụ --</option>
+                        {cateringCategories.map(category => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {cateringCategories.length === 0 && (
+                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                          Đang tải danh sách loại dịch vụ...
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label><strong>Mô tả:</strong></label>
+                      <input
+                        type="text"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-food-image-upload"
+                        />
+                        <label htmlFor="edit-food-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+                      </div>
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : selectedItem.type === "QuaTang" ? (
+                  <>
+                    <div>
+                      <label><strong>Tên:</strong></label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Giá:</strong></label>
+                      <input
+                        type="text"
+                        value={editPrice}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
+                      />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
+                    </div>
+                    <div>
+                      <label><strong>Loại quà tặng:</strong></label>
+                      <select
+                        value={editCate}
+                        onChange={(e) => setEditCate(e.target.value)}
+                      >
+                        <option value="">-- Chọn loại quà tặng --</option>
+                        {giftCategories.map(category => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {giftCategories.length === 0 && (
+                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                          Đang tải danh sách loại quà tặng...
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label><strong>Mô tả:</strong></label>
+                      <input
+                        type="text"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-gift-image-upload"
+                        />
+                        <label htmlFor="edit-gift-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+                      </div>
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label><strong>Trạng thái:</strong></label>
+                      <input
+                        type="text"
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value)}
+                      />
+                    </div>
+                  </>
+                ) : selectedItem.type === "TrangTri" ? (
+                  <>
+                    <div>
+                      <label><strong>Tên:</strong></label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Giá:</strong></label>
+                      <input
+                        type="text"
+                        value={editPrice}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
+                      />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
+                    </div>
+                    <div>
+                      <label><strong>Loại trang trí:</strong></label>
+                      <select
+                        value={editCate}
+                        onChange={(e) => setEditCate(e.target.value)}
+                      >
+                        <option value="">-- Chọn loại trang trí --</option>
+                        {decorateCategories.map(category => (
+                          <option key={category._id} value={category._id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {decorateCategories.length === 0 && (
+                        <div style={{ fontSize: '0.8em', color: '#888', marginTop: '5px' }}>
+                          Đang tải danh sách loại trang trí...
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label><strong>Mô tả:</strong></label>
+                      <input
+                        type="text"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-decorate-image-upload"
+                        />
+                        <label htmlFor="edit-decorate-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+                      </div>
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label><strong>Trạng thái:</strong></label>
+                      <input
+                        type="text"
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value)}
+                      />
+                    </div>
+                  </>
+                ) : selectedItem.type === "Order" ? (
+                  <>
+                    <div>
+                      <label><strong>Tên phòng/sảnh:</strong></label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Giá:</strong></label>
+                      <input
+                        type="text"
+                        value={editPrice}
+                        onChange={(e) => handlePriceInput(e.target.value, setEditPrice)}
+                      />
+                      <span className="current-price">
+                        Giá hiện tại: {formatCurrency(selectedItem.price)} VND
+                      </span>
+                    </div>
+                    <div>
+                      <label><strong>Số lượng khách:</strong></label>
+                      <input
+                        type="number"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label><strong>Hình ảnh:</strong></label>
+                      <div className="image-upload-container">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleEditImageUpload}
+                          className="image-upload-input"
+                          id="edit-lobby-image-upload"
+                        />
+                        <label htmlFor="edit-lobby-image-upload" className="image-upload-label">
+                          Chọn hình ảnh
+                        </label>
+                        <span className="file-name">
+                          {editSelectedImage ? editSelectedImage.name : "Chưa chọn file nào"}
+                        </span>
+                      </div>
+                      {editImageUrl && (
+                        <div className="image-preview">
+                          <p><strong>Hình ảnh hiện tại:</strong></p>
+                          <img src={editImageUrl} alt="Preview" className="preview-image" />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : null}
+                <div className="detail-card-buttons">
+                  <button className="button-update" onClick={handleUpdate}>
+                    Lưu Thay Đổi
+                  </button>
+                  <button className="button-cancel" onClick={() => setShowUpdateModal(false)}>
+                    Hủy
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       );
     } else {
@@ -1922,7 +1991,7 @@ const ProductManagement = () => {
   );
 };
 
-// Thêm CSS mới
+// Thêm CSS mới vào phần styles
 const styles = `
 .container {
   padding: 20px;
@@ -1999,59 +2068,197 @@ const styles = `
 
 .product-table-container {
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  margin-top: 20px;
+  transition: all 0.3s ease;
 }
 
 .product-table {
   width: 100%;
   border-collapse: collapse;
+  border-spacing: 0;
 }
 
 .product-table th {
-  background: #fafafa;
-  padding: 12px 15px;
+  background: #f8f9fa;
+  padding: 16px;
   text-align: left;
-  font-weight: 500;
-  color: #666;
-  border-bottom: 1px solid #eee;
+  font-weight: 600;
+  color: #495057;
+  border: none;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .product-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #eee;
-  color: #333;
+  padding: 16px;
+  border: none;
+  color: #212529;
+  transition: background-color 0.2s ease;
+  vertical-align: middle;
+}
+
+.product-table tr {
+  transition: all 0.2s ease;
+}
+
+.product-table tbody tr:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .product-image-cell {
-  width: 80px;
+  width: 100px;
+  padding: 8px !important;
 }
 
 .product-thumbnail {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.product-thumbnail:hover {
+  transform: scale(1.05);
+}
+
+/* Thêm separator nhẹ giữa các dòng */
+.product-table tbody tr:not(:last-child) {
+  border-bottom: 1px solid rgba(233, 236, 239, 0.5);
+}
+
+/* Thêm separator cho header */
+.product-table thead {
+  border-bottom: 2px solid rgba(233, 236, 239, 0.7);
 }
 
 .action-column {
-  width: 100px;
+  width: 120px;
+  text-align: center;
 }
 
 .button-detail {
   background: #1890ff;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 8px 16px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 13px;
-  transition: background 0.3s;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .button-detail:hover {
   background: #40a9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+}
+
+.button-detail:active {
+  transform: translateY(0);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  align-items: center;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.action-buttons input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #f8f9fa;
+}
+
+.action-buttons input:focus {
+  outline: none;
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+  background: white;
+}
+
+.button-add {
+  background: #1890ff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2);
+}
+
+.button-add:hover {
+  background: #40a9ff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(24, 144, 255, 0.3);
+}
+
+.button-add:active {
+  transform: translateY(0);
+}
+
+.no-results {
+  text-align: center;
+  padding: 48px;
+  color: #6c757d;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+}
+
+.no-results p {
+  font-size: 16px;
+  margin: 0;
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 60px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-top: 20px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .detail-card {
@@ -2181,35 +2388,6 @@ const styles = `
   max-height: 200px;
   object-fit: cover;
   border-radius: 4px;
-}
-
-.spinner-container {
-  display: flex;
-  justify-content: center;
-  padding: 50px;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #1890ff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.no-results {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .current-price {
