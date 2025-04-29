@@ -19,6 +19,8 @@ function Transactions() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [error, setError] = useState(null);
+  const [planDetails, setPlanDetails] = useState(null);
+  const [loadingPlanDetails, setLoadingPlanDetails] = useState(false);
 
   const lastFetchTime = useRef(Date.now());
   const isMounted = useRef(true);
@@ -262,12 +264,43 @@ function Transactions() {
     });
   };
 
-  const handleRowClick = (transaction) => {
+  const fetchPlanDetails = async (planId) => {
+    if (!planId) return;
+    
+    try {
+      setLoadingPlanDetails(true);
+      const response = await axios.get(
+        `https://apidatn.onrender.com/plans/${planId}`,
+        {
+          headers: {
+            'user-id': userId,
+            'user-role': userRole,
+          },
+        }
+      );
+
+      if (response.data.status) {
+        setPlanDetails(response.data.data);
+      }
+    } catch (err) {
+      console.error('Lỗi khi lấy thông tin kế hoạch:', err);
+    } finally {
+      setLoadingPlanDetails(false);
+    }
+  };
+
+  const handleRowClick = async (transaction) => {
     setSelectedTransaction(transaction);
+    if (transaction.planId) {
+      await fetchPlanDetails(transaction.planId);
+    } else {
+      setPlanDetails(null);
+    }
   };
 
   const closeModal = () => {
     setSelectedTransaction(null);
+    setPlanDetails(null);
   };
 
   return (
@@ -398,6 +431,7 @@ function Transactions() {
               </button>
             </div>
             <div className="transaction-details">
+              <div className="section-title">Thông tin giao dịch</div>
               <div className="detail-group transaction-id-group">
                 <span className="detail-label">Mã giao dịch</span>
                 <span className="detail-value transaction-id">{selectedTransaction._id || 'N/A'}</span>
@@ -424,10 +458,66 @@ function Transactions() {
                 <span className="detail-label">Ngày tạo giao dịch</span>
                 <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
               </div>
+
+              {loadingPlanDetails ? (
+                <LoadingSpinner size="small" text="Đang tải thông tin kế hoạch..." />
+              ) : planDetails ? (
+                <>
+                  <div className="section-title">Chi tiết kế hoạch</div>
+                  <div className="plan-details-section">
+                    <div className="plan-image-container">
+                      <img 
+                        src={planDetails.image || 'placeholder.jpg'} 
+                        alt={planDetails.name}
+                        className="plan-image"
+                      />
+                    </div>
+                    <div className="plan-info">
+                      <div className="detail-group">
+                        <span className="detail-label">Sảnh</span>
+                        <span className="detail-value">{planDetails.sanhName || 'N/A'}</span>
+                      </div>
+                      <div className="detail-group">
+                        <span className="detail-label">Tổng giá</span>
+                        <span className="detail-value price">
+                          {planDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ
+                        </span>
+                      </div>
+                      <div className="detail-group">
+                        <span className="detail-label">Ngày tổ chức</span>
+                        <span className="detail-value">{formatDate(planDetails.eventDate)}</span>
+                      </div>
+                      <div className="detail-group">
+                        <span className="detail-label">Số bàn</span>
+                        <span className="detail-value">{planDetails.tableCount || 'N/A'}</span>
+                      </div>
+                      <div className="detail-group">
+                        <span className="detail-label">Menu</span>
+                        <span className="detail-value">{planDetails.menuName || 'N/A'}</span>
+                      </div>
+                      <div className="detail-group">
+                        <span className="detail-label">Dịch vụ</span>
+                        <div className="services-list">
+                          {planDetails.services?.map((service, index) => (
+                            <div key={index} className="service-item">
+                              {service.name} - {service.price?.toLocaleString('vi-VN')} VNĐ
+                            </div>
+                          )) || 'Không có dịch vụ'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="no-plan-details">
+                  Không có thông tin chi tiết kế hoạch
+                </div>
+              )}
+
               {selectedTransaction.status !== 'Đã đặt cọc' &&
                 selectedTransaction.status !== 'Đã hủy' &&
                 userRole === 'admin' && (
-                  <div className="detail-group">
+                  <div className="detail-group actions">
                     <button
                       className="button-confirm"
                       onClick={() => {

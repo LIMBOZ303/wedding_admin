@@ -363,13 +363,15 @@
 }
 
 .transaction-modal {
-    background-color: white;
-    border-radius: 8px;
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
     width: 90%;
-    max-width: 500px;
+    max-width: 800px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 .modal-header {
@@ -518,5 +520,152 @@
     .button-disabled {
         min-width: 100px;
         padding: 6px 12px;
+    }
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 25px 0 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.section-title:first-child {
+    margin-top: 0;
+}
+
+.plan-details-section {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 25px;
+    margin-top: 20px;
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.plan-image-container {
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.plan-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.plan-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.detail-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e9ecef;
+}
+
+.detail-label {
+    color: #64748b;
+    font-weight: 500;
+    min-width: 140px;
+}
+
+.detail-value {
+    color: #334155;
+    font-weight: 500;
+    text-align: right;
+    flex: 1;
+}
+
+.detail-value.price {
+    color: #3498db;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: right;
+}
+
+.service-item {
+    padding: 6px 12px;
+    background: white;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #475569;
+}
+
+.no-plan-details {
+    text-align: center;
+    padding: 30px;
+    color: #64748b;
+    background: #f1f5f9;
+    border-radius: 12px;
+    margin-top: 20px;
+}
+
+.detail-group.actions {
+    margin-top: 25px;
+    border-bottom: none;
+    justify-content: flex-end;
+}
+
+/* Loading spinner styles */
+.loading-spinner-small {
+    width: 30px;
+    height: 30px;
+    margin: 20px auto;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .plan-details-section {
+        grid-template-columns: 1fr;
+    }
+
+    .plan-image-container {
+        height: 180px;
+    }
+
+    .detail-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .detail-value {
+        text-align: left;
+    }
+
+    .services-list {
+        text-align: left;
+    }
+}
+
+/* Animation */
+.transaction-modal {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

@@ -1,28 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { fetchPlanswithUser } from '../api/plan_api';
+import {
+    faTimes,
+    faFilter,
+    faMoneyBill,
+    faCalendarCheck,
+    faList,
+    faCheckCircle,
+    faExclamationTriangle,
+    faSearch
+} from '@fortawesome/free-solid-svg-icons';
+import { fetchPlanswithUser, fetchPlansNoUser } from '../api/plan_api';
+import { fetchTransaction } from '../api/transaction_api';
+import axios from 'axios';
 import Swal from 'sweetalert2';
 import "../public/styles/PlanManagement.css";
 import LoadingSpinner from './LoadingSpinner';
 
 const PlansManagement = () => {
-    const [plans, setPlans] = useState([]);
+    const [activeTab, setActiveTab] = useState('other'); // 'other', 'deposited', 'transactions'
+    const [otherPlans, setOtherPlans] = useState([]);
+    const [depositedPlans, setDepositedPlans] = useState([]);
+    const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [showDetailModal, setShowDetailModal] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState(null);
+    const [statusFilter, setStatusFilter] = useState('all');
+
+    // New state variables for transactions
+    const [loadingTransactions, setLoadingTransactions] = useState(false);
+    const [loadingConfirm, setLoadingConfirm] = useState({});
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [planDetails, setPlanDetails] = useState(null);
+    const [loadingPlanDetails, setLoadingPlanDetails] = useState(false);
+
+    const lastFetchTime = useRef(Date.now());
+    const isMounted = useRef(true);
+    const lastVisibilityChange = useRef(Date.now());
+    const minimumRefreshInterval = 600000; // 10 minutes
+
+    const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
 
     const fetchData = async () => {
+        setLoading(true);
         try {
-            const [plansRes] = await Promise.all([fetchPlanswithUser()]);
-            setPlans(plansRes || []);
+            // Lấy tất cả kế hoạch
+            const [userPlansRes, defaultPlansRes] = await Promise.all([
+                fetchPlanswithUser(),
+                fetchPlansNoUser()
+            ]);
+
+            // Lọc kế hoạch đã đặt cọc
+            const deposited = userPlansRes.filter(plan => plan.status === 'Đã đặt cọc');
+            // Lọc kế hoạch khác (chưa đặt cọc và mặc định)
+            const others = [
+                ...userPlansRes.filter(plan => plan.status !== 'Đã đặt cọc'),
+                ...defaultPlansRes
+            ];
+
+            setDepositedPlans(deposited);
+            setOtherPlans(others);
+
+            // Lấy dữ liệu giao dịch
+            if (userId && userRole) {
+                const transactionRes = await fetchTransaction(userId, userRole);
+                setTransactions(transactionRes.data || []);
+            }
+
         } catch (err) {
             setError('Không thể tải dữ liệu');
             Swal.fire({
                 icon: 'error',
                 title: 'Lỗi!',
-                text: 'Không thể tải danh sách kế hoạch',
+                text: 'Không thể tải dữ liệu',
                 toast: true,
                 position: 'top-end',
                 timer: 3000,
@@ -35,7 +89,268 @@ const PlansManagement = () => {
 
     useEffect(() => {
         fetchData();
+    }, [userId, userRole]);
+
+    useEffect(() => {
+        return () => {
+            isMounted.current = false;
+        };
     }, []);
+
+    const getTransactions = useCallback(async (force = false) => {
+        const now = Date.now();
+        if (!force && now - lastFetchTime.current < 5000) {
+            return;
+        }
+
+        try {
+            setLoadingTransactions(true);
+            setError(null);
+            lastFetchTime.current = now;
+
+            if (!userId || !userRole) {
+                throw new Error('Vui lòng đăng nhập với tài khoản admin');
+            }
+
+            const data = await fetchTransaction(userId, userRole);
+            
+            if (data.status) {
+                if (!Array.isArray(data.data)) {
+                    throw new Error('Dữ liệu giao dịch không hợp lệ');
+                }
+
+                const sortedData = [...data.data].sort((a, b) => {
+                    // Sắp xếp theo ngày mới nhất trước
+                    const dateA = new Date(a.createdAt);
+                    const dateB = new Date(b.createdAt);
+                    return dateB - dateA;
+                });
+
+                setTransactions(sortedData);
+            } else {
+                throw new Error(data.message || 'Không lấy được danh sách giao dịch');
+            }
+        } catch (err) {
+            setError(`Lỗi: ${err.message}`);
+            console.error('Lỗi khi lấy danh sách giao dịch:', err.message);
+        } finally {
+            setLoadingTransactions(false);
+        }
+    }, [userId, userRole]);
+
+    // Auto refresh for transactions
+    useEffect(() => {
+        let intervalId;
+
+        const handleVisibilityChange = () => {
+            const now = Date.now();
+            if (!document.hidden) {
+                if (now - lastVisibilityChange.current >= minimumRefreshInterval) {
+                    lastVisibilityChange.current = now;
+                    getTransactions(true);
+                }
+            }
+        };
+
+        intervalId = setInterval(() => {
+            if (!document.hidden) {
+                getTransactions();
+            }
+        }, 600000);
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [getTransactions]);
+
+    const confirmTransaction = useCallback(async (transactionId) => {
+        if (loadingConfirm[transactionId]) return;
+
+        try {
+            setLoadingConfirm((prev) => ({ ...prev, [transactionId]: true }));
+            const response = await axios.patch(
+                `https://apidatn.onrender.com/users/transactions/${transactionId}/confirm`,
+                {},
+                {
+                    headers: {
+                        'user-id': userId,
+                        'user-role': userRole,
+                    },
+                }
+            );
+
+            if (response.data.status) {
+                setTransactions((prev) =>
+                    prev.map((tx) =>
+                        tx._id === transactionId ? { ...tx, status: 'Đã kích hoạt' } : tx
+                    )
+                );
+                getTransactions(true);
+            } else {
+                throw new Error('Không thể xác nhận giao dịch: ' + response.data.message);
+            }
+        } catch (err) {
+            setError('Lỗi khi xác nhận giao dịch: ' + err.message);
+            console.error('Lỗi khi xác nhận giao dịch:', err.message);
+        } finally {
+            setLoadingConfirm((prev) => ({ ...prev, [transactionId]: false }));
+        }
+    }, [userId, userRole, getTransactions]);
+
+    const filteredTransactions = React.useMemo(() => {
+        return transactions.filter((tx) => {
+            if (!searchTerm) return true;
+
+            const searchString = searchTerm.toLowerCase();
+            return (
+                (tx._id && String(tx._id).toLowerCase().includes(searchString)) ||
+                (tx.userId?.name && tx.userId.name.toLowerCase().includes(searchString)) ||
+                (tx.userId?.email && tx.userId.email.toLowerCase().includes(searchString)) ||
+                (tx.planName && tx.planName.toLowerCase().includes(searchString))
+            );
+        });
+    }, [transactions, searchTerm]);
+
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedTransactions = React.useMemo(() => {
+        let sortableItems = [...filteredTransactions];
+
+        if (sortConfig.key) {
+            sortableItems.sort((a, b) => {
+                let aValue, bValue;
+
+                if (sortConfig.key === 'userName') {
+                    aValue = a.userId?.name || '';
+                    bValue = b.userId?.name || '';
+                } else if (sortConfig.key === 'userEmail') {
+                    aValue = a.userId?.email || '';
+                    bValue = b.userId?.email || '';
+                } else if (sortConfig.key === 'planName') {
+                    aValue = a.planName || '';
+                    bValue = b.planName || '';
+                } else if (sortConfig.key === 'createdAt') {
+                    return sortConfig.direction === 'ascending' 
+                        ? new Date(a.createdAt) - new Date(b.createdAt)
+                        : new Date(b.createdAt) - new Date(a.createdAt);
+                } else {
+                    aValue = a[sortConfig.key] || '';
+                    bValue = b[sortConfig.key] || '';
+                }
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        } else {
+            // Mặc định sắp xếp theo ngày mới nhất nếu không có tiêu chí sắp xếp nào khác
+            sortableItems.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+
+        return sortableItems;
+    }, [filteredTransactions, sortConfig]);
+
+    const getSortIcon = (columnName) => {
+        if (sortConfig.key !== columnName) {
+            return null;
+        }
+        return sortConfig.direction === 'ascending' ? '↑' : '↓';
+    };
+
+    const getStatusBadge = (status) => {
+        switch (status) {
+            case 'Đã kích hoạt':
+                return (
+                    <span className="status-badge status-active">
+                        <FontAwesomeIcon icon={faCheckCircle} /> Đã xác nhận
+                    </span>
+                );
+            case 'Chưa kích hoạt':
+                return (
+                    <span className="status-badge status-pending">
+                        <FontAwesomeIcon icon={faExclamationTriangle} /> Chờ xác nhận
+                    </span>
+                );
+            case 'Đã đặt cọc':
+                return (
+                    <span className="status-badge status-deposited">
+                        <FontAwesomeIcon icon={faCheckCircle} /> Đã đặt cọc
+                    </span>
+                );
+            case 'Đã hủy':
+                return (
+                    <span className="status-badge status-canceled">
+                        <FontAwesomeIcon icon={faTimes} /> Đã hủy
+                    </span>
+                );
+            default:
+                return <span className="status-badge">{status || 'N/A'}</span>;
+        }
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const fetchPlanDetails = async (planId) => {
+        if (!planId) return;
+        
+        try {
+            setLoadingPlanDetails(true);
+            const response = await axios.get(
+                `https://apidatn.onrender.com/plans/${planId}`,
+                {
+                    headers: {
+                        'user-id': userId,
+                        'user-role': userRole,
+                    },
+                }
+            );
+
+            if (response.data.status) {
+                setPlanDetails(response.data.data);
+            }
+        } catch (err) {
+            console.error('Lỗi khi lấy thông tin kế hoạch:', err);
+        } finally {
+            setLoadingPlanDetails(false);
+        }
+    };
+
+    const handleRowClick = async (transaction) => {
+        setSelectedTransaction(transaction);
+        if (transaction.planId) {
+            await fetchPlanDetails(transaction.planId);
+        } else {
+            setPlanDetails(null);
+        }
+    };
+
+    const closeModal = () => {
+        setSelectedTransaction(null);
+        setPlanDetails(null);
+    };
 
     const openDetailModal = (plan) => {
         setSelectedPlan(plan);
@@ -63,50 +378,326 @@ const PlansManagement = () => {
         return presents.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
     };
 
-    if (loading) return <LoadingSpinner size="large" text="Đang tải danh sách kế hoạch..." />;
+    const filterPlansByStatus = (plans) => {
+        if (statusFilter === 'all') return plans;
+        return plans.filter(plan => {
+            if (statusFilter === 'deposited') {
+                return plan.status === 'Đã đặt cọc';
+            } else if (statusFilter === 'not-deposited') {
+                return plan.status === 'Chưa đặt cọc';
+            }
+            return true;
+        });
+    };
+
+    // Render danh sách kế hoạch
+    const renderPlanList = (plans) => {
+        const filteredPlans = filterPlansByStatus(plans);
+        
+        if (filteredPlans.length === 0) {
+            return <p className="no-plans">Không có kế hoạch nào.</p>;
+        }
+
+        return (
+            <div className="plans-list">
+                {filteredPlans.map(plan => (
+                    <div key={plan._id} className="plan-item" onClick={() => openDetailModal(plan)}>
+                        <div className="plan-image-container">
+                            <img
+                                src={plan.SanhId?.imageUrl || 'https://via.placeholder.com/120'}
+                                alt={plan.name}
+                                className="plan-image"
+                            />
+                        </div>
+                        <div className="plan-details">
+                            <h3>{plan.name}</h3>
+                            <p><strong>Sảnh:</strong> {plan.SanhId?.name || 'N/A'}</p>
+                            <p><strong>Tổng giá:</strong> {plan.totalPrice.toLocaleString()} VNĐ</p>
+                            <p><strong>Ngày sự kiện:</strong> {plan.plandateevent ? new Date(plan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</p>
+                            {plan.UserId && (
+                                <p><strong>Khách hàng:</strong> {plan.UserId.name || 'N/A'}</p>
+                            )}
+                            <p>
+                                <strong>Trạng thái:</strong> 
+                                <span className={`status ${plan.status === 'Đã đặt cọc' ? 'deposited' : 'not-deposited'}`}>
+                                    {plan.status}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    // Updated renderTransactionList function
+    const renderTransactionList = () => {
+        return (
+            <div className="transactions-container">
+                <div className="transactions-header">
+                    <h2>Quản lý Giao dịch</h2>
+                    <div className="header-actions">
+                        <div className="search-container">
+                            <FontAwesomeIcon icon={faSearch} className="search-icon" />
+                            <input
+                                type="text"
+                                placeholder="Tìm kiếm theo mã, tên, email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="search-input"
+                            />
+                            {searchTerm && (
+                                <button onClick={() => setSearchTerm('')} className="clear-search">
+                                    <FontAwesomeIcon icon={faTimes} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {error && (
+                    <div className="error-message">
+                        {error}
+                    </div>
+                )}
+
+                <div className="transactions-content">
+                    {loadingTransactions ? (
+                        <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
+                    ) : transactions.length === 0 ? (
+                        <div className="no-data">
+                            <FontAwesomeIcon icon={faExclamationTriangle} size="2x" />
+                            <p>Không có giao dịch nào trong hệ thống</p>
+                        </div>
+                    ) : filteredTransactions.length === 0 ? (
+                        <div className="no-data">
+                            <FontAwesomeIcon icon={faExclamationTriangle} size="2x" />
+                            <p>Không tìm thấy giao dịch khớp với tìm kiếm</p>
+                            <button onClick={() => setSearchTerm('')} className="clear-search-button">
+                                Xóa tìm kiếm
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="table-responsive">
+                            <table className="transactions-table">
+                                <thead>
+                                    <tr>
+                                        <th onClick={() => requestSort('index')} className="sortable">
+                                            STT {getSortIcon('index')}
+                                        </th>
+                                        <th onClick={() => requestSort('userName')} className="sortable">
+                                            Người dùng {getSortIcon('userName')}
+                                        </th>
+                                        <th onClick={() => requestSort('userEmail')} className="sortable">
+                                            Email {getSortIcon('userEmail')}
+                                        </th>
+                                        <th onClick={() => requestSort('planName')} className="sortable">
+                                            Tên kế hoạch {getSortIcon('planName')}
+                                        </th>
+                                        <th onClick={() => requestSort('status')} className="sortable">
+                                            Trạng thái {getSortIcon('status')}
+                                        </th>
+                                        <th onClick={() => requestSort('createdAt')} className="sortable">
+                                            Ngày tạo {getSortIcon('createdAt')}
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sortedTransactions.map((tx, index) => (
+                                        <tr
+                                            key={tx._id || index}
+                                            onClick={() => handleRowClick(tx)}
+                                            className={tx.status === 'Chưa kích hoạt' ? 'pending-row' : ''}
+                                        >
+                                            <td className="index-column">{index + 1}</td>
+                                            <td>{tx.userId?.name || 'N/A'}</td>
+                                            <td>{tx.userId?.email || 'N/A'}</td>
+                                            <td>{tx.planName || 'Không có tên kế hoạch'}</td>
+                                            <td>
+                                                <span className={`status-badge ${
+                                                    tx.status === 'Đã đặt cọc' ? 'status-deposited' :
+                                                    tx.status === 'Đã hủy' ? 'status-canceled' :
+                                                    tx.status === 'Đã kích hoạt' ? 'status-active' :
+                                                    'status-pending'
+                                                }`}>
+                                                    {tx.status === 'Đã đặt cọc' ? 'Đã đặt cọc' :
+                                                     tx.status === 'Đã hủy' ? 'Đã hủy' :
+                                                     tx.status === 'Đã kích hoạt' ? 'Đã xác nhận' :
+                                                     'Chờ xác nhận'}
+                                                </span>
+                                            </td>
+                                            <td>{formatDate(tx.createdAt)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+
+                {selectedTransaction && (
+                    <div className="transaction-modal-overlay" onClick={closeModal}>
+                        <div className="transaction-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Chi tiết Giao dịch</h3>
+                                <button className="modal-close" onClick={closeModal}>
+                                    <FontAwesomeIcon icon={faTimes} />
+                                </button>
+                            </div>
+                            <div className="transaction-details">
+                                <div className="section-title">Thông tin giao dịch</div>
+                                <div className="detail-group transaction-id-group">
+                                    <span className="detail-label">Mã giao dịch</span>
+                                    <span className="detail-value transaction-id">{selectedTransaction._id || 'N/A'}</span>
+                                </div>
+                                <div className="detail-group">
+                                    <span className="detail-label">Người đặt cọc</span>
+                                    <span className="detail-value">{selectedTransaction.userId?.name || 'N/A'}</span>
+                                </div>
+                                <div className="detail-group">
+                                    <span className="detail-label">Email</span>
+                                    <span className="detail-value">{selectedTransaction.userId?.email || 'N/A'}</span>
+                                </div>
+                                <div className="detail-group">
+                                    <span className="detail-label">Tên kế hoạch</span>
+                                    <span className="detail-value">
+                                        {selectedTransaction.planName || 'Không có tên kế hoạch'}
+                                    </span>
+                                </div>
+                                <div className="detail-group">
+                                    <span className="detail-label">Trạng thái</span>
+                                    <span className="detail-value status">{getStatusBadge(selectedTransaction.status)}</span>
+                                </div>
+                                <div className="detail-group">
+                                    <span className="detail-label">Ngày tạo giao dịch</span>
+                                    <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
+                                </div>
+
+                                {loadingPlanDetails ? (
+                                    <LoadingSpinner size="small" text="Đang tải thông tin kế hoạch..." />
+                                ) : planDetails ? (
+                                    <>
+                                        <div className="section-title">Chi tiết kế hoạch</div>
+                                        <div className="plan-details-section">
+                                            <div className="plan-image-container">
+                                                <img 
+                                                    src={planDetails.image || 'placeholder.jpg'} 
+                                                    alt={planDetails.name}
+                                                    className="plan-image"
+                                                />
+                                            </div>
+                                            <div className="plan-info">
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Sảnh</span>
+                                                    <span className="detail-value">{planDetails.sanhName || 'N/A'}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Tổng giá</span>
+                                                    <span className="detail-value price">
+                                                        {planDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ
+                                                    </span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Ngày tổ chức</span>
+                                                    <span className="detail-value">{formatDate(planDetails.eventDate)}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Số bàn</span>
+                                                    <span className="detail-value">{planDetails.tableCount || 'N/A'}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Menu</span>
+                                                    <span className="detail-value">{planDetails.menuName || 'N/A'}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Dịch vụ</span>
+                                                    <div className="services-list">
+                                                        {planDetails.services?.map((service, index) => (
+                                                            <div key={index} className="service-item">
+                                                                {service.name} - {service.price?.toLocaleString('vi-VN')} VNĐ
+                                                            </div>
+                                                        )) || 'Không có dịch vụ'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="no-plan-details">
+                                        Không có thông tin chi tiết kế hoạch
+                                    </div>
+                                )}
+
+                                {selectedTransaction.status !== 'Đã đặt cọc' &&
+                                    selectedTransaction.status !== 'Đã hủy' &&
+                                    userRole === 'admin' && (
+                                        <div className="detail-group actions">
+                                            <button
+                                                className="button-confirm"
+                                                onClick={() => {
+                                                    confirmTransaction(selectedTransaction._id);
+                                                    closeModal();
+                                                }}
+                                                disabled={loadingConfirm[selectedTransaction._id]}
+                                            >
+                                                <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                                            </button>
+                                        </div>
+                                    )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    if (loading) return <LoadingSpinner size="large" text="Đang tải dữ liệu..." />;
     if (error) return <div className="plans-management"><p className="error-text">{error}</p></div>;
 
     return (
         <div className="plans-management">
             <div className="header">
-                <h1>Quản Lý Kế Hoạch</h1>
+                <h1>Quản Lý Kế Hoạch & Giao Dịch</h1>
             </div>
 
-            <div className="plans-section">
-                <h2>Kế Hoạch</h2>
-                {plans.length > 0 ? (
-                    <div className="plans-list">
-                        {plans.map(plan => (
-                            <div key={plan._id} className="plan-item" onClick={() => openDetailModal(plan)}>
-                                <div className="plan-image-container">
-                                    <img
-                                        src={plan.SanhId.imageUrl || 'https://via.placeholder.com/120'}
-                                        alt={plan.name}
-                                        className="plan-image"
-                                    />
-                                </div>
-                                <div className="plan-details">
-                                    <h3>{plan.name}</h3>
-                                    <p><strong>Sảnh:</strong> {plan.SanhId?.name || 'N/A'}</p>
-                                    <p><strong>Tổng giá:</strong> {plan.totalPrice.toLocaleString()} VNĐ</p>
-                                    <p><strong>Ngày sự kiện:</strong> {plan.plandateevent ? new Date(plan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</p>
-                                    <p><strong>Khách hàng:</strong> {plan.UserId?.name || 'N/A'}</p>
-                                    <p>
-                                        <strong>Trạng thái:</strong> 
-                                        <span className={`status ${plan.status === 'Chưa kích hoạt' ? 'inactive' : 
-                                                                  plan.status === 'Đã kích hoạt' ? 'active' : 
-                                                                  plan.status === 'Đang chờ xác nhận' ? 'pending-confirmation' : 
-                                                                  'canceled'}`}>
-                                            {plan.status}
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="no-plans">Không có kế hoạch nào.</p>
+            <div className="tabs">
+                <button 
+                    className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('other')}
+                >
+                    <FontAwesomeIcon icon={faList} /> Khác
+                </button>
+                <button 
+                    className={`tab-button ${activeTab === 'deposited' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('deposited')}
+                >
+                    <FontAwesomeIcon icon={faCalendarCheck} /> Kế hoạch đã đặt cọc
+                </button>
+                <button 
+                    className={`tab-button ${activeTab === 'transactions' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('transactions')}
+                >
+                    <FontAwesomeIcon icon={faMoneyBill} /> Giao dịch
+                </button>
+            </div>
+
+            <div className="content-section">
+                {activeTab === 'other' && (
+                    <>
+                        <h2>Kế Hoạch Khác</h2>
+                        {renderPlanList(otherPlans)}
+                    </>
                 )}
+                
+                {activeTab === 'deposited' && (
+                    <>
+                        <h2>Kế Hoạch Đã Đặt Cọc</h2>
+                        {renderPlanList(depositedPlans)}
+                    </>
+                )}
+                
+                {activeTab === 'transactions' && renderTransactionList()}
             </div>
 
             {showDetailModal && selectedPlan && (
@@ -129,13 +720,12 @@ const PlansManagement = () => {
                                     <p><span className="label">Tổng giá:</span> <span className="value price">{selectedPlan.totalPrice.toLocaleString()} VNĐ</span></p>
                                     <p><span className="label">Ngày sự kiện:</span> <span className="value">{selectedPlan.plandateevent ? new Date(selectedPlan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</span></p>
                                     <p><span className="label">Số lượng khách:</span> <span className="value">{selectedPlan.plansoluongkhach || 'Chưa xác định'}</span></p>
-                                    <p><span className="label">Khách Hàng:</span> <span className="value">{selectedPlan.UserId?.name || 'N/A'}</span></p>
+                                    {selectedPlan.UserId && (
+                                        <p><span className="label">Khách Hàng:</span> <span className="value">{selectedPlan.UserId.name || 'N/A'}</span></p>
+                                    )}
                                     <p>
                                         <span className="label">Trạng thái:</span> 
-                                        <span className={`value status ${selectedPlan.status === 'Chưa kích hoạt' ? 'inactive' : 
-                                                                        selectedPlan.status === 'Đã kích hoạt' ? 'active' : 
-                                                                        selectedPlan.status === 'Đang chờ xác nhận' ? 'pending-confirmation' : 
-                                                                        'canceled'}`}>
+                                        <span className={`value status ${selectedPlan.status === 'Đã đặt cọc' ? 'deposited' : 'not-deposited'}`}>
                                             {selectedPlan.status}
                                         </span>
                                     </p>

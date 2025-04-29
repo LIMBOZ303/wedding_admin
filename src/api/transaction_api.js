@@ -16,49 +16,6 @@ export const fetchTransaction = async (userId, role) => {
       throw new Error('Dữ liệu API không hợp lệ');
     }
 
-    // Nếu có dữ liệu giao dịch, lấy thêm thông tin kế hoạch
-    if (response.data.status && Array.isArray(response.data.data)) {
-      const transactions = response.data.data;
-      
-      // Lấy danh sách planId duy nhất
-      const uniquePlanIds = [...new Set(transactions.map(tx => tx.planId).filter(Boolean))];
-      
-      // Lấy thông tin kế hoạch cho từng planId
-      const planDetails = await Promise.all(
-        uniquePlanIds.map(async (planId) => {
-          try {
-            const planResponse = await axios.get(`https://apidatn.onrender.com/plan/${planId}`);
-            return {
-              planId,
-              name: planResponse.data?.data?.name || 'Không có tên kế hoạch'
-            };
-          } catch (error) {
-            console.error(`Lỗi khi lấy thông tin kế hoạch ${planId}:`, error);
-            return {
-              planId,
-              name: 'Không có tên kế hoạch'
-            };
-          }
-        })
-      );
-
-      // Tạo map từ planId sang tên kế hoạch
-      const planNameMap = Object.fromEntries(
-        planDetails.map(plan => [plan.planId, plan.name])
-      );
-
-      // Thêm tên kế hoạch vào mỗi giao dịch
-      const transactionsWithPlanNames = transactions.map(tx => ({
-        ...tx,
-        planName: tx.planId ? planNameMap[tx.planId] : 'Không có tên kế hoạch'
-      }));
-
-      return {
-        ...response.data,
-        data: transactionsWithPlanNames
-      };
-    }
-
     return response.data;
   } catch (error) {
     console.error('Lỗi khi lấy giao dịch:', error.message);
@@ -66,94 +23,90 @@ export const fetchTransaction = async (userId, role) => {
   }
 };
 
-// thống kê 
-const fetchTransactionStats = async () => {
+// Thống kê tổng quan
+export const fetchTransactionStats = async () => {
   try {
     const response = await axios.get(`${API_URL}/transaction-stats`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching transaction stats:', error);
+    console.error('Lỗi khi lấy thống kê giao dịch:', error);
     throw error;
   }
 };
 
-const fetchTransactionStatsByStatus = async (status) => {
+// Thống kê theo trạng thái
+export const fetchTransactionStatsByStatus = async (status) => {
   try {
     const response = await axios.get(`${API_URL}/transaction-stats/by-status/${status}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching stats for status ${status}:`, error);
+    console.error(`Lỗi khi lấy thống kê theo trạng thái ${status}:`, error);
     throw error;
   }
 };
 
-const fetchTransactionStatsByUser = async (userId) => {
+// Thống kê theo người dùng
+export const fetchTransactionStatsByUser = async (userId) => {
   try {
     const response = await axios.get(`${API_URL}/transaction-stats/by-user/${userId}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching stats for user ${userId}:`, error);
+    console.error(`Lỗi khi lấy thống kê theo người dùng ${userId}:`, error);
     throw error;
   }
 };
 
-const fetchRevenueStats = async () => {
+// Thống kê doanh thu tổng quan
+export const fetchRevenueStats = async () => {
   try {
     const response = await axios.get(`${API_URL}/revenue-stats`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching revenue stats:', error);
+    console.error('Lỗi khi lấy thống kê doanh thu:', error);
     throw error;
   }
 };
 
-const fetchRevenueByYear = async (year) => {
+// Thống kê doanh thu theo năm
+export const fetchRevenueByYear = async (year) => {
   try {
     const response = await axios.get(`${API_URL}/revenue-stats/by-year/${year}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching revenue for year ${year}:`, error);
+    console.error(`Lỗi khi lấy doanh thu năm ${year}:`, error);
     throw error;
   }
 };
 
-const fetchRevenueByQuarter = async (year, quarter) => {
+// Thống kê doanh thu theo quý
+export const fetchRevenueByQuarter = async (year, quarter) => {
   try {
     const response = await axios.get(`${API_URL}/revenue-stats/by-quarter/${year}/${quarter}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching revenue for year ${year}, quarter ${quarter}:`, error);
+    console.error(`Lỗi khi lấy doanh thu quý ${quarter} năm ${year}:`, error);
     throw error;
   }
 };
 
-const fetchRevenueByMonth = async (year, month) => {
+// Thống kê doanh thu theo tháng
+export const fetchRevenueByMonth = async (year, month) => {
   try {
     const response = await axios.get(`${API_URL}/revenue-stats/by-month/${year}/${month}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching revenue for year ${year}, month ${month}:`, error);
+    console.error(`Lỗi khi lấy doanh thu tháng ${month} năm ${year}:`, error);
     throw error;
   }
 };
 
-const fetchRevenueByWeek = async (year, week) => {
+// Thống kê doanh thu theo tuần
+export const fetchRevenueByWeek = async (year, week) => {
   try {
     const response = await axios.get(`${API_URL}/revenue-stats/by-week/${year}/${week}`);
     return response.data;
   } catch (error) {
-    console.error(`Error fetching revenue for year ${year}, week ${week}:`, error);
+    console.error(`Lỗi khi lấy doanh thu tuần ${week} năm ${year}:`, error);
     throw error;
   }
-};
-
-export {
-  fetchTransactionStats,
-  fetchTransactionStatsByStatus,
-  fetchTransactionStatsByUser,
-  fetchRevenueStats,
-  fetchRevenueByYear,
-  fetchRevenueByQuarter,
-  fetchRevenueByMonth,
-  fetchRevenueByWeek
 };

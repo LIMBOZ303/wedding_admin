@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAccounts, getUserStatus } from '../api/users_api';
+import { fetchPlanswithUser } from '../api/plan_api';
 import '../public/styles/AccountManagement.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch, faExclamationCircle, faUsers, faCircle, faClock, faSync } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faExclamationCircle, faUsers, faCircle, faClock, faSync, faTimes, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import LoadingSpinner from './LoadingSpinner';
 
 const AccountManagement = () => {
@@ -11,15 +12,22 @@ const AccountManagement = () => {
     const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showUserDetailModal, setShowUserDetailModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [userPlans, setUserPlans] = useState([]);
+    const [loadingUserDetails, setLoadingUserDetails] = useState(false);
 
     const loadAccounts = async () => {
         setLoading(true);
         try {
             const data = await fetchAccounts();
 
+            // Lọc chỉ lấy tài khoản có role là 'user'
+            const userAccounts = data.filter(account => account.role === 'user');
+
             // Thêm thông tin trạng thái từ API
             const accountsWithStatus = await Promise.all(
-                data.map(async (account) => {
+                userAccounts.map(async (account) => {
                     try {
                         const statusResponse = await getUserStatus(account._id);
                         if (statusResponse && statusResponse.status) {
@@ -78,6 +86,27 @@ const AccountManagement = () => {
         });
     };
 
+    const openUserDetailModal = async (account) => {
+        setSelectedUser(account);
+        setLoadingUserDetails(true);
+        try {
+            const plans = await fetchPlanswithUser();
+            const userPlans = plans.filter(plan => plan.UserId?._id === account._id);
+            setUserPlans(userPlans);
+            setShowUserDetailModal(true);
+        } catch (err) {
+            console.error('Lỗi khi lấy danh sách kế hoạch:', err);
+        } finally {
+            setLoadingUserDetails(false);
+        }
+    };
+
+    const closeUserDetailModal = () => {
+        setShowUserDetailModal(false);
+        setSelectedUser(null);
+        setUserPlans([]);
+    };
+
     if (error) {
         return (
             <div className="account-management-container">
@@ -131,7 +160,7 @@ const AccountManagement = () => {
                             <th>Trạng thái</th>
                             <th>Tên</th>
                             <th>Email</th>
-                            <th>Hoạt động lần cuối</th>
+                            <th>Xem chi tiết</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -148,11 +177,15 @@ const AccountManagement = () => {
                                 </td>
                                 <td>{account.name}</td>
                                 <td className="email-cell">{account.email}</td>
-                                <td className="last-active-cell">
-                                    <div className="last-active">
-                                        <FontAwesomeIcon icon={faClock} />
-                                        <span>{formatLastActive(account.lastActive)}</span>
-                                    </div>
+                                <td className="view-details-cell">
+                                    <button 
+                                        className="view-details-button"
+                                        onClick={() => openUserDetailModal(account)}
+                                        title="Xem chi tiết"
+                                    >
+                                        <FontAwesomeIcon icon={faInfoCircle} />
+                                        <span>Xem chi tiết</span>
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -162,6 +195,85 @@ const AccountManagement = () => {
                 <div className="empty-state">
                     <FontAwesomeIcon icon={faUsers} />
                     <p>Không tìm thấy tài khoản nào.</p>
+                </div>
+            )}
+
+            {/* User Detail Modal */}
+            {showUserDetailModal && (
+                <div className="modal-overlay" onClick={closeUserDetailModal}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Chi Tiết Người Dùng</h2>
+                            <button className="close-btn" onClick={closeUserDetailModal}>
+                                <FontAwesomeIcon icon={faTimes} />
+                            </button>
+                        </div>
+
+                        {loadingUserDetails ? (
+                            <LoadingSpinner size="medium" text="Đang tải chi tiết..." />
+                        ) : (
+                            <div className="user-details-content">
+                                <div className="user-info-section">
+                                    <h3>Thông Tin Cơ Bản</h3>
+                                    <div className="info-grid">
+                                        <div className="info-item">
+                                            <span className="label">Tên:</span>
+                                            <span className="value">{selectedUser.name}</span>
+                                        </div>
+                                        <div className="info-item">
+                                            <span className="label">Email:</span>
+                                            <span className="value">{selectedUser.email}</span>
+                                        </div>
+                                        <div className="info-item">
+                                            <span className="label">Trạng thái:</span>
+                                            <span className={`value status ${selectedUser.isOnline ? 'online' : 'offline'}`}>
+                                                {selectedUser.isOnline ? 'Đang hoạt động' : 'Không hoạt động'}
+                                            </span>
+                                        </div>
+                                        <div className="info-item">
+                                            <span className="label">Hoạt động lần cuối:</span>
+                                            <span className="value">{formatLastActive(selectedUser.lastActive)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="user-plans-section">
+                                    <h3>Danh Sách Kế Hoạch Đã Đặt Cọc</h3>
+                                    {userPlans.length > 0 ? (
+                                        <div className="plans-list">
+                                            {userPlans.map(plan => (
+                                                <div key={plan._id} className="plan-item">
+                                                    <div className="plan-image-container">
+                                                        <img
+                                                            src={plan.SanhId?.imageUrl || 'https://via.placeholder.com/120'}
+                                                            alt={plan.name}
+                                                            className="plan-image"
+                                                        />
+                                                    </div>
+                                                    <div className="plan-details">
+                                                        <h4>{plan.name}</h4>
+                                                        <p><strong>Sảnh:</strong> {plan.SanhId?.name || 'N/A'}</p>
+                                                        <p><strong>Tổng giá:</strong> {plan.totalPrice.toLocaleString()} VNĐ</p>
+                                                        <p><strong>Ngày sự kiện:</strong> {plan.plandateevent ? new Date(plan.plandateevent).toLocaleDateString('vi-VN') : 'Chưa xác định'}</p>
+                                                        <p>
+                                                            <strong>Trạng thái:</strong>
+                                                            <span className={`status ${plan.status === 'Đã đặt cọc' ? 'deposited' : 'not-deposited'}`}>
+                                                                {plan.status}
+                                                            </span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="no-plans">
+                                            <p>Người dùng chưa có kế hoạch nào đã đặt cọc.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
