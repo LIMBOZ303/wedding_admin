@@ -11,7 +11,7 @@ import {
     faSearch
 } from '@fortawesome/free-solid-svg-icons';
 import { fetchPlanswithUser, fetchPlansNoUser } from '../api/plan_api';
-import { fetchTransaction } from '../api/transaction_api';
+import { fetchTransaction, fetchPlanFromTransaction } from '../api/transaction_api';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import "../public/styles/PlanManagement.css";
@@ -58,11 +58,11 @@ const PlansManagement = () => {
 
             // Lọc kế hoạch đã đặt cọc
             const deposited = userPlansRes.filter(plan => plan.status === 'Đã đặt cọc');
-            // Lọc kế hoạch khác (chưa đặt cọc và mặc định)
-            const others = [
-                ...userPlansRes.filter(plan => plan.status !== 'Đã đặt cọc'),
-                ...defaultPlansRes
-            ];
+            // Lọc kế hoạch khác (chỉ lấy kế hoạch của User chưa đặt cọc và chưa hủy)
+            const others = userPlansRes.filter(plan => 
+                plan.status !== 'Đã đặt cọc' && 
+                plan.status !== 'Đã hủy'
+            );
 
             setDepositedPlans(deposited);
             setOtherPlans(others);
@@ -357,7 +357,7 @@ const PlansManagement = () => {
     };
 
     const handleRowClick = async (transaction) => {
-        console.log('Row clicked:', transaction); // Thêm log để kiểm tra
+        console.log('Row clicked:', transaction);
         setSelectedTransaction(transaction);
         if (transaction.planId) {
             await fetchPlanDetails(transaction.planId);
@@ -628,6 +628,10 @@ const PlansManagement = () => {
                             </div>
                             <div className="plan-info">
                                 <div className="detail-group">
+                                    <span className="detail-label">Tên kế hoạch</span>
+                                    <span className="detail-value">{planDetails.name || 'N/A'}</span>
+                                </div>
+                                <div className="detail-group">
                                     <span className="detail-label">Sảnh</span>
                                     <span className="detail-value">{planDetails.sanhName || 'N/A'}</span>
                                 </div>
@@ -640,6 +644,10 @@ const PlansManagement = () => {
                                     <span className="detail-value">{formatDate(planDetails.eventDate)}</span>
                                 </div>
                                 <div className="detail-group">
+                                    <span className="detail-label">Số lượng khách</span>
+                                    <span className="detail-value">{planDetails.guestCount || 'N/A'}</span>
+                                </div>
+                                <div className="detail-group">
                                     <span className="detail-label">Số bàn</span>
                                     <span className="detail-value">{planDetails.tableCount || 'N/A'}</span>
                                 </div>
@@ -647,18 +655,93 @@ const PlansManagement = () => {
                                     <span className="detail-label">Menu</span>
                                     <span className="detail-value">{planDetails.menuName || 'N/A'}</span>
                                 </div>
-                                <div className="detail-group">
-                                    <span className="detail-label">Dịch vụ</span>
-                                    <div className="services-list">
-                                        {planDetails.services?.map((service, index) => (
-                                            <div key={index} className="service-item">
-                                                {service.name} - {service.price?.toLocaleString('vi-VN')} VNĐ
-                                            </div>
-                                        )) || 'Không có dịch vụ'}
-                                    </div>
-                                </div>
                             </div>
                         </div>
+
+                        {/* Dịch vụ ẩm thực */}
+                        {planDetails.caterings && planDetails.caterings.length > 0 && (
+                            <div className="service-section">
+                                <div className="section-title">Dịch vụ Ẩm thực</div>
+                                <div className="service-list">
+                                    {planDetails.caterings.map((item, index) => (
+                                        <div key={index} className="service-item">
+                                            <div className="service-image-container">
+                                                <img 
+                                                    src={item.imageUrl || 'https://via.placeholder.com/80'} 
+                                                    alt={item.name}
+                                                    className="service-image"
+                                                />
+                                            </div>
+                                            <div className="service-info">
+                                                <span className="service-name">{item.name}</span>
+                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="service-total">
+                                    <span className="total-label">Tổng giá dịch vụ ẩm thực:</span>
+                                    <span className="total-value">{calculateCateringTotal(planDetails.caterings, planDetails.guestCount)?.toLocaleString('vi-VN')} VNĐ</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Dịch vụ trang trí */}
+                        {planDetails.decorates && planDetails.decorates.length > 0 && (
+                            <div className="service-section">
+                                <div className="section-title">Dịch vụ Trang trí</div>
+                                <div className="service-list">
+                                    {planDetails.decorates.map((item, index) => (
+                                        <div key={index} className="service-item">
+                                            <div className="service-image-container">
+                                                <img 
+                                                    src={item.imageUrl || 'https://via.placeholder.com/80'} 
+                                                    alt={item.name}
+                                                    className="service-image"
+                                                />
+                                            </div>
+                                            <div className="service-info">
+                                                <span className="service-name">{item.name}</span>
+                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="service-total">
+                                    <span className="total-label">Tổng giá dịch vụ trang trí:</span>
+                                    <span className="total-value">{calculateDecorateTotal(planDetails.decorates)?.toLocaleString('vi-VN')} VNĐ</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Dịch vụ MC/Quà tặng */}
+                        {planDetails.presents && planDetails.presents.length > 0 && (
+                            <div className="service-section">
+                                <div className="section-title">Dịch vụ MC/Quà tặng</div>
+                                <div className="service-list">
+                                    {planDetails.presents.map((item, index) => (
+                                        <div key={index} className="service-item">
+                                            <div className="service-image-container">
+                                                <img 
+                                                    src={item.imageUrl || 'https://via.placeholder.com/80'} 
+                                                    alt={item.name}
+                                                    className="service-image"
+                                                />
+                                            </div>
+                                            <div className="service-info">
+                                                <span className="service-name">{item.name}</span>
+                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
+                                                <span className="service-quantity">Số lượng: {item.quantity || 1}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="service-total">
+                                    <span className="total-label">Tổng giá dịch vụ MC/Quà tặng:</span>
+                                    <span className="total-value">{calculatePresentTotal(planDetails.presents)?.toLocaleString('vi-VN')} VNĐ</span>
+                                </div>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <div className="no-plan-details">
