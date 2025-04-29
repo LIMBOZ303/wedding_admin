@@ -7,12 +7,10 @@ import {
   faUsers,
   faBoxArchive,
   faBlog,
-  faExchangeAlt,
   faSignOutAlt,
   faBars,
   faChevronLeft,
   faComments,
-  faUserCheck
 } from '@fortawesome/free-solid-svg-icons';
 import '../public/styles/Slidebar.css';
 import { AppContext } from '../AppContext';
@@ -84,11 +82,9 @@ const Sidebar = () => {
     { path: '/home', icon: faHome, text: 'Trang chủ' },
     { path: '/products', icon: faBoxes, text: 'Quản Lý Dịch Vụ' },
     { path: '/accounts', icon: faUsers, text: 'Quản Lý Tài Khoản' },
-    { path: '/user-status', icon: faUserCheck, text: 'Đang Online' },
     { path: '/plans', icon: faBoxArchive, text: 'Quản Lý Kế Hoạch' },
     { path: '/combo', icon: faBoxArchive, text: 'Quản lý Combo' },
     { path: '/blog', icon: faBlog, text: 'Blog' },
-    { path: '/transaction', icon: faExchangeAlt, text: 'Giao Dịch' },
     { path: '/admin-chat', icon: faComments, text: 'Chat Với Khách Hàng' },
     { path: '/', icon: faSignOutAlt, text: 'Đăng xuất' },
   ];
