@@ -238,7 +238,7 @@ const AccountManagement = () => {
                                 </div>
 
                                 <div className="user-plans-section">
-                                    <h3>Danh Sách Kế Hoạch Đã Đặt Cọc</h3>
+                                    <h3>Danh Sách Kế Hoạch Người Dùng</h3>
                                     {userPlans.length > 0 ? (
                                         <div className="plans-list">
                                             {userPlans.map(plan => (
@@ -267,7 +267,7 @@ const AccountManagement = () => {
                                         </div>
                                     ) : (
                                         <div className="no-plans">
-                                            <p>Người dùng chưa có kế hoạch nào đã đặt cọc.</p>
+                                            <p>Người dùng chưa có kế hoạch nào!</p>
                                         </div>
                                     )}
                                 </div>
