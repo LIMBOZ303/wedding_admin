@@ -249,7 +249,7 @@ const ProductManagement = () => {
           setEditCate("");
         }
 
-        setEditDescription(localItem.description || "");
+        setEditDescription(localItem.Description || "");
         setEditImageUrl(localItem.imageUrl || "");
 
         try {
@@ -274,7 +274,7 @@ const ProductManagement = () => {
               setEditCate("");
             }
 
-            setEditDescription(food.description || "");
+            setEditDescription(food.Description || "");
             setEditImageUrl(food.imageUrl || "");
             console.log("Đã cập nhật thông tin từ fetchFoodById");
           }
@@ -302,7 +302,7 @@ const ProductManagement = () => {
                 setEditCate("");
               }
 
-              setEditDescription(food.description || "");
+              setEditDescription(food.Description || "");
               setEditImageUrl(food.imageUrl || "");
               console.log("Đã cập nhật thông tin từ fetchFoodDetail");
             }
@@ -543,7 +543,7 @@ const ProductManagement = () => {
           setEditCate("");
         }
 
-        setEditDescription(item.description || "");
+        setEditDescription(item.Description || "");
         setEditImageUrl(item.imageUrl || "");
 
         try {
@@ -568,7 +568,7 @@ const ProductManagement = () => {
               setEditCate("");
             }
 
-            setEditDescription(catering.description || "");
+            setEditDescription(catering.Description || "");
             setEditImageUrl(catering.imageUrl || "");
             console.log("Đã cập nhật thông tin từ fetchCateringById");
           }
@@ -596,7 +596,7 @@ const ProductManagement = () => {
                 setEditCate("");
               }
 
-              setEditDescription(catering.description || "");
+              setEditDescription(catering.Description || "");
               setEditImageUrl(catering.imageUrl || "");
               console.log("Đã cập nhật thông tin từ fetchCateringDetail");
             }
@@ -795,7 +795,7 @@ const ProductManagement = () => {
         newData = {
           name: newName.trim(),
           price: priceNumber, // Sử dụng giá đã được xử lý
-          description: newDescription?.trim(),
+          Description: newDescription?.trim(),
           imageUrl: newImageUrl?.trim(),
         };
 
@@ -1162,7 +1162,7 @@ const ProductManagement = () => {
                       </td>
                       <td data-full-text={item.name}>{item.name}</td>
                       <td data-full-text={`${formatCurrency(item.price)} VND`}>{formatCurrency(item.price)} VND</td>
-                      <td data-full-text={item.description || "Không có mô tả"}>{item.description || "Không có mô tả"}</td>
+                      <td data-full-text={item.Description || "Không có mô tả"}>{item.Description || "Không có mô tả"}</td>
                       <td className="action-column">
                         <button
                           className="button-detail"
@@ -1219,17 +1219,17 @@ const ProductManagement = () => {
                 {selectedItem.type === "DichVu" && (
                   <>
                     <p>
-                      <strong>Loại dịch vụ:</strong> {selectedItem.cate_cateringId?.name || "Chưa có"}
+                      <strong>Loại Món Ăn:</strong> {selectedItem.cate_cateringId?.name || "Chưa có"}
                     </p>
                     <p>
-                      <strong>Mô tả:</strong> {selectedItem.description || "Không có mô tả"}
+                      <strong>Mô tả:</strong> {selectedItem.Description || "Không có mô tả"}
                     </p>
                   </>
                 )}
                 {selectedItem.type === "QuaTang" && (
                   <>
                     <p>
-                      <strong>Loại quà tặng:</strong> {selectedItem.Cate_presentId?.name || "Chưa có"}
+                      <strong>Loại Quà Tặng:</strong> {selectedItem.Cate_presentId?.name || "Chưa có"}
                     </p>
                     <p>
                       <strong>Mô tả:</strong> {selectedItem.Description || "Không có mô tả"}
