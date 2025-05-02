@@ -44,8 +44,6 @@ const AdminChat = () => {
     const [currentUserId, setCurrentUserId] = useState(null);
     const [currentUserInfo, setCurrentUserInfo] = useState(null);
     const [messageInput, setMessageInput] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [userLoading, setUserLoading] = useState(true);
     const [socket, setSocket] = useState(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
     const [currentPlanId, setCurrentPlanId] = useState(null);
@@ -68,7 +66,6 @@ const AdminChat = () => {
         decorate: [],
         present: []
     });
-    const [planLoading, setPlanLoading] = useState(false);
     const [planError, setPlanError] = useState(null);
     const [planSuccess, setPlanSuccess] = useState(false);
     const [showLists, setShowLists] = useState({
@@ -79,7 +76,6 @@ const AdminChat = () => {
     });
     const [showViewDetailModal, setShowViewDetailModal] = useState(false);
     const [selectedPlanForView, setSelectedPlanForView] = useState(null);
-
     const [isPlanConfirmed, setIsPlanConfirmed] = useState(false);
 
     const appContext = useContext(AppContext) || {};
@@ -144,7 +140,6 @@ const AdminChat = () => {
     };
 
     const fetchPlanData = async () => {
-        setPlanLoading(true);
         try {
             const [lobbyRes, cateringRes, decorateRes, presentRes] = await Promise.all([
                 fetchLobbies(),
@@ -160,8 +155,6 @@ const AdminChat = () => {
             });
         } catch (err) {
             setPlanError('Không thể tải dữ liệu kế hoạch');
-        } finally {
-            setPlanLoading(false);
         }
     };
 
@@ -232,29 +225,13 @@ const AdminChat = () => {
                 const parsedContent = JSON.parse(processedMessage.message);
                 if (parsedContent.planId) {
                     setCurrentPlanId(parsedContent.planId);
-                    // Kiểm tra trạng thái kế hoạch
                     const planDetails = await fetchPlanDetails(parsedContent.planId);
-                    // Đặt isPlanConfirmed thành true nếu trạng thái không phải "Đang chờ xác nhận"
                     setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(planDetails.status));
                 } else {
                     console.warn('Không có planId trong tin nhắn kế hoạch:', processedMessage.message);
                 }
             } catch (e) {
                 console.error('Lỗi parse JSON trong handleNewMessage:', e, 'Nội dung:', processedMessage.message);
-            }
-        }
-
-        // Xử lý tin nhắn xác nhận
-        if (processedMessage.messageType === 'confirmation' && processedMessage.senderType === 'user') {
-            try {
-                const parsedContent = JSON.parse(processedMessage.message);
-                if (parsedContent.action === 'confirm' && parsedContent.planId === currentPlanId) {
-                    // Kiểm tra trạng thái kế hoạch từ API để xác nhận
-                    const planDetails = await fetchPlanDetails(parsedContent.planId);
-                    setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(planDetails.status));
-                }
-            } catch (e) {
-                console.error('Lỗi parse JSON trong tin nhắn xác nhận:', e);
             }
         }
 
@@ -271,12 +248,12 @@ const AdminChat = () => {
             }
         }
 
-        const existingUserIndex = users.findIndex(user => user.userId === senderId);
+        setUsers(prevUsers => {
+            const existingUserIndex = prevUsers.findIndex(user => user.userId === senderId);
+            const updatedUsers = [...prevUsers];
 
-        if (existingUserIndex >= 0 && processedMessage.senderType !== 'admin') {
-            setUsers(prevUsers => {
-                const updatedUsers = [...prevUsers];
-
+            if (existingUserIndex >= 0) {
+                // Cập nhật thông tin cho user hiện có
                 const updatedName = processedMessage.userName && processedMessage.userName !== 'Khách hàng' && processedMessage.userName !== senderId
                     ? processedMessage.userName
                     : updatedUsers[existingUserIndex].name;
@@ -289,27 +266,30 @@ const AdminChat = () => {
                     lastMessageTime: processedMessage.createdAt,
                     unreadCount: currentUserId === senderId
                         ? 0
-                        : (updatedUsers[existingUserIndex].unreadCount || 0) + 1
+                        : (updatedUsers[existingUserIndex].unreadCount || 0) + (processedMessage.senderType === 'user' ? 1 : 0)
                 };
-                return updatedUsers;
-            });
-        } else if (processedMessage.senderType !== 'admin') {
-            const userDisplayName = (processedMessage.userName && processedMessage.userName !== senderId)
-                ? processedMessage.userName
-                : 'Khách hàng';
 
-            setUsers(prevUsers => [
-                {
+                // Di chuyển user lên đầu danh sách
+                const [movedUser] = updatedUsers.splice(existingUserIndex, 1);
+                updatedUsers.unshift(movedUser);
+            } else if (processedMessage.senderType === 'user') {
+                // Chỉ tạo user mới nếu không tìm thấy và là tin nhắn từ user
+                const userDisplayName = (processedMessage.userName && processedMessage.userName !== senderId)
+                    ? processedMessage.userName
+                    : 'Khách hàng';
+
+                updatedUsers.unshift({
                     userId: senderId,
                     name: userDisplayName,
                     lastMessage: processedMessage.message,
                     lastMessageType: processedMessage.messageType,
                     lastMessageTime: processedMessage.createdAt,
                     unreadCount: currentUserId === senderId ? 0 : 1
-                },
-                ...prevUsers
-            ]);
-        }
+                });
+            }
+
+            return updatedUsers;
+        });
 
         if (currentUserId === userId || currentUserId === senderId) {
             setMessages(prevMessages => [...prevMessages, processedMessage]);
@@ -354,7 +334,6 @@ const AdminChat = () => {
 
     const fetchUsers = async () => {
         try {
-            setUserLoading(true);
             setRefreshingUsers(true);
             const result = await fetchAllChatUsers();
             if (result.success) {
@@ -377,7 +356,6 @@ const AdminChat = () => {
         } catch (error) {
             console.error('Lỗi khi lấy danh sách người dùng chat:', error);
         } finally {
-            setUserLoading(false);
             setRefreshingUsers(false);
         }
     };
@@ -449,7 +427,6 @@ const AdminChat = () => {
 
     const fetchMessages = async (userId) => {
         try {
-            setLoading(true);
             setRefreshingMessages(true);
             const result = await fetchChatHistory(userId);
             if (result.success) {
@@ -481,9 +458,7 @@ const AdminChat = () => {
                         const parsedContent = JSON.parse(planMessage.message);
                         if (parsedContent.planId) {
                             setCurrentPlanId(parsedContent.planId);
-                            // Lấy chi tiết kế hoạch để kiểm tra trạng thái xác nhận
                             const planDetails = await fetchPlanDetails(parsedContent.planId);
-                            // Đặt isPlanConfirmed thành true nếu trạng thái không phải "Đang chờ xác nhận"
                             setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(planDetails.status));
                         } else {
                             setCurrentPlanId(null);
@@ -533,7 +508,6 @@ const AdminChat = () => {
             setCurrentPlanId(null);
             setIsPlanConfirmed(false);
         } finally {
-            setLoading(false);
             setRefreshingMessages(false);
         }
     };
@@ -636,7 +610,6 @@ const AdminChat = () => {
 
     const handleOpenPlanModal = async () => {
         if (!currentUserId || !currentPlanId) return;
-        setPlanLoading(true);
         try {
             await fetchPlanData();
             const fetchedPlanDetails = await fetchPlanDetails(currentPlanId);
@@ -661,13 +634,10 @@ const AdminChat = () => {
                 icon: 'error',
                 confirmButtonText: 'OK',
             });
-        } finally {
-            setPlanLoading(false);
         }
     };
 
     const handleViewPlanDetails = async (planId) => {
-        setPlanLoading(true);
         try {
             const fetchedPlanDetails = await fetchPlanDetails(planId);
             setSelectedPlanForView(fetchedPlanDetails);
@@ -681,8 +651,6 @@ const AdminChat = () => {
                 icon: 'error',
                 confirmButtonText: 'OK',
             });
-        } finally {
-            setPlanLoading(false);
         }
     };
 
@@ -709,7 +677,6 @@ const AdminChat = () => {
             setPlanError('Vui lòng nhập số lượng khách hợp lệ!');
             return;
         }
-        setPlanLoading(true);
         try {
             const updateData = {
                 UserId: currentUserId,
@@ -765,8 +732,6 @@ const AdminChat = () => {
                 icon: 'error',
                 confirmButtonText: 'OK',
             });
-        } finally {
-            setPlanLoading(false);
         }
     };
 
@@ -844,7 +809,7 @@ const AdminChat = () => {
                                             name={singleSelect ? 'sanh' : type}
                                             checked={singleSelect ? selectedIds === item._id : selectedIds.includes(item._id)}
                                             onChange={() => { }}
-                                            disabled={planLoading}
+                                            disabled={refreshingMessages}
                                         />
                                         {(singleSelect ? selectedIds === item._id : selectedIds.includes(item._id)) && (
                                             <span className="checkmark">
@@ -876,7 +841,7 @@ const AdminChat = () => {
                                                                 ),
                                                             }));
                                                         }}
-                                                        disabled={planLoading}
+                                                        disabled={refreshingMessages}
                                                     />
                                                 </div>
                                             )}
@@ -1051,13 +1016,7 @@ const AdminChat = () => {
                     </div>
 
                     <div className="user-list">
-                        {userLoading ? (
-                            <div className="loading-spinner">
-                                <div className="spinner-border text-primary" role="status">
-                                    <span className="visually-hidden"></span>
-                                </div>
-                            </div>
-                        ) : users.length === 0 ? (
+                        {users.length === 0 ? (
                             <div className="no-users">
                                 <p>Chưa có người dùng nào chat</p>
                             </div>
@@ -1065,7 +1024,7 @@ const AdminChat = () => {
                             users.map((user) => (
                                 <div
                                     key={user.userId}
-                                    className={`user-item ${currentUserId === user.userId ? 'active' : ''} ${user.unreadCount > 0 ? 'unread' : ''}`}
+                                    className={`user-item ${currentUserId === user.userId ? 'active' : ''} ${user.unreadCount > 0 && currentUserId !== user.userId ? 'unread' : ''}`}
                                     onClick={() => handleSelectUser(user.userId)}
                                     title={`${user.name || 'Khách hàng'}${user.email ? ' - ' + user.email : ''}`}
                                 >
@@ -1087,7 +1046,7 @@ const AdminChat = () => {
                                             <p>{truncateMessage(user.lastMessage, 30, user.lastMessageType)}</p>
                                             <small>{formatTime(user.lastMessageTime)}</small>
                                         </div>
-                                        {user.unreadCount > 0 && (
+                                        {user.unreadCount > 0 && currentUserId !== user.userId && (
                                             <div className="unread-badge">
                                                 <span>{user.unreadCount}</span>
                                             </div>
@@ -1149,12 +1108,6 @@ const AdminChat = () => {
                                         <p>Chọn một người dùng để bắt đầu chat</p>
                                     </div>
                                 </div>
-                            ) : loading ? (
-                                <div className="loading-spinner">
-                                    <div className="spinner-border text-primary" role="status">
-                                        <span className="visually-hidden"></span>
-                                    </div>
-                                </div>
                             ) : messages.length === 0 ? (
                                 <div className="no-messages">
                                     <div className="empty-state">
@@ -1193,9 +1146,11 @@ const AdminChat = () => {
                                                 )}
                                                 <div className={`message ${message.senderType === 'admin' ? 'sent' : 'received'}`}>
                                                     <div className="message-content">
-                                                        <div className="message-sender">
-                                                            <UserNameDisplay userName={senderName} highlight={true} />
-                                                        </div>
+                                                        {message.senderType !== 'admin' && (
+                                                            <div className="message-sender">
+                                                                <UserNameDisplay userName={senderName} highlight={true} />
+                                                            </div>
+                                                        )}
                                                         {isImage ? (
                                                             <div className="message-image-container">
                                                                 <img
@@ -1288,7 +1243,7 @@ const AdminChat = () => {
                                     <button
                                         className="confirmation-button"
                                         onClick={handleOpenPlanModal}
-                                        disabled={!currentUserId || !currentPlanId || planLoading}
+                                        disabled={!currentUserId || !currentPlanId || refreshingMessages}
                                         title={currentPlanId ? "Chỉnh sửa và gửi kế hoạch mới" : "Chưa có kế hoạch từ người dùng"}
                                     >
                                         <FontAwesomeIcon icon={faEdit} />
@@ -1450,7 +1405,7 @@ const AdminChat = () => {
                         {planError && <div className="error-message"><FontAwesomeIcon icon={faTimes} /> {planError}</div>}
                         {planSuccess && <div className="success-message"><FontAwesomeIcon icon={faCheck} /> Gửi kế hoạch thành công!</div>}
 
-                        {planLoading ? (
+                        {refreshingMessages ? (
                             <div className="loading-spinner">
                                 <div className="spinner-border text-primary" role="status">
                                     <span className="visually-hidden"></span>
@@ -1465,7 +1420,7 @@ const AdminChat = () => {
                                         type="text"
                                         value={editedPlan.name}
                                         onChange={(e) => setEditedPlan(prev => ({ ...prev, name: e.target.value }))}
-                                        disabled={planLoading}
+                                        disabled={refreshingMessages}
                                         placeholder="Nhập tên kế hoạch..."
                                         className="edit-input"
                                     />
@@ -1482,7 +1437,7 @@ const AdminChat = () => {
                                             const value = parseInt(e.target.value) || 0;
                                             setEditedPlan(prev => ({ ...prev, numberOfGuests: value }));
                                         }}
-                                        disabled={planLoading}
+                                        disabled={refreshingMessages}
                                         placeholder="Nhập số lượng khách..."
                                         className="edit-input"
                                     />
@@ -1509,15 +1464,15 @@ const AdminChat = () => {
                                     <button
                                         className="save-btn"
                                         onClick={handleSendNewPlan}
-                                        disabled={planLoading || planSuccess}
+                                        disabled={refreshingMessages || planSuccess}
                                     >
-                                        <FontAwesomeIcon icon={planLoading ? faSpinner : faSave} spin={planLoading} />
-                                        {planLoading ? 'Đang gửi...' : 'Gửi Kế hoạch'}
+                                        <FontAwesomeIcon icon={refreshingMessages ? faSpinner : faSave} spin={refreshingMessages} />
+                                        {refreshingMessages ? 'Đang gửi...' : 'Gửi Kế hoạch'}
                                     </button>
                                     <button
                                         className="cancel-btn"
                                         onClick={handleClosePlanModal}
-                                        disabled={planLoading}
+                                        disabled={refreshingMessages}
                                     >
                                         <FontAwesomeIcon icon={faTimes} /> Hủy
                                     </button>
