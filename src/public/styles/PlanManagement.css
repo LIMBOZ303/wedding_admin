@@ -952,33 +952,86 @@
 
 /* Status Badges */
 .status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.status-badge.status-active {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-}
-
-.status-badge.status-pending {
-    background-color: #fff3e0;
-    color: #ef6c00;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .status-badge.status-deposited {
-    background-color: #e3f2fd;
-    color: #1976d2;
+    background-color: #4CAF50;
+    color: white;
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
 }
 
 .status-badge.status-canceled {
-    background-color: #fbe9e7;
-    color: #d32f2f;
+    background-color: #f44336;
+    color: white;
+    box-shadow: 0 2px 4px rgba(244, 67, 54, 0.2);
+}
+
+.status-badge.status-active {
+    background-color: #2196F3;
+    color: white;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.2);
+}
+
+.status-badge.status-pending {
+    background-color: #ff9800;
+    color: white;
+    box-shadow: 0 2px 4px rgba(255, 152, 0, 0.2);
+}
+
+.status-badge svg {
+    font-size: 0.9em;
+}
+
+/* Hiệu ứng hover */
+.status-badge:hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Animation cho trạng thái đang chờ */
+.status-badge.status-pending {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Thêm icon và màu sắc cho từng trạng thái */
+.status-badge.status-deposited::before {
+    content: "✓";
+    margin-right: 4px;
+}
+
+.status-badge.status-canceled::before {
+    content: "×";
+    margin-right: 4px;
+}
+
+.status-badge.status-active::before {
+    content: "✓";
+    margin-right: 4px;
+}
+
+.status-badge.status-pending::before {
+    content: "⌛";
+    margin-right: 4px;
 }
 
 /* Buttons */

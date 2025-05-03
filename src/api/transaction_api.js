@@ -2,18 +2,61 @@ import axios from 'axios';
 
 const API_URL = 'https://apidatn.onrender.com/transaction';
 const USER_API_URL = 'https://apidatn.onrender.com/users';
+const PLAN_API_URL = 'https://apidatn.onrender.com/plans';
 
 export const fetchTransaction = async (userId, role) => {
   try {
+    // Lấy danh sách giao dịch
     const response = await axios.get(`${USER_API_URL}/get/transactions`, {
       headers: {
         'user-id': userId,
         'user-role': role,
       },
     });
-    
+
+    console.log('Transaction API Response:', response.data);
+
     if (!response.data || typeof response.data !== 'object') {
       throw new Error('Dữ liệu API không hợp lệ');
+    }
+
+    // Nếu có dữ liệu giao dịch, lấy thông tin kế hoạch cho mỗi giao dịch
+    if (response.data.status && Array.isArray(response.data.data)) {
+      const transactionsWithPlanDetails = await Promise.all(
+        response.data.data.map(async (transaction) => {
+          console.log('Processing transaction:', transaction);
+
+          if (transaction.planId) {
+            try {
+              console.log('Fetching plan details for planId:', transaction.planId);
+              const planResponse = await axios.get(`${PLAN_API_URL}/${transaction.planId}`);
+              console.log('Plan API Response:', planResponse.data);
+
+              if (planResponse.data && planResponse.data.status) {
+                const planData = planResponse.data.data;
+                console.log('Plan Data:', planData);
+                return {
+                  ...transaction,
+                  planName: planData.name,
+                  planDetails: planData
+                };
+              }
+            } catch (error) {
+              console.error(`Lỗi khi lấy thông tin kế hoạch cho giao dịch ${transaction._id}:`, error);
+            }
+          } else {
+            console.log('No planId found for transaction:', transaction._id);
+          }
+          return transaction;
+        })
+      );
+
+      console.log('Final transactions with plan details:', transactionsWithPlanDetails);
+
+      return {
+        ...response.data,
+        data: transactionsWithPlanDetails
+      };
     }
 
     return response.data;

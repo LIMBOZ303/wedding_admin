@@ -10,8 +10,8 @@ import {
     faExclamationTriangle,
     faSearch
 } from '@fortawesome/free-solid-svg-icons';
-import { fetchPlanswithUser, fetchPlansNoUser } from '../api/plan_api';
-import { fetchTransaction, fetchPlanFromTransaction } from '../api/transaction_api';
+import { fetchPlanswithUser, fetchPlansNoUser, fetchPlanById } from '../api/plan_api';
+import { fetchTransaction } from '../api/transaction_api';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import "../public/styles/PlanManagement.css";
@@ -59,8 +59,8 @@ const PlansManagement = () => {
             // Lọc kế hoạch đã đặt cọc
             const deposited = userPlansRes.filter(plan => plan.status === 'Đã đặt cọc');
             // Lọc kế hoạch khác (chỉ lấy kế hoạch của User chưa đặt cọc và chưa hủy)
-            const others = userPlansRes.filter(plan => 
-                plan.status !== 'Đã đặt cọc' && 
+            const others = userPlansRes.filter(plan =>
+                plan.status !== 'Đã đặt cọc' &&
                 plan.status !== 'Đã hủy'
             );
 
@@ -115,14 +115,48 @@ const PlansManagement = () => {
             }
 
             const data = await fetchTransaction(userId, userRole);
-            
+            console.log("Raw transaction data from API:", data); // Debug log
+
             if (data.status) {
                 if (!Array.isArray(data.data)) {
                     throw new Error('Dữ liệu giao dịch không hợp lệ');
                 }
 
-                const sortedData = [...data.data].sort((a, b) => {
-                    // Sắp xếp theo ngày mới nhất trước
+                // Lấy thông tin chi tiết cho mỗi giao dịch có planId
+                const transactionsWithPlanDetails = await Promise.all(
+                    data.data.map(async (tx) => {
+                        console.log("Processing transaction:", tx); // Debug log
+                        console.log("Plan ID from transaction:", tx.planId); // Debug log
+
+                        if (tx.planId) {
+                            try {
+                                console.log("Fetching plan details for plan ID:", tx.planId); // Debug log
+                                const planResponse = await fetchPlanById(tx.planId);
+                                console.log("Plan API response:", planResponse); // Debug log
+
+                                if (planResponse && planResponse.status && planResponse.data) {
+                                    console.log("Successfully got plan details:", planResponse.data); // Debug log
+                                    return {
+                                        ...tx,
+                                        planName: planResponse.data.name,
+                                        planDetails: planResponse.data
+                                    };
+                                } else {
+                                    console.log("Plan API response was invalid:", planResponse); // Debug log
+                                }
+                            } catch (error) {
+                                console.error(`Error fetching plan details for transaction ${tx._id}:`, error);
+                            }
+                        } else {
+                            console.log("No plan ID found for transaction:", tx._id); // Debug log
+                        }
+                        return tx;
+                    })
+                );
+
+                console.log("Final processed transactions:", transactionsWithPlanDetails); // Debug log
+
+                const sortedData = [...transactionsWithPlanDetails].sort((a, b) => {
                     const dateA = new Date(a.createdAt);
                     const dateB = new Date(b.createdAt);
                     return dateB - dateA;
@@ -134,7 +168,7 @@ const PlansManagement = () => {
             }
         } catch (err) {
             setError(`Lỗi: ${err.message}`);
-            console.error('Lỗi khi lấy danh sách giao dịch:', err.message);
+            console.error('Lỗi khi lấy danh sách giao dịch:', err);
         } finally {
             setLoadingTransactions(false);
         }
@@ -210,7 +244,7 @@ const PlansManagement = () => {
                 if (transactionStatusFilter === 'all') return true;
                 return tx.status === transactionStatusFilter;
             }
-    
+
             const searchString = searchTerm.toLowerCase();
             const matchesSearch = (
                 (tx._id && String(tx._id).toLowerCase().includes(searchString)) ||
@@ -218,7 +252,7 @@ const PlansManagement = () => {
                 (tx.userId?.email && tx.userId.email.toLowerCase().includes(searchString)) ||
                 (tx.planName && tx.planName.toLowerCase().includes(searchString))
             );
-    
+
             // Lọc theo trạng thái
             if (transactionStatusFilter === 'all') return matchesSearch;
             return matchesSearch && tx.status === transactionStatusFilter;
@@ -250,7 +284,7 @@ const PlansManagement = () => {
                     aValue = a.planName || '';
                     bValue = b.planName || '';
                 } else if (sortConfig.key === 'createdAt') {
-                    return sortConfig.direction === 'ascending' 
+                    return sortConfig.direction === 'ascending'
                         ? new Date(a.createdAt) - new Date(b.createdAt)
                         : new Date(b.createdAt) - new Date(a.createdAt);
                 } else {
@@ -318,9 +352,7 @@ const PlansManagement = () => {
         return date.toLocaleDateString('vi-VN', {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
+            year: 'numeric'
         });
     };
 
@@ -329,7 +361,7 @@ const PlansManagement = () => {
             setPlanDetails(null);
             return;
         }
-    
+
         try {
             setLoadingPlanDetails(true);
             const response = await axios.get(
@@ -341,7 +373,7 @@ const PlansManagement = () => {
                     },
                 }
             );
-    
+
             if (response.data.status) {
                 setPlanDetails(response.data.data);
             } else {
@@ -412,7 +444,7 @@ const PlansManagement = () => {
     // Render danh sách kế hoạch
     const renderPlanList = (plans) => {
         const filteredPlans = filterPlansByStatus(plans);
-        
+
         if (filteredPlans.length === 0) {
             return <p className="no-plans">Không có kế hoạch nào.</p>;
         }
@@ -437,7 +469,7 @@ const PlansManagement = () => {
                                 <p><strong>Khách hàng:</strong> {plan.UserId.name || 'N/A'}</p>
                             )}
                             <p>
-                                <strong>Trạng thái:</strong> 
+                                <strong>Trạng thái:</strong>
                                 <span className={`status ${plan.status === 'Đã đặt cọc' ? 'deposited' : 'not-deposited'}`}>
                                     {plan.status}
                                 </span>
@@ -466,7 +498,7 @@ const PlansManagement = () => {
                                 className="status-filter"
                             >
                                 <option value="all">Tất cả</option>
-                                
+
                                 <option value="Đang chờ">Chờ xác nhận</option>
                                 <option value="Đã đặt cọc">Đã đặt cọc</option>
                                 <option value="Đã hủy">Đã hủy</option>
@@ -490,13 +522,13 @@ const PlansManagement = () => {
                         </div>
                     </div>
                 </div>
-    
+
                 {error && (
                     <div className="error-message">
                         {error}
                     </div>
                 )}
-    
+
                 <div className="transactions-content">
                     {loadingTransactions ? (
                         <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
@@ -554,18 +586,24 @@ const PlansManagement = () => {
                                             <td className="index-column">{index + 1}</td>
                                             <td>{tx.userId?.name || 'N/A'}</td>
                                             <td>{tx.userId?.email || 'N/A'}</td>
-                                            <td>{tx.planName || 'Không có tên kế hoạch'}</td>
                                             <td>
-                                                <span className={`status-badge ${
-                                                    tx.status === 'Đã đặt cọc' ? 'status-deposited' :
-                                                    tx.status === 'Đã hủy' ? 'status-canceled' :
-                                                    tx.status === 'Đã kích hoạt' ? 'status-active' :
-                                                    'status-pending'
-                                                }`}>
+                                                {(() => {
+                                                    console.log("Transaction data for plan name:", tx);
+                                                    const planName = tx.planDetails?.name || tx.planName || 'Không có tên kế hoạch';
+                                                    console.log("Resolved plan name:", planName);
+                                                    return planName;
+                                                })()}
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge ${tx.status === 'Đã đặt cọc' ? 'status-deposited' :
+                                                        tx.status === 'Đã hủy' ? 'status-canceled' :
+                                                            tx.status === 'Đã kích hoạt' ? 'status-active' :
+                                                                'status-pending'
+                                                    }`}>
                                                     {tx.status === 'Đã đặt cọc' ? 'Đã đặt cọc' :
-                                                     tx.status === 'Đã hủy' ? 'Đã hủy' :
-                                                     tx.status === 'Đã kích hoạt' ? 'Đã xác nhận' :
-                                                     'Chờ xác nhận'}
+                                                        tx.status === 'Đã hủy' ? 'Đã hủy' :
+                                                            tx.status === 'Đã kích hoạt' ? 'Đã xác nhận' :
+                                                                'Chờ xác nhận'}
                                                 </span>
                                             </td>
                                             <td>{formatDate(tx.createdAt)}</td>
@@ -576,199 +614,203 @@ const PlansManagement = () => {
                         </div>
                     )}
                 </div>
-    
-                {selectedTransaction && (
-    <div className="transaction-modal-overlay" onClick={closeModal}>
-        <div className="transaction-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-                <h3>Chi tiết Giao dịch</h3>
-                <button className="modal-close" onClick={closeModal}>
-                    <FontAwesomeIcon icon={faTimes} />
-                </button>
-            </div>
-            <div className="transaction-details">
-                <div className="section-title">Thông tin giao dịch</div>
-                <div className="detail-group transaction-id-group">
-                    <span className="detail-label">Mã giao dịch</span>
-                    <span className="detail-value transaction-id">{selectedTransaction._id || 'N/A'}</span>
-                </div>
-                <div className="detail-group">
-                    <span className="detail-label">Người đặt cọc</span>
-                    <span className="detail-value">{selectedTransaction.userId?.name || 'N/A'}</span>
-                </div>
-                <div className="detail-group">
-                    <span className="detail-label">Email</span>
-                    <span className="detail-value">{selectedTransaction.userId?.email || 'N/A'}</span>
-                </div>
-                <div className="detail-group">
-                    <span className="detail-label">Tên kế hoạch</span>
-                    <span className="detail-value">{selectedTransaction.planName || 'Không có tên kế hoạch'}</span>
-                </div>
-                <div className="detail-group">
-                    <span className="detail-label">Trạng thái</span>
-                    <span className="detail-value status">{getStatusBadge(selectedTransaction.status)}</span>
-                </div>
-                <div className="detail-group">
-                    <span className="detail-label">Ngày tạo giao dịch</span>
-                    <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
-                </div>
 
-                {loadingPlanDetails ? (
-                    <LoadingSpinner size="small" text="Đang tải thông tin kế hoạch..." />
-                ) : planDetails ? (
-                    <>
-                        <div className="section-title">Chi tiết kế hoạch</div>
-                        <div className="plan-details-section">
-                            <div className="plan-image-container">
-                                <img 
-                                    src={planDetails.image || 'https://via.placeholder.com/120'} 
-                                    alt={planDetails.name}
-                                    className="plan-image"
-                                />
+                {selectedTransaction && (
+                    <div className="transaction-modal-overlay" onClick={closeModal}>
+                        <div className="transaction-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="modal-header">
+                                <h3>Chi tiết Giao dịch</h3>
+                                <button className="modal-close" onClick={closeModal}>
+                                    <FontAwesomeIcon icon={faTimes} />
+                                </button>
                             </div>
-                            <div className="plan-info">
+                            <div className="transaction-details">
+                                <div className="section-title">Thông tin giao dịch</div>
+                                <div className="detail-group transaction-id-group">
+                                    <span className="detail-label">Mã giao dịch</span>
+                                    <span className="detail-value transaction-id">{selectedTransaction._id || 'N/A'}</span>
+                                </div>
+                                <div className="detail-group">
+                                    <span className="detail-label">Người đặt cọc</span>
+                                    <span className="detail-value">{selectedTransaction.userId?.name || 'N/A'}</span>
+                                </div>
+                                <div className="detail-group">
+                                    <span className="detail-label">Email</span>
+                                    <span className="detail-value">{selectedTransaction.userId?.email || 'N/A'}</span>
+                                </div>
                                 <div className="detail-group">
                                     <span className="detail-label">Tên kế hoạch</span>
-                                    <span className="detail-value">{planDetails.name || 'N/A'}</span>
+                                    <span className="detail-value">
+                                        {selectedTransaction.planName ||
+                                            (selectedTransaction.planDetails && selectedTransaction.planDetails.name) ||
+                                            'Không có tên kế hoạch'}
+                                    </span>
                                 </div>
                                 <div className="detail-group">
-                                    <span className="detail-label">Sảnh</span>
-                                    <span className="detail-value">{planDetails.sanhName || 'N/A'}</span>
+                                    <span className="detail-label">Trạng thái</span>
+                                    <span className="detail-value status">{getStatusBadge(selectedTransaction.status)}</span>
                                 </div>
                                 <div className="detail-group">
-                                    <span className="detail-label">Tổng giá</span>
-                                    <span className="detail-value price">{planDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ</span>
+                                    <span className="detail-label">Ngày tạo giao dịch</span>
+                                    <span className="detail-value date">{formatDate(selectedTransaction.createdAt)}</span>
                                 </div>
-                                <div className="detail-group">
-                                    <span className="detail-label">Ngày tổ chức</span>
-                                    <span className="detail-value">{formatDate(planDetails.eventDate)}</span>
-                                </div>
-                                <div className="detail-group">
-                                    <span className="detail-label">Số lượng khách</span>
-                                    <span className="detail-value">{planDetails.guestCount || 'N/A'}</span>
-                                </div>
-                                <div className="detail-group">
-                                    <span className="detail-label">Số bàn</span>
-                                    <span className="detail-value">{planDetails.tableCount || 'N/A'}</span>
-                                </div>
-                                <div className="detail-group">
-                                    <span className="detail-label">Menu</span>
-                                    <span className="detail-value">{planDetails.menuName || 'N/A'}</span>
-                                </div>
+
+                                {loadingPlanDetails ? (
+                                    <LoadingSpinner size="small" text="Đang tải thông tin kế hoạch..." />
+                                ) : planDetails ? (
+                                    <>
+                                        <div className="section-title">Chi tiết kế hoạch</div>
+                                        <div className="plan-details-section">
+                                            <div className="plan-image-container">
+                                                <img
+                                                    src={planDetails.image || 'https://via.placeholder.com/120'}
+                                                    alt={planDetails.name}
+                                                    className="plan-image"
+                                                />
+                                            </div>
+                                            <div className="plan-info">
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Tên kế hoạch</span>
+                                                    <span className="detail-value">{planDetails.name || 'N/A'}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Sảnh</span>
+                                                    <span className="detail-value">{planDetails.sanhName || 'N/A'}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Tổng giá</span>
+                                                    <span className="detail-value price">{planDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Ngày tổ chức</span>
+                                                    <span className="detail-value">{formatDate(planDetails.eventDate)}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Số lượng khách</span>
+                                                    <span className="detail-value">{planDetails.guestCount || 'N/A'}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Số bàn</span>
+                                                    <span className="detail-value">{planDetails.tableCount || 'N/A'}</span>
+                                                </div>
+                                                <div className="detail-group">
+                                                    <span className="detail-label">Menu</span>
+                                                    <span className="detail-value">{planDetails.menuName || 'N/A'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Dịch vụ ẩm thực */}
+                                        {planDetails.caterings && planDetails.caterings.length > 0 && (
+                                            <div className="service-section">
+                                                <div className="section-title">Dịch vụ Ẩm thực</div>
+                                                <div className="service-list">
+                                                    {planDetails.caterings.map((item, index) => (
+                                                        <div key={index} className="service-item">
+                                                            <div className="service-image-container">
+                                                                <img
+                                                                    src={item.imageUrl || 'https://via.placeholder.com/80'}
+                                                                    alt={item.name}
+                                                                    className="service-image"
+                                                                />
+                                                            </div>
+                                                            <div className="service-info">
+                                                                <span className="service-name">{item.name}</span>
+                                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="service-total">
+                                                    <span className="total-label">Tổng giá dịch vụ ẩm thực:</span>
+                                                    <span className="total-value">{calculateCateringTotal(planDetails.caterings, planDetails.guestCount)?.toLocaleString('vi-VN')} VNĐ</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Dịch vụ trang trí */}
+                                        {planDetails.decorates && planDetails.decorates.length > 0 && (
+                                            <div className="service-section">
+                                                <div className="section-title">Dịch vụ Trang trí</div>
+                                                <div className="service-list">
+                                                    {planDetails.decorates.map((item, index) => (
+                                                        <div key={index} className="service-item">
+                                                            <div className="service-image-container">
+                                                                <img
+                                                                    src={item.imageUrl || 'https://via.placeholder.com/80'}
+                                                                    alt={item.name}
+                                                                    className="service-image"
+                                                                />
+                                                            </div>
+                                                            <div className="service-info">
+                                                                <span className="service-name">{item.name}</span>
+                                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="service-total">
+                                                    <span className="total-label">Tổng giá dịch vụ trang trí:</span>
+                                                    <span className="total-value">{calculateDecorateTotal(planDetails.decorates)?.toLocaleString('vi-VN')} VNĐ</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Dịch vụ MC/Quà tặng */}
+                                        {planDetails.presents && planDetails.presents.length > 0 && (
+                                            <div className="service-section">
+                                                <div className="section-title">Dịch vụ MC/Quà tặng</div>
+                                                <div className="service-list">
+                                                    {planDetails.presents.map((item, index) => (
+                                                        <div key={index} className="service-item">
+                                                            <div className="service-image-container">
+                                                                <img
+                                                                    src={item.imageUrl || 'https://via.placeholder.com/80'}
+                                                                    alt={item.name}
+                                                                    className="service-image"
+                                                                />
+                                                            </div>
+                                                            <div className="service-info">
+                                                                <span className="service-name">{item.name}</span>
+                                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
+                                                                <span className="service-quantity">Số lượng: {item.quantity || 1}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="service-total">
+                                                    <span className="total-label">Tổng giá dịch vụ MC/Quà tặng:</span>
+                                                    <span className="total-value">{calculatePresentTotal(planDetails.presents)?.toLocaleString('vi-VN')} VNĐ</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="no-plan-details">
+                                        Không có thông tin chi tiết kế hoạch
+                                    </div>
+                                )}
+
+                                {selectedTransaction.status !== 'Đã đặt cọc' &&
+                                    selectedTransaction.status !== 'Đã hủy' &&
+                                    userRole === 'admin' && (
+                                        <div className="detail-group actions">
+                                            <button
+                                                className="button-confirm"
+                                                onClick={() => {
+                                                    confirmTransaction(selectedTransaction._id);
+                                                    closeModal();
+                                                }}
+                                                disabled={loadingConfirm[selectedTransaction._id]}
+                                            >
+                                                <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
+                                            </button>
+                                        </div>
+                                    )}
                             </div>
                         </div>
-
-                        {/* Dịch vụ ẩm thực */}
-                        {planDetails.caterings && planDetails.caterings.length > 0 && (
-                            <div className="service-section">
-                                <div className="section-title">Dịch vụ Ẩm thực</div>
-                                <div className="service-list">
-                                    {planDetails.caterings.map((item, index) => (
-                                        <div key={index} className="service-item">
-                                            <div className="service-image-container">
-                                                <img 
-                                                    src={item.imageUrl || 'https://via.placeholder.com/80'} 
-                                                    alt={item.name}
-                                                    className="service-image"
-                                                />
-                                            </div>
-                                            <div className="service-info">
-                                                <span className="service-name">{item.name}</span>
-                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="service-total">
-                                    <span className="total-label">Tổng giá dịch vụ ẩm thực:</span>
-                                    <span className="total-value">{calculateCateringTotal(planDetails.caterings, planDetails.guestCount)?.toLocaleString('vi-VN')} VNĐ</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Dịch vụ trang trí */}
-                        {planDetails.decorates && planDetails.decorates.length > 0 && (
-                            <div className="service-section">
-                                <div className="section-title">Dịch vụ Trang trí</div>
-                                <div className="service-list">
-                                    {planDetails.decorates.map((item, index) => (
-                                        <div key={index} className="service-item">
-                                            <div className="service-image-container">
-                                                <img 
-                                                    src={item.imageUrl || 'https://via.placeholder.com/80'} 
-                                                    alt={item.name}
-                                                    className="service-image"
-                                                />
-                                            </div>
-                                            <div className="service-info">
-                                                <span className="service-name">{item.name}</span>
-                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="service-total">
-                                    <span className="total-label">Tổng giá dịch vụ trang trí:</span>
-                                    <span className="total-value">{calculateDecorateTotal(planDetails.decorates)?.toLocaleString('vi-VN')} VNĐ</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Dịch vụ MC/Quà tặng */}
-                        {planDetails.presents && planDetails.presents.length > 0 && (
-                            <div className="service-section">
-                                <div className="section-title">Dịch vụ MC/Quà tặng</div>
-                                <div className="service-list">
-                                    {planDetails.presents.map((item, index) => (
-                                        <div key={index} className="service-item">
-                                            <div className="service-image-container">
-                                                <img 
-                                                    src={item.imageUrl || 'https://via.placeholder.com/80'} 
-                                                    alt={item.name}
-                                                    className="service-image"
-                                                />
-                                            </div>
-                                            <div className="service-info">
-                                                <span className="service-name">{item.name}</span>
-                                                <span className="service-price">{item.price?.toLocaleString('vi-VN')} VNĐ</span>
-                                                <span className="service-quantity">Số lượng: {item.quantity || 1}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="service-total">
-                                    <span className="total-label">Tổng giá dịch vụ MC/Quà tặng:</span>
-                                    <span className="total-value">{calculatePresentTotal(planDetails.presents)?.toLocaleString('vi-VN')} VNĐ</span>
-                                </div>
-                            </div>
-                        )}
-                    </>
-                ) : (
-                    <div className="no-plan-details">
-                        Không có thông tin chi tiết kế hoạch
                     </div>
                 )}
-
-                {selectedTransaction.status !== 'Đã đặt cọc' &&
-                    selectedTransaction.status !== 'Đã hủy' &&
-                    userRole === 'admin' && (
-                        <div className="detail-group actions">
-                            <button
-                                className="button-confirm"
-                                onClick={() => {
-                                    confirmTransaction(selectedTransaction._id);
-                                    closeModal();
-                                }}
-                                disabled={loadingConfirm[selectedTransaction._id]}
-                            >
-                                <FontAwesomeIcon icon={faCheckCircle} /> Xác nhận giao dịch
-                            </button>
-                        </div>
-                    )}
-            </div>
-        </div>
-    </div>
-)}
             </div>
         );
     };
@@ -783,19 +825,19 @@ const PlansManagement = () => {
             </div>
 
             <div className="tabs">
-                <button 
+                <button
                     className={`tab-button ${activeTab === 'other' ? 'active' : ''}`}
                     onClick={() => setActiveTab('other')}
                 >
                     <FontAwesomeIcon icon={faList} /> Khác
                 </button>
-                <button 
+                <button
                     className={`tab-button ${activeTab === 'deposited' ? 'active' : ''}`}
                     onClick={() => setActiveTab('deposited')}
                 >
                     <FontAwesomeIcon icon={faCalendarCheck} /> Kế hoạch đã đặt cọc
                 </button>
-                <button 
+                <button
                     className={`tab-button ${activeTab === 'transactions' ? 'active' : ''}`}
                     onClick={() => setActiveTab('transactions')}
                 >
@@ -810,14 +852,14 @@ const PlansManagement = () => {
                         {renderPlanList(otherPlans)}
                     </>
                 )}
-                
+
                 {activeTab === 'deposited' && (
                     <>
                         <h2>Kế Hoạch Đã Đặt Cọc</h2>
                         {renderPlanList(depositedPlans)}
                     </>
                 )}
-                
+
                 {activeTab === 'transactions' && renderTransactionList()}
             </div>
 
@@ -845,7 +887,7 @@ const PlansManagement = () => {
                                         <p><span className="label">Khách Hàng:</span> <span className="value">{selectedPlan.UserId.name || 'N/A'}</span></p>
                                     )}
                                     <p>
-                                        <span className="label">Trạng thái:</span> 
+                                        <span className="label">Trạng thái:</span>
                                         <span className={`value status ${selectedPlan.status === 'Đã đặt cọc' ? 'deposited' : 'not-deposited'}`}>
                                             {selectedPlan.status}
                                         </span>
@@ -988,5 +1030,46 @@ const PlansManagement = () => {
         </div>
     );
 };
+
+// Thêm CSS vào cuối file, trước export default
+const styles = `
+<style>
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-badge.status-deposited {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.status-badge.status-canceled {
+    background-color: #f44336;
+    color: white;
+}
+
+.status-badge.status-active {
+    background-color: #2196F3;
+    color: white;
+}
+
+.status-badge.status-pending {
+    background-color: #ff9800;
+    color: white;
+}
+
+.status-badge svg {
+    font-size: 0.9em;
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', styles);
 
 export default PlansManagement;

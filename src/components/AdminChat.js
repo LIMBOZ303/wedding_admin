@@ -27,6 +27,7 @@ import { fetchCatering } from '../api/catering_api';
 import { fetchDecorate } from '../api/decorate_api';
 import { fetchGifts } from '../api/gift_api';
 import Swal from 'sweetalert2';
+import LoadingSpinner from './LoadingSpinner';
 
 const UserNameDisplay = ({ userName, highlight = false, fallback = 'Khách hàng' }) => {
     const displayName = userName || fallback;
@@ -77,6 +78,9 @@ const AdminChat = () => {
     const [showViewDetailModal, setShowViewDetailModal] = useState(false);
     const [selectedPlanForView, setSelectedPlanForView] = useState(null);
     const [isPlanConfirmed, setIsPlanConfirmed] = useState(false);
+    const [loadingPlanDetails, setLoadingPlanDetails] = useState(false);
+    const [viewingPlanId, setViewingPlanId] = useState(null);
+    const [sendingPlan, setSendingPlan] = useState(false);
 
     const appContext = useContext(AppContext) || {};
     const setUnreadMessages = appContext.setUnreadMessages || (() => {
@@ -639,9 +643,10 @@ const AdminChat = () => {
 
     const handleViewPlanDetails = async (planId) => {
         try {
+            setLoadingPlanDetails(true);
+            setViewingPlanId(planId);
             const fetchedPlanDetails = await fetchPlanDetails(planId);
             setSelectedPlanForView(fetchedPlanDetails);
-            // Đặt isPlanConfirmed dựa trên trạng thái kế hoạch
             setIsPlanConfirmed(['Chưa đặt cọc', 'Đang chờ', 'Đã đặt cọc'].includes(fetchedPlanDetails.status));
             setShowViewDetailModal(true);
         } catch (error) {
@@ -651,6 +656,9 @@ const AdminChat = () => {
                 icon: 'error',
                 confirmButtonText: 'OK',
             });
+        } finally {
+            setLoadingPlanDetails(false);
+            setViewingPlanId(null);
         }
     };
 
@@ -678,6 +686,7 @@ const AdminChat = () => {
             return;
         }
         try {
+            setSendingPlan(true);
             const updateData = {
                 UserId: currentUserId,
                 name: editedPlan.name,
@@ -732,6 +741,8 @@ const AdminChat = () => {
                 icon: 'error',
                 confirmButtonText: 'OK',
             });
+        } finally {
+            setSendingPlan(false);
         }
     };
 
@@ -1171,16 +1182,18 @@ const AdminChat = () => {
                                                                 </div>
                                                                 <div className="plan-message-body">
                                                                     <p><strong>Tên kế hoạch:</strong> {parsedContent.name || 'N/A'}</p>
-                                                                    {/* <p><strong>Số lượng khách:</strong> {parsedContent.numberOfGuests || 'N/A'}</p> */}
                                                                 </div>
                                                                 <div className="plan-message-footer">
                                                                     <button
                                                                         className="view-details-button"
                                                                         onClick={() => parsedContent.planId && handleViewPlanDetails(parsedContent.planId)}
-                                                                        disabled={!parsedContent.planId}
-                                                                        title="Xem chi tiết kế hoạch"
+                                                                        disabled={!parsedContent.planId || (loadingPlanDetails && viewingPlanId === parsedContent.planId)}
                                                                     >
-                                                                        Xem chi tiết
+                                                                        {loadingPlanDetails && viewingPlanId === parsedContent.planId ? (
+                                                                            <LoadingSpinner size="small" text="Đang tải..." />
+                                                                        ) : (
+                                                                            'Xem chi tiết'
+                                                                        )}
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -1464,15 +1477,21 @@ const AdminChat = () => {
                                     <button
                                         className="save-btn"
                                         onClick={handleSendNewPlan}
-                                        disabled={refreshingMessages || planSuccess}
+                                        disabled={refreshingMessages || planSuccess || sendingPlan}
                                     >
-                                        <FontAwesomeIcon icon={refreshingMessages ? faSpinner : faSave} spin={refreshingMessages} />
-                                        {refreshingMessages ? 'Đang gửi...' : 'Gửi Kế hoạch'}
+                                        {sendingPlan ? (
+                                            <LoadingSpinner size="small" text="Đang gửi..." />
+                                        ) : (
+                                            <>
+                                                <FontAwesomeIcon icon={faSave} />
+                                                <span>Gửi Kế hoạch</span>
+                                            </>
+                                        )}
                                     </button>
                                     <button
                                         className="cancel-btn"
                                         onClick={handleClosePlanModal}
-                                        disabled={refreshingMessages}
+                                        disabled={refreshingMessages || sendingPlan}
                                     >
                                         <FontAwesomeIcon icon={faTimes} /> Hủy
                                     </button>
@@ -1649,5 +1668,47 @@ const AdminChat = () => {
         </div>
     );
 };
+
+const styles = `
+<style>
+.view-details-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.view-details-button:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.view-details-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.view-details-button.loading {
+    background-color: #6c757d;
+    pointer-events: none;
+}
+
+.view-details-button .fa-spinner {
+    font-size: 14px;
+}
+
+.view-details-button span {
+    font-size: 14px;
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', styles);
 
 export default AdminChat;

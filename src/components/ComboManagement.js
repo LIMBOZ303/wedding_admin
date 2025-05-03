@@ -5,7 +5,7 @@ import { createCombo } from '../api/combo_api';
 import { fetchCatering } from '../api/catering_api';
 import { fetchDecorate } from '../api/decorate_api';
 import { fetchGifts } from '../api/gift_api';
-import { fetchLobbies } from '../api/order_api';
+import { fetchLobbies, fetchLobbyById } from '../api/order_api';
 import { fetchPlansNoUser, updatePlan, deletePlan } from '../api/plan_api';
 import LoadingSpinner from './LoadingSpinner';
 import Swal from 'sweetalert2';
@@ -46,6 +46,7 @@ const ComboManagement = () => {
         decorate: '',
         present: ''
     });
+    const [loadingLobbyDetail, setLoadingLobbyDetail] = useState(false);
 
     const calculateTotalPrice = (combo) => {
         let total = 0;
@@ -215,7 +216,7 @@ const ComboManagement = () => {
         setError(null);
     };
 
-    const openDetailModal = (plan) => {
+    const openDetailModal = async (plan) => {
         setSelectedPlan(plan);
         setEditedPlan({
             ...plan,
@@ -224,6 +225,27 @@ const ComboManagement = () => {
             decorateId: plan.decorates.map(item => item._id),
             presentId: plan.presents.map(item => item._id),
         });
+        
+        // Lấy chi tiết sảnh nếu có SanhId
+        if (plan.SanhId) {
+            setLoadingLobbyDetail(true);
+            try {
+                const sanhId = plan.SanhId._id || plan.SanhId;
+                const response = await fetchLobbyById(sanhId);
+                if (response.status && response.data) {
+                    setSelectedPlan(prev => ({
+                        ...prev,
+                        SanhId: response.data
+                    }));
+                }
+            } catch (error) {
+                console.error("Lỗi khi lấy chi tiết sảnh:", error);
+                setError("Không thể lấy thông tin chi tiết sảnh");
+            } finally {
+                setLoadingLobbyDetail(false);
+            }
+        }
+
         setShowDetailModal(true);
         setIsEditing(false);
     };
@@ -488,20 +510,26 @@ const ComboManagement = () => {
 
                                 <div className="sanh-detail-section">
                                     <h3>Chi Tiết Sảnh</h3>
-                                    <div className="sanh-content">
-                                        <div className="sanh-image-container">
-                                            <img
-                                                src={selectedPlan.SanhId?.imageUrl || 'https://via.placeholder.com/150'}
-                                                alt={selectedPlan.SanhId?.name || 'Sảnh'}
-                                                className="sanh-image"
-                                            />
+                                    {loadingLobbyDetail ? (
+                                        <div className="loading-spinner">
+                                            <FontAwesomeIcon icon={faSpinner} spin /> Đang tải thông tin sảnh...
                                         </div>
-                                        <div className="sanh-details">
-                                            <p><span className="label">Tên sảnh:</span> <span className="value">{selectedPlan.SanhId?.name || 'N/A'}</span></p>
-                                            <p><span className="label">Giá:</span> <span className="value price">{selectedPlan.SanhId?.price.toLocaleString() || 'N/A'} VNĐ</span></p>
-                                            <p><span className="label">Số lượng khách tối đa:</span> <span className="value">{selectedPlan.SanhId?.SoLuongKhach || 'N/A'}</span></p>
+                                    ) : (
+                                        <div className="sanh-content">
+                                            <div className="sanh-image-container">
+                                                <img
+                                                    src={selectedPlan.SanhId?.imageUrl || 'https://via.placeholder.com/150'}
+                                                    alt={selectedPlan.SanhId?.name || 'Sảnh'}
+                                                    className="sanh-image"
+                                                />
+                                            </div>
+                                            <div className="sanh-details">
+                                                <p><span className="label">Tên sảnh:</span> <span className="value">{selectedPlan.SanhId?.name || 'N/A'}</span></p>
+                                                <p><span className="label">Giá:</span> <span className="value price">{selectedPlan.SanhId?.price?.toLocaleString() || 'N/A'} VNĐ</span></p>
+                                                <p><span className="label">Sức chứa:</span> <span className="value">{selectedPlan.SanhId?.SoLuongKhach || 'N/A'} khách</span></p>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
 
                                 <div className="form-group">
