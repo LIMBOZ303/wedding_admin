@@ -102,77 +102,43 @@ const PlansManagement = () => {
     const getTransactions = useCallback(async (force = false) => {
         const now = Date.now();
         if (!force && now - lastFetchTime.current < 5000) {
-            return;
+          return;
         }
-
+      
         try {
-            setLoadingTransactions(true);
-            setError(null);
-            lastFetchTime.current = now;
-
-            if (!userId || !userRole) {
-                throw new Error('Vui lòng đăng nhập với tài khoản admin');
+          setLoadingTransactions(true);
+          setError(null);
+          lastFetchTime.current = now;
+      
+          if (!userId || !userRole) {
+            throw new Error('Vui lòng đăng nhập với tài khoản admin');
+          }
+      
+          const data = await fetchTransaction(userId, userRole);
+          console.log('Raw transaction data from API:', data);
+      
+          if (data.status) {
+            if (!Array.isArray(data.data)) {
+              throw new Error('Dữ liệu giao dịch không hợp lệ');
             }
-
-            const data = await fetchTransaction(userId, userRole);
-            console.log("Raw transaction data from API:", data); // Debug log
-
-            if (data.status) {
-                if (!Array.isArray(data.data)) {
-                    throw new Error('Dữ liệu giao dịch không hợp lệ');
-                }
-
-                // Lấy thông tin chi tiết cho mỗi giao dịch có planId
-                const transactionsWithPlanDetails = await Promise.all(
-                    data.data.map(async (tx) => {
-                        console.log("Processing transaction:", tx); // Debug log
-                        console.log("Plan ID from transaction:", tx.planId); // Debug log
-
-                        if (tx.planId) {
-                            try {
-                                console.log("Fetching plan details for plan ID:", tx.planId); // Debug log
-                                const planResponse = await fetchPlanById(tx.planId);
-                                console.log("Plan API response:", planResponse); // Debug log
-
-                                if (planResponse && planResponse.status && planResponse.data) {
-                                    console.log("Successfully got plan details:", planResponse.data); // Debug log
-                                    return {
-                                        ...tx,
-                                        planName: planResponse.data.name,
-                                        planDetails: planResponse.data
-                                    };
-                                } else {
-                                    console.log("Plan API response was invalid:", planResponse); // Debug log
-                                }
-                            } catch (error) {
-                                console.error(`Error fetching plan details for transaction ${tx._id}:`, error);
-                            }
-                        } else {
-                            console.log("No plan ID found for transaction:", tx._id); // Debug log
-                        }
-                        return tx;
-                    })
-                );
-
-                console.log("Final processed transactions:", transactionsWithPlanDetails); // Debug log
-
-                const sortedData = [...transactionsWithPlanDetails].sort((a, b) => {
-                    const dateA = new Date(a.createdAt);
-                    const dateB = new Date(b.createdAt);
-                    return dateB - dateA;
-                });
-
-                setTransactions(sortedData);
-            } else {
-                throw new Error(data.message || 'Không lấy được danh sách giao dịch');
-            }
+      
+            const sortedData = [...data.data].sort((a, b) => {
+              const dateA = new Date(a.createdAt);
+              const dateB = new Date(b.createdAt);
+              return dateB - dateA;
+            });
+      
+            setTransactions(sortedData);
+          } else {
+            throw new Error(data.message || 'Không lấy được danh sách giao dịch');
+          }
         } catch (err) {
-            setError(`Lỗi: ${err.message}`);
-            console.error('Lỗi khi lấy danh sách giao dịch:', err);
+          setError(`Lỗi: ${err.message}`);
+          console.error('Lỗi khi lấy danh sách giao dịch:', err);
         } finally {
-            setLoadingTransactions(false);
+          setLoadingTransactions(false);
         }
-    }, [userId, userRole]);
+      }, [userId, userRole]);
 
     // Auto refresh for transactions
     useEffect(() => {
@@ -586,19 +552,12 @@ const PlansManagement = () => {
                                             <td className="index-column">{index + 1}</td>
                                             <td>{tx.userId?.name || 'N/A'}</td>
                                             <td>{tx.userId?.email || 'N/A'}</td>
-                                            <td>
-                                                {(() => {
-                                                    console.log("Transaction data for plan name:", tx);
-                                                    const planName = tx.planDetails?.name || tx.planName || 'Không có tên kế hoạch';
-                                                    console.log("Resolved plan name:", planName);
-                                                    return planName;
-                                                })()}
-                                            </td>
+                                            <td>{tx.planName || 'N/A'}</td>
                                             <td>
                                                 <span className={`status-badge ${tx.status === 'Đã đặt cọc' ? 'status-deposited' :
-                                                        tx.status === 'Đã hủy' ? 'status-canceled' :
-                                                            tx.status === 'Đã kích hoạt' ? 'status-active' :
-                                                                'status-pending'
+                                                    tx.status === 'Đã hủy' ? 'status-canceled' :
+                                                        tx.status === 'Đã kích hoạt' ? 'status-active' :
+                                                            'status-pending'
                                                     }`}>
                                                     {tx.status === 'Đã đặt cọc' ? 'Đã đặt cọc' :
                                                         tx.status === 'Đã hủy' ? 'Đã hủy' :
