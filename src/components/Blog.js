@@ -369,8 +369,6 @@ const Blog = () => {
 
   return (
     <div className="blog-container">
-      {loading && <LoadingSpinner size="large" text="Đang tải dữ liệu..." />}
-      
       {/* Notification */}
       {notification && (
         <div
