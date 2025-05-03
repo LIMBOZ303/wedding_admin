@@ -1480,11 +1480,13 @@ const AdminChat = () => {
                                         disabled={refreshingMessages || planSuccess || sendingPlan}
                                     >
                                         {sendingPlan ? (
-                                            <LoadingSpinner size="small" text="Đang gửi..." />
+                                            <>
+                                                <LoadingSpinner size="small" text="Đang gửi..." />
+                                            </>
                                         ) : (
                                             <>
                                                 <FontAwesomeIcon icon={faSave} />
-                                                <span>Gửi Kế hoạch</span>
+                                                Gửi Kế hoạch
                                             </>
                                         )}
                                     </button>
