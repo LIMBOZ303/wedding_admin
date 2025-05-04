@@ -102,43 +102,43 @@ const PlansManagement = () => {
     const getTransactions = useCallback(async (force = false) => {
         const now = Date.now();
         if (!force && now - lastFetchTime.current < 5000) {
-          return;
+            return;
         }
-      
+
         try {
-          setLoadingTransactions(true);
-          setError(null);
-          lastFetchTime.current = now;
-      
-          if (!userId || !userRole) {
-            throw new Error('Vui lòng đăng nhập với tài khoản admin');
-          }
-      
-          const data = await fetchTransaction(userId, userRole);
-          console.log('Raw transaction data from API:', data);
-      
-          if (data.status) {
-            if (!Array.isArray(data.data)) {
-              throw new Error('Dữ liệu giao dịch không hợp lệ');
+            setLoadingTransactions(true);
+            setError(null);
+            lastFetchTime.current = now;
+
+            if (!userId || !userRole) {
+                throw new Error('Vui lòng đăng nhập với tài khoản admin');
             }
-      
-            const sortedData = [...data.data].sort((a, b) => {
-              const dateA = new Date(a.createdAt);
-              const dateB = new Date(b.createdAt);
-              return dateB - dateA;
-            });
-      
-            setTransactions(sortedData);
-          } else {
-            throw new Error(data.message || 'Không lấy được danh sách giao dịch');
-          }
+
+            const data = await fetchTransaction(userId, userRole);
+            console.log('Raw transaction data from API:', data);
+
+            if (data.status) {
+                if (!Array.isArray(data.data)) {
+                    throw new Error('Dữ liệu giao dịch không hợp lệ');
+                }
+
+                const sortedData = [...data.data].sort((a, b) => {
+                    const dateA = new Date(a.createdAt);
+                    const dateB = new Date(b.createdAt);
+                    return dateB - dateA;
+                });
+
+                setTransactions(sortedData);
+            } else {
+                throw new Error(data.message || 'Không lấy được danh sách giao dịch');
+            }
         } catch (err) {
-          setError(`Lỗi: ${err.message}`);
-          console.error('Lỗi khi lấy danh sách giao dịch:', err);
+            setError(`Lỗi: ${err.message}`);
+            console.error('Lỗi khi lấy danh sách giao dịch:', err);
         } finally {
-          setLoadingTransactions(false);
+            setLoadingTransactions(false);
         }
-      }, [userId, userRole]);
+    }, [userId, userRole]);
 
     // Auto refresh for transactions
     useEffect(() => {
@@ -745,9 +745,7 @@ const PlansManagement = () => {
                                         )}
                                     </>
                                 ) : (
-                                    <div className="no-plan-details">
-                                        Không có thông tin chi tiết kế hoạch
-                                    </div>
+                                    <div></div>
                                 )}
 
                                 {selectedTransaction.status !== 'Đã đặt cọc' &&
