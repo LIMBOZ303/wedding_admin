@@ -364,7 +364,7 @@ const ComboManagement = () => {
         );
     };
 
-    if (loading) return <LoadingSpinner text="Đang tải..." />;
+    if (loading) return <LoadingSpinner text="Đang tải Combo..." />;
     if (error) return <div className="combo-management"><p className="error-text">{error}</p></div>;
 
     return (

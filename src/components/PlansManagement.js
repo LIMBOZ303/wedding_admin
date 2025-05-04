@@ -475,7 +475,7 @@ const PlansManagement = () => {
                             <FontAwesomeIcon icon={faSearch} className="search-icon" />
                             <input
                                 type="text"
-                                placeholder="Tìm kiếm theo mã, tên, email..."
+                                placeholder="Tìm kiếm tên, email..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="search-input"
@@ -497,7 +497,7 @@ const PlansManagement = () => {
 
                 <div className="transactions-content">
                     {loadingTransactions ? (
-                        <LoadingSpinner size="large" text="Đang tải dữ liệu..." />
+                        <LoadingSpinner size="large" text="Đang tải giao dịch..." />
                     ) : transactions.length === 0 ? (
                         <div className="no-data">
                             <FontAwesomeIcon icon={faExclamationTriangle} size="2x" />
@@ -615,7 +615,7 @@ const PlansManagement = () => {
                                 </div>
 
                                 {loadingPlanDetails ? (
-                                    <LoadingSpinner size="small" text="Đang tải thông tin kế hoạch..." />
+                                    <LoadingSpinner size="small" text="Đang tải dữ liệu..." />
                                 ) : planDetails ? (
                                     <>
                                         <div className="section-title">Chi tiết kế hoạch</div>
@@ -772,7 +772,7 @@ const PlansManagement = () => {
         );
     };
 
-    if (loading) return <LoadingSpinner size="large" text="Đang tải dữ liệu..." />;
+    if (loading) return <LoadingSpinner size="large" text="Đang tải kế hoạch..." />;
     if (error) return <div className="plans-management"><p className="error-text">{error}</p></div>;
 
     return (
