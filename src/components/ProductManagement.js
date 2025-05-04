@@ -225,7 +225,7 @@ const ProductManagement = () => {
       setLoading(true);
 
       if (activeTab === "DichVu") {
-        // Xử lý chi tiết món ăn (giữ nguyên code cũ)
+        // Xử lý chi tiết món ăn
         const localItem = foodList.find(item => item._id === id);
 
         if (!localItem) {
@@ -234,16 +234,19 @@ const ProductManagement = () => {
           return;
         }
 
+        // Lưu thông tin category từ localItem
+        const categoryInfo = localItem.cate_cateringId;
+        
         setSelectedItem({ ...localItem, type: activeTab });
         setEditName(localItem.name || "");
         setEditPrice(localItem.price || "");
 
         // Handle cate_cateringId which could be an object or a string
-        if (localItem.cate_cateringId) {
-          if (typeof localItem.cate_cateringId === 'object' && localItem.cate_cateringId._id) {
-            setEditCate(localItem.cate_cateringId._id);
+        if (categoryInfo) {
+          if (typeof categoryInfo === 'object' && categoryInfo._id) {
+            setEditCate(categoryInfo._id);
           } else {
-            setEditCate(localItem.cate_cateringId);
+            setEditCate(categoryInfo);
           }
         } else {
           setEditCate("");
@@ -259,7 +262,13 @@ const ProductManagement = () => {
 
           if (res && res.status && res.data) {
             const food = res.data;
-            setSelectedItem({ ...food, type: activeTab });
+            // Giữ lại thông tin category từ localItem nếu API không trả về
+            const updatedFood = {
+              ...food,
+              cate_cateringId: food.cate_cateringId || categoryInfo
+            };
+            
+            setSelectedItem({ ...updatedFood, type: activeTab });
             setEditName(food.name || "");
             setEditPrice(food.price || "");
 
@@ -269,6 +278,13 @@ const ProductManagement = () => {
                 setEditCate(food.cate_cateringId._id);
               } else {
                 setEditCate(food.cate_cateringId);
+              }
+            } else if (categoryInfo) {
+              // Sử dụng categoryInfo từ localItem nếu API không trả về
+              if (typeof categoryInfo === 'object' && categoryInfo._id) {
+                setEditCate(categoryInfo._id);
+              } else {
+                setEditCate(categoryInfo);
               }
             } else {
               setEditCate("");
@@ -287,7 +303,13 @@ const ProductManagement = () => {
 
             if (res && res.status && res.data) {
               const food = res.data;
-              setSelectedItem({ ...food, type: activeTab });
+              // Giữ lại thông tin category từ localItem nếu API không trả về
+              const updatedFood = {
+                ...food,
+                cate_cateringId: food.cate_cateringId || categoryInfo
+              };
+              
+              setSelectedItem({ ...updatedFood, type: activeTab });
               setEditName(food.name || "");
               setEditPrice(food.price || "");
 
@@ -297,6 +319,13 @@ const ProductManagement = () => {
                   setEditCate(food.cate_cateringId._id);
                 } else {
                   setEditCate(food.cate_cateringId);
+                }
+              } else if (categoryInfo) {
+                // Sử dụng categoryInfo từ localItem nếu API không trả về
+                if (typeof categoryInfo === 'object' && categoryInfo._id) {
+                  setEditCate(categoryInfo._id);
+                } else {
+                  setEditCate(categoryInfo);
                 }
               } else {
                 setEditCate("");
@@ -337,7 +366,7 @@ const ProductManagement = () => {
 
         setEditDescription(localItem.Description || "");
         setEditImageUrl(localItem.imageUrl || "");
-        setEditStatus(localItem.Status || "");
+ 
 
         try {
           console.log(`Đang gọi API lấy chi tiết quà tặng với ID: ${id}`);
@@ -363,7 +392,7 @@ const ProductManagement = () => {
 
             setEditDescription(gift.Description || "");
             setEditImageUrl(gift.imageUrl || "");
-            setEditStatus(gift.Status || "");
+
             console.log("Đã cập nhật thông tin từ fetchGiftById");
           }
         } catch (error) {
@@ -392,7 +421,7 @@ const ProductManagement = () => {
 
               setEditDescription(gift.Description || "");
               setEditImageUrl(gift.imageUrl || "");
-              setEditStatus(gift.Status || "");
+
               console.log("Đã cập nhật thông tin từ fetchGiftDetail");
             }
           } catch (detailError) {
@@ -1219,7 +1248,20 @@ const ProductManagement = () => {
                 {selectedItem.type === "DichVu" && (
                   <>
                     <p>
-                      <strong>Loại Món Ăn:</strong> {selectedItem.cate_cateringId?.name || "Chưa có"}
+                      <strong>Loại Món Ăn:</strong> {
+                        cateringCategories.length === 0
+                          ? "Đang tải..."
+                          : (() => {
+                              if (selectedItem.cate_cateringId && typeof selectedItem.cate_cateringId === 'object' && selectedItem.cate_cateringId.name) {
+                                return selectedItem.cate_cateringId.name;
+                              }
+                              if (typeof selectedItem.cate_cateringId === 'string' && cateringCategories.length > 0) {
+                                const found = cateringCategories.find(cat => cat._id === selectedItem.cate_cateringId);
+                                return found ? found.name : 'Chưa có';
+                              }
+                              return 'Chưa có';
+                            })()
+                      }
                     </p>
                     <p>
                       <strong>Mô tả:</strong> {selectedItem.Description || "Không có mô tả"}
@@ -1234,9 +1276,6 @@ const ProductManagement = () => {
                     <p>
                       <strong>Mô tả:</strong> {selectedItem.Description || "Không có mô tả"}
                     </p>
-                    <p>
-                      <strong>Trạng thái:</strong> {selectedItem.Status || "Chưa có"}
-                    </p>
                   </>
                 )}
                 {selectedItem.type === "TrangTri" && (
@@ -1247,9 +1286,7 @@ const ProductManagement = () => {
                     <p>
                       <strong>Mô tả:</strong> {selectedItem.Description || "Không có mô tả"}
                     </p>
-                    <p>
-                      <strong>Trạng thái:</strong> {selectedItem.Status || "Chưa có"}
-                    </p>
+
                   </>
                 )}
                 {selectedItem.type === "Order" && (
@@ -1453,15 +1490,7 @@ const ProductManagement = () => {
                         </div>
                       )}
                     </div>
-                    <div>
-                      <label><strong>Trạng thái:</strong></label>
-                      <input
-                        type="text"
-                        value={newStatus}
-                        onChange={(e) => setNewStatus(e.target.value)}
-                        placeholder="Nhập trạng thái"
-                      />
-                    </div>
+                    {/* Đã xóa input trạng thái */}
                   </>
                 )}
 
@@ -1786,14 +1815,7 @@ const ProductManagement = () => {
                         </div>
                       )}
                     </div>
-                    <div>
-                      <label><strong>Trạng thái:</strong></label>
-                      <input
-                        type="text"
-                        value={editStatus}
-                        onChange={(e) => setEditStatus(e.target.value)}
-                      />
-                    </div>
+                    {/* Đã xóa input trạng thái */}
                   </>
                 ) : selectedItem.type === "TrangTri" ? (
                   <>
